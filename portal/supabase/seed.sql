@@ -1,27 +1,27 @@
 -- DEMO DATA for the HBC Admin Portal. Run once after the migrations. Safe to delete later:
---   truncate employees, quotations restart identity cascade;   (and payroll_periods cascade)
+--   truncate employees, quotations, payroll_periods restart identity cascade;   (clears all companies' data)
 -- Names, clients and amounts are fictional.
 
-insert into employees (emp_code, name, job_title, department, joining_date, basic_salary, allowances, ot_method, ot_rate) values
-  ('HBC-001', 'Abdullah Al-Harbi',   'Site Manager',          'Operations',   '2021-03-01', 9500, 2500, 'multiplier', null),
-  ('HBC-002', 'Muhammad Usman',      'Civil Engineer',        'Engineering',  '2022-01-15', 7200, 1800, 'multiplier', null),
-  ('HBC-003', 'Faisal Al-Qahtani',   'Safety Officer',        'HSE',          '2022-06-01', 6000, 1500, 'multiplier', null),
-  ('HBC-004', 'Rashid Ahmed',        'Foreman',               'Operations',   '2020-09-10', 4200, 1000, 'multiplier', null),
-  ('HBC-005', 'Imran Khan',          'Electrician',           'MEP',          '2023-02-01', 3200,  800, 'multiplier', null),
-  ('HBC-006', 'Sanjay Kumar',        'Plumber',               'MEP',          '2023-04-20', 2800,  700, 'multiplier', null),
-  ('HBC-007', 'Mohammed Ali',        'Mason',                 'Operations',   '2021-11-05', 2400,  600, 'fixed',      14),
-  ('HBC-008', 'Bilal Hussain',       'Steel Fixer',           'Operations',   '2022-08-18', 2400,  600, 'fixed',      14),
-  ('HBC-009', 'Yasir Mahmood',       'Welder',                'Fabrication',  '2022-10-01', 3000,  750, 'multiplier', null),
-  ('HBC-010', 'Nasser Al-Dosari',    'Procurement Officer',   'Procurement',  '2021-05-12', 5500, 1400, 'multiplier', null),
-  ('HBC-011', 'Zahid Iqbal',         'Heavy Equipment Operator','Operations', '2023-07-01', 3400,  900, 'multiplier', null),
-  ('HBC-012', 'Omar Al-Shehri',      'Accounts Assistant',    'Administration','2024-01-10', 4800, 1200, 'multiplier', null);
+insert into employees (company_id, emp_code, name, job_title, department, joining_date, basic_salary, allowances, ot_method, ot_rate) values
+  ((select id from companies where code = 'HBC'), 'HBC-001', 'Abdullah Al-Harbi',   'Site Manager',          'Operations',   '2021-03-01', 9500, 2500, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-002', 'Muhammad Usman',      'Civil Engineer',        'Engineering',  '2022-01-15', 7200, 1800, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-003', 'Faisal Al-Qahtani',   'Safety Officer',        'HSE',          '2022-06-01', 6000, 1500, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-004', 'Rashid Ahmed',        'Foreman',               'Operations',   '2020-09-10', 4200, 1000, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-005', 'Imran Khan',          'Electrician',           'MEP',          '2023-02-01', 3200,  800, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-006', 'Sanjay Kumar',        'Plumber',               'MEP',          '2023-04-20', 2800,  700, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-007', 'Mohammed Ali',        'Mason',                 'Operations',   '2021-11-05', 2400,  600, 'fixed',      14),
+  ((select id from companies where code = 'HBC'), 'HBC-008', 'Bilal Hussain',       'Steel Fixer',           'Operations',   '2022-08-18', 2400,  600, 'fixed',      14),
+  ((select id from companies where code = 'HBC'), 'HBC-009', 'Yasir Mahmood',       'Welder',                'Fabrication',  '2022-10-01', 3000,  750, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-010', 'Nasser Al-Dosari',    'Procurement Officer',   'Procurement',  '2021-05-12', 5500, 1400, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-011', 'Zahid Iqbal',         'Heavy Equipment Operator','Operations', '2023-07-01', 3400,  900, 'multiplier', null),
+  ((select id from companies where code = 'HBC'), 'HBC-012', 'Omar Al-Shehri',      'Accounts Assistant',    'Administration','2024-01-10', 4800, 1200, 'multiplier', null);
 
 -- Attendance: 1 Aug 2026 → 29 Sep 2026 (today, 30 Sep, is left open for you to mark).
 -- Fridays are weekly off, 23 Sep (National Day) is a holiday; a few deterministic exceptions and OT days.
 alter table attendance disable trigger attendance_guard_trg;
 
-insert into attendance (employee_id, work_date, status, regular_hours, ot_hours, remarks)
-select e.id, d::date, s.status,
+insert into attendance (company_id, employee_id, work_date, status, regular_hours, ot_hours, remarks)
+select e.company_id, e.id, d::date, s.status,
        case when s.status = 'present' then 8 else 0 end,
        case when s.status = 'present' and s.h % 100 between 60 and 74 then 1 + (s.h % 3) else 0 end,
        case s.status when 'absent' then 'No show' when 'sick_leave' then 'Medical certificate' else '' end
@@ -39,7 +39,7 @@ cross join lateral (
       else 'present'
     end::attendance_status as status
 ) s
-where d::date >= e.joining_date;
+where d::date >= e.joining_date and e.company_id = (select id from companies where code = 'HBC');
 
 alter table attendance enable trigger attendance_guard_trg;
 
@@ -51,24 +51,24 @@ create or replace function pg_temp.seed_q(
 declare v_id uuid; v_sub numeric; v_vat numeric; v_grand numeric; v_rev int; v_rid uuid; it jsonb; pos int;
 begin
   select coalesce(sum((i ->> 'qty')::numeric * (i ->> 'unit_price')::numeric), 0) into v_sub from jsonb_array_elements(p_items) i;
-  insert into quotations (number, status, client, project, quote_date, amount, current_revision)
-  values (p_number, p_status, p_client, p_project, p_date, 0, p_revs) returning id into v_id;
+  insert into quotations (company_id, number, status, client, project, quote_date, amount, current_revision)
+  values ((select id from companies where code = 'HBC'), p_number, p_status, p_client, p_project, p_date, 0, p_revs) returning id into v_id;
   for v_rev in 0..p_revs loop
     -- earlier revisions carry a slightly higher price so the history is visible
     v_sub := (select sum((i ->> 'qty')::numeric * (i ->> 'unit_price')::numeric) from jsonb_array_elements(p_items) i)
              * (1 + 0.05 * (p_revs - v_rev));
     v_vat := round((v_sub - p_disc) * 0.15, 2);
     v_grand := v_sub - p_disc + v_vat;
-    insert into quotation_revisions (quotation_id, revision, client, attention, project, quote_date, validity_days, reference,
+    insert into quotation_revisions (company_id, quotation_id, revision, client, attention, project, quote_date, validity_days, reference,
       subtotal, discount, vat_rate, vat_amount, grand_total, payment_terms, delivery, notes, revision_note)
-    values (v_id, v_rev, p_client, p_attn, p_project, p_date, 30, 'RFQ-' || right(p_number, 4),
+    values ((select id from companies where code = 'HBC'), v_id, v_rev, p_client, p_attn, p_project, p_date, 30, 'RFQ-' || right(p_number, 4),
       v_sub, p_disc, 0.15, v_vat, v_grand, p_terms, '2-3 weeks from PO', 'Prices are valid for the stated period. Site access to be provided by client.',
       case when v_rev = 0 then 'Original' else 'Revised pricing' end) returning id into v_rid;
     pos := 0;
     for it in select * from jsonb_array_elements(p_items) loop
       pos := pos + 1;
-      insert into quotation_items (revision_id, position, description, qty, unit, unit_price)
-      values (v_rid, pos, it ->> 'd', (it ->> 'qty')::numeric, it ->> 'u',
+      insert into quotation_items (company_id, revision_id, position, description, qty, unit, unit_price)
+      values ((select id from companies where code = 'HBC'), v_rid, pos, it ->> 'd', (it ->> 'qty')::numeric, it ->> 'u',
               round((it ->> 'unit_price')::numeric * (1 + 0.05 * (p_revs - v_rev)), 2));
     end loop;
     if v_rev = p_revs then
