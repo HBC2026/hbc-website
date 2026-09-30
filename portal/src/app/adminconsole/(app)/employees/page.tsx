@@ -22,7 +22,7 @@ function toDraft(e?: Employee, nextCode = ''): Draft {
 }
 
 export default function EmployeesPage() {
-  const { profile, company, settings, toast } = useApp();
+  const { profile, company, settings, toast, confirmDialog } = useApp();
   const canWrite = can(profile!.role, 'employees:write');
   const sb = supabase();
   const { data, error, loading, reload } = useQuery(async () =>
@@ -61,7 +61,7 @@ export default function EmployeesPage() {
 
   async function toggle(e: Employee) {
     const status = e.status === 'active' ? 'inactive' : 'active';
-    if (status === 'inactive' && !confirm(`Deactivate ${e.name}? They will be excluded from future attendance and payroll.`)) return;
+    if (status === 'inactive' && !(await confirmDialog({ title: 'Deactivate employee?', message: `Deactivate ${e.name}? They will be excluded from future attendance and payroll.`, confirmLabel: 'Deactivate', danger: true }))) return;
     const { error } = await sb.from('employees').update({ status }).eq('id', e.id);
     if (error) return toast(error.message, true);
     toast(status === 'active' ? 'Employee reactivated' : 'Employee deactivated'); reload();

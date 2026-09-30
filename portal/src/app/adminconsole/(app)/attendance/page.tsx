@@ -24,7 +24,7 @@ function buildRows(emps: Employee[], existing: AttendanceRow[]): Rows {
 }
 
 export default function DailyAttendance() {
-  const { profile } = useApp();
+  const { profile, confirmDialog } = useApp();
   const canWrite = can(profile!.role, 'attendance:write');
   const sb = supabase();
   const [date, setDate] = useState(today());
@@ -44,9 +44,9 @@ export default function DailyAttendance() {
     };
   }, [date]);
 
-  function changeDate(d: string) {
+  async function changeDate(d: string) {
     if (!d) return;
-    if (dirty && !confirm('You have unsaved attendance changes. Discard them?')) return;
+    if (dirty && !(await confirmDialog({ title: 'Discard changes?', message: 'You have unsaved attendance changes. Discard them?', confirmLabel: 'Discard', danger: true }))) return;
     setDirty(false); setDate(d);
   }
 
@@ -73,7 +73,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   date: string; emps: Employee[]; initial: Rows; locked: boolean; canWrite: boolean; monthText: string;
   onDirty: (d: boolean) => void; onSaved: () => void;
 }) {
-  const { settings, toast } = useApp();
+  const { settings, toast, confirmDialog } = useApp();
   const [rows, setRows] = useState<Rows>(initial);
   const [saving, setSaving] = useState(false);
   const editable = canWrite && !locked;
@@ -88,9 +88,9 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
     else patch(id, { status, regular: status ? '0' : '', ot: status ? '0' : '' });
   }
 
-  function markAll() {
+  async function markAll() {
     const hasExceptions = Object.values(rows).some((r) => (r.status && r.status !== 'present') || Number(r.ot) > 0);
-    if (hasExceptions && !confirm('This will overwrite existing exceptions and overtime for this date. Continue?')) return;
+    if (hasExceptions && !(await confirmDialog({ title: 'Mark everyone present?', message: 'This will overwrite existing exceptions and overtime for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
     setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'present' as const, regular: std, ot: '0', remarks: rows[e.id].remarks }])));
   }
 

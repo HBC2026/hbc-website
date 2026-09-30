@@ -10,7 +10,7 @@ import type { Role, Settings } from '@/lib/types';
 interface TeamMember { user_id: string; full_name: string; email: string | null; role: Role | null }
 
 export default function SettingsPage() {
-  const { profile, company, settings, reloadSettings, toast } = useApp();
+  const { profile, company, settings, reloadSettings, toast, confirmDialog } = useApp();
   const canWrite = can(profile!.role, 'settings:write');
   const sb = supabase();
   const [s, setS] = useState<Settings>(settings);
@@ -36,7 +36,7 @@ export default function SettingsPage() {
 
   /** role = null removes the user from this company. */
   async function setRole(id: string, role: Role | null) {
-    if (id === profile!.id && role !== 'administrator' && !confirm('You are changing your own access to this company. You will lose administrator access here. Continue?')) return;
+    if (id === profile!.id && role !== 'administrator' && !(await confirmDialog({ title: 'Change your own access?', message: 'You are changing your own access to this company. You will lose administrator access here. Continue?', confirmLabel: 'Continue', danger: true }))) return;
     const { error } = await sb.rpc('set_company_member', { p_user: id, p_role: role });
     if (error) return toast(error.message, true);
     toast('Access updated'); team.reload();

@@ -21,7 +21,7 @@ const STEPS = ['Attendance', 'Calculate', 'Review', 'Approve', 'Salary Slips', '
 export default function PayrollPeriodPage() {
   const params = useParams<{ ym: string }>();
   const parsed = parseYm(params.ym);
-  const { profile, toast } = useApp();
+  const { profile, toast, confirmDialog } = useApp();
   const role = profile!.role;
   const sb = supabase();
   const [tab, setTab] = useState<Tab>('payroll');
@@ -70,8 +70,8 @@ export default function PayrollPeriodPage() {
     toast(ok); reload();
   }
   const calculate = () => run(() => sb.rpc('calculate_payroll', { p_year: year, p_month: month }), `Payroll calculated for ${label}`);
-  const approve = () => {
-    if (!confirm(`Approve payroll for ${label}?\n\nThis locks the payroll period and its attendance, and generates salary slips.`)) return;
+  const approve = async () => {
+    if (!(await confirmDialog({ title: 'Approve payroll', message: `Approve payroll for ${label}?\n\nThis locks the payroll period and its attendance, and generates salary slips.`, confirmLabel: 'Approve' }))) return;
     run(() => sb.rpc('approve_payroll', { p_period: period!.id }), 'Payroll approved — salary slips generated');
   };
 

@@ -1,12 +1,15 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { isConfigured, setCompanyId, supabase, getCompanyId } from '@/lib/supabase';
+import { Modal } from '@/components/ui';
 import type { Company, Profile, Role, Settings } from '@/lib/types';
 
 export const DEFAULT_SETTINGS: Settings = {
   ot_multiplier: 1.5, standard_hours: 8, days_divisor: 30, vat_rate: 0.15, max_ot_per_day: 6,
   company: { name: 'Hassan and Bilal Company', name_ar: 'شركة حسن و بلال', address: '', phone: '', email: '', vat_no: '', cr_no: '' },
 };
+
+export interface ConfirmOptions { title?: string; message: string; confirmLabel?: string; danger?: boolean }
 
 interface Toast { id: number; msg: string; error?: boolean }
 interface AppCtx {
@@ -15,6 +18,8 @@ interface AppCtx {
   companies: Company[]; company: Company | null; switchCompany: (id: string) => void;
   signOut: () => Promise<void>; reloadSettings: () => Promise<void>;
   toast: (msg: string, error?: boolean) => void;
+  /** In-app replacement for window.confirm: resolves true on OK, false on Cancel / Esc / click outside. */
+  confirmDialog: (o: string | ConfirmOptions) => Promise<boolean>;
 }
 const Ctx = createContext<AppCtx | null>(null);
 
@@ -32,6 +37,12 @@ export function Providers({ children }: { children: ReactNode }) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [dialog, setDialog] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null);
+
+  const confirmDialog = useCallback((o: string | ConfirmOptions) => new Promise<boolean>((resolve) => {
+    setDialog({ ...(typeof o === 'string' ? { message: o } : o), resolve });
+  }), []);
+  const answer = (ok: boolean) => { dialog?.resolve(ok); setDialog(null); };
 
   const toast = useCallback((msg: string, error = false) => {
     const id = Date.now() + Math.random();
@@ -91,8 +102,17 @@ export function Providers({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => { await supabase().auth.signOut(); }, []);
 
   return (
-    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, toast }}>
+    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, toast, confirmDialog }}>
       {children}
+      {dialog && (
+        <Modal title={dialog.title ?? 'Please confirm'} onClose={() => answer(false)}
+          footer={<>
+            <button className="btn" onClick={() => answer(false)}>Cancel</button>
+            <button className={`btn ${dialog.danger ? 'danger' : 'primary'}`} autoFocus onClick={() => answer(true)}>{dialog.confirmLabel ?? 'OK'}</button>
+          </>}>
+          <p style={{ margin: 0, whiteSpace: 'pre-line', lineHeight: 1.55 }}>{dialog.message}</p>
+        </Modal>
+      )}
       <div className="toast-wrap">
         {toasts.map((t) => <div key={t.id} className={`toast${t.error ? ' error' : ''}`}>{t.msg}</div>)}
       </div>
