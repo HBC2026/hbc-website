@@ -165,3 +165,133 @@ export function Select({ value, onChange, disabled, className = 'select', style,
     </>
   );
 }
+
+/* ------------------------------------------------ in-app date / month pickers and unit suggestions */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const p2 = (n: number) => String(n).padStart(2, '0');
+
+/** Anchored popup used by the pickers: fixed position under (or over) the trigger; a bottom sheet on phones (CSS). */
+function usePopup(height: number) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const btn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    window.addEventListener('resize', close); window.addEventListener('keydown', key);
+    return () => { window.removeEventListener('resize', close); window.removeEventListener('keydown', key); };
+  }, [open]);
+  function toggle() {
+    if (!open && btn.current) {
+      const r = btn.current.getBoundingClientRect();
+      const up = window.innerHeight - r.bottom < height + 16 && r.top > window.innerHeight - r.bottom;
+      setPos({ left: Math.max(8, Math.min(r.left, window.innerWidth - 300)), top: up ? Math.max(8, r.top - height - 4) : r.bottom + 4 });
+    }
+    setOpen(!open);
+  }
+  return { open, setOpen, pos, btn, toggle };
+}
+
+function PickerButton({ pop, className, style, children, disabled, onOpen }: { pop: ReturnType<typeof usePopup>; className: string; style?: CSSProperties; children: ReactNode; disabled?: boolean; onOpen: () => void }) {
+  return (
+    <button type="button" ref={pop.btn} className={`${className} dd-btn`} style={style} disabled={disabled} aria-haspopup="dialog" aria-expanded={pop.open}
+      onClick={() => { if (!pop.open) onOpen(); pop.toggle(); }}>
+      <span className="dd-label">{children}</span><span className="dd-caret" aria-hidden>▾</span>
+    </button>
+  );
+}
+
+export function DatePicker({ value, onChange, className = 'input', style, disabled }: { value: string; onChange: (v: string) => void; className?: string; style?: CSSProperties; disabled?: boolean }) {
+  const pop = usePopup(340);
+  const today = new Date();
+  const sel = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+  const [view, setView] = useState({ y: today.getFullYear(), m: today.getMonth() });
+  const shown = sel ? `${Number(sel.slice(8))} ${MONTHS[Number(sel.slice(5, 7)) - 1]} ${sel.slice(0, 4)}` : 'Select date';
+  const first = new Date(view.y, view.m, 1).getDay();
+  const count = new Date(view.y, view.m + 1, 0).getDate();
+  const step = (n: number) => setView((v) => { const d = new Date(v.y, v.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() }; });
+  const todayStr = `${today.getFullYear()}-${p2(today.getMonth() + 1)}-${p2(today.getDate())}`;
+  return (
+    <>
+      <PickerButton pop={pop} className={className} style={style} disabled={disabled}
+        onOpen={() => { if (sel) setView({ y: Number(sel.slice(0, 4)), m: Number(sel.slice(5, 7)) - 1 }); }}>{shown}</PickerButton>
+      {pop.open && (
+        <>
+          <div className="dd-backdrop" onClick={() => pop.setOpen(false)} />
+          <div className="dd-menu pick" role="dialog" style={{ top: pop.pos.top, left: pop.pos.left }}>
+            <div className="pick-head">
+              <button type="button" className="pick-nav" aria-label="Previous month" onClick={() => step(-1)}>‹</button>
+              <strong>{MONTHS_LONG[view.m]} {view.y}</strong>
+              <button type="button" className="pick-nav" aria-label="Next month" onClick={() => step(1)}>›</button>
+            </div>
+            <div className="pick-grid">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i} className="pick-dow">{d}</div>)}
+              {Array.from({ length: first }, (_, i) => <div key={`b${i}`} />)}
+              {Array.from({ length: count }, (_, i) => {
+                const s = `${view.y}-${p2(view.m + 1)}-${p2(i + 1)}`;
+                return <button type="button" key={s} className={`pick-day${s === sel ? ' sel' : ''}${s === todayStr ? ' today' : ''}`}
+                  onClick={() => { pop.setOpen(false); onChange(s); }}>{i + 1}</button>;
+              })}
+            </div>
+            <div className="pick-foot"><button type="button" className="btn sm" onClick={() => { pop.setOpen(false); onChange(todayStr); }}>Today</button></div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+export function MonthPicker({ value, onChange, className = 'input', style, disabled }: { value: string; onChange: (v: string) => void; className?: string; style?: CSSProperties; disabled?: boolean }) {
+  const pop = usePopup(250);
+  const ok = /^\d{4}-\d{2}$/.test(value);
+  const selY = ok ? Number(value.slice(0, 4)) : new Date().getFullYear();
+  const selM = ok ? Number(value.slice(5)) : 0;
+  const [year, setYear] = useState(selY);
+  return (
+    <>
+      <PickerButton pop={pop} className={className} style={style} disabled={disabled} onOpen={() => setYear(selY)}>
+        {ok ? `${MONTHS_LONG[selM - 1]} ${selY}` : 'Select month'}
+      </PickerButton>
+      {pop.open && (
+        <>
+          <div className="dd-backdrop" onClick={() => pop.setOpen(false)} />
+          <div className="dd-menu pick" role="dialog" style={{ top: pop.pos.top, left: pop.pos.left }}>
+            <div className="pick-head">
+              <button type="button" className="pick-nav" aria-label="Previous year" onClick={() => setYear(year - 1)}>‹</button>
+              <strong>{year}</strong>
+              <button type="button" className="pick-nav" aria-label="Next year" onClick={() => setYear(year + 1)}>›</button>
+            </div>
+            <div className="pick-months">
+              {MONTHS.map((m, i) => (
+                <button type="button" key={m} className={`pick-day${year === selY && i + 1 === selM ? ' sel' : ''}`}
+                  onClick={() => { pop.setOpen(false); onChange(`${year}-${p2(i + 1)}`); }}>{m}</button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/** Text input with an in-app suggestion list (replaces <datalist>). Free text is still allowed. */
+export function SuggestInput({ value, onChange, options, style, className = 'input' }: { value: string; onChange: (v: string) => void; options: string[]; style?: CSSProperties; className?: string }) {
+  const [focus, setFocus] = useState(false);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  const ref = useRef<HTMLInputElement>(null);
+  const list = options.filter((o) => o.toLowerCase().includes(value.toLowerCase()) && o !== value);
+  return (
+    <>
+      <input ref={ref} className={className} style={style} value={value} autoComplete="off"
+        onFocus={() => { setRect(ref.current?.getBoundingClientRect() ?? null); setFocus(true); }}
+        onBlur={() => setFocus(false)} onChange={(e) => onChange(e.target.value)} />
+      {focus && rect && list.length > 0 && (
+        <ul className="dd-menu suggest" style={{ top: rect.bottom + 4, left: rect.left, minWidth: Math.max(rect.width, 110), maxHeight: 220 }}>
+          {list.map((o) => <li key={o} className="dd-item" onMouseDown={(e) => { e.preventDefault(); onChange(o); setFocus(false); }}>{o}</li>)}
+        </ul>
+      )}
+    </>
+  );
+}

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Money, Riyal } from '@/components/Money';
 import { useMemo, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { Badge, ErrorBox, Select, Field, Loading, Modal, PageHead } from '@/components/ui';
+import { Badge, DatePicker, ErrorBox, Select, Field, Loading, Modal, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate, today } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
@@ -116,7 +116,7 @@ export default function EmployeesPage() {
             <Field label="Full name" className="span-2"><input className="input" value={draft.name} onChange={(e) => set('name', e.target.value)} /></Field>
             <Field label="Job title"><input className="input" value={draft.job_title} onChange={(e) => set('job_title', e.target.value)} /></Field>
             <Field label="Department"><input className="input" value={draft.department} onChange={(e) => set('department', e.target.value)} /></Field>
-            <Field label="Joining date"><input className="input" type="date" value={draft.joining_date} onChange={(e) => set('joining_date', e.target.value)} /></Field>
+            <Field label="Joining date"><DatePicker value={draft.joining_date} onChange={(v) => set('joining_date', v)} /></Field>
             <Field label={<>Basic salary (<Riyal /> / month)</>}><input className="input num" type="number" min="0" step="0.01" value={draft.basic_salary} onChange={(e) => set('basic_salary', e.target.value)} /></Field>
             <Field label={<>Allowances (<Riyal /> / month)</>}><input className="input num" type="number" min="0" step="0.01" value={draft.allowances} onChange={(e) => set('allowances', e.target.value)} /></Field>
             <Field label="OT calculation">

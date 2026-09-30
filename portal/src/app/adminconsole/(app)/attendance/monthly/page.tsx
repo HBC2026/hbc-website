@@ -1,9 +1,9 @@
 'use client';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ATT_CODE, ATT_LABEL, ErrorBox, Select, Loading, PageHead, Tabs } from '@/components/ui';
+import { ATT_CODE, ATT_LABEL, ErrorBox, MonthPicker, Select, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { daysInMonth, hrs, monthEnd, monthLabel, monthStart, ymKey } from '@/lib/format';
+import { daysInMonth, hrs, monthEnd, monthStart, ymKey } from '@/lib/format';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, Employee } from '@/lib/types';
 
@@ -20,8 +20,14 @@ function MonthlyAttendance() {
   const qp = useSearchParams().get('ym');
   const [ym, setYm] = useState(qp && /^\d{4}-(0[1-9]|1[0-2])$/.test(qp) ? qp : ymKey(now.getFullYear(), now.getMonth() + 1));
   const [view, setView] = useState<View>('timesheet');
-  // the wide timesheet grid can't fit a phone; start on the calendar there
-  useEffect(() => { if (window.matchMedia('(max-width: 800px)').matches) setView('calendar'); }, []);
+  // the wide timesheet grid can't fit a phone, so phones get the calendar only
+  const [phone, setPhone] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 800px)');
+    const sync = () => { setPhone(mq.matches); if (mq.matches) setView('calendar'); };
+    sync(); mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
   const [empId, setEmpId] = useState('');
   const [y, m] = ym.split('-').map(Number);
   const dim = daysInMonth(y, m);
@@ -62,11 +68,10 @@ function MonthlyAttendance() {
     <>
       <PageHead eyebrow="Payroll" title="Monthly Attendance" sub="Attendance is the source data for payroll — overtime is entered once, here." />
       <div className="toolbar" style={{ marginBottom: 12 }}>
-        <input className="input" type="month" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} />
-        <span className="muted">{monthLabel(y, m)}</span>
+        <MonthPicker value={ym} onChange={setYm} />
         <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off</span>
       </div>
-      <Tabs tabs={[['timesheet', 'Timesheet View'], ['calendar', 'Calendar View']]} value={view} onChange={setView} />
+      {!phone && <Tabs tabs={[['timesheet', 'Timesheet View'], ['calendar', 'Calendar View']]} value={view} onChange={setView} />}
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : view === 'timesheet' ? (
         <div className="panel flush"><div className="table-wrap"><table className="table sheet">

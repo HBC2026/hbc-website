@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { Money, Riyal } from '@/components/Money';
 import { useMemo, useState } from 'react';
 import { useApp } from './Providers';
-import { Field } from './ui';
+import { DatePicker, Field, SuggestInput } from './ui';
 import { fmtNum, today } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import type { QuotationItem, QuotationRevision } from '@/lib/types';
@@ -65,7 +65,7 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
           <Field label="Attention"><input className="input" value={f.attention} onChange={(e) => set('attention', e.target.value)} /></Field>
           <Field label="Project" className="span-2"><input className="input" value={f.project} onChange={(e) => set('project', e.target.value)} /></Field>
           <Field label="Reference"><input className="input" value={f.reference} onChange={(e) => set('reference', e.target.value)} placeholder="Client RFQ / enquiry no." /></Field>
-          <Field label="Date"><input className="input" type="date" value={f.quote_date} onChange={(e) => set('quote_date', e.target.value)} /></Field>
+          <Field label="Date"><DatePicker value={f.quote_date} onChange={(v) => set('quote_date', v)} /></Field>
           <Field label="Validity (days)"><input className="input num" type="number" min="1" value={f.validity_days} onChange={(e) => set('validity_days', e.target.value)} /></Field>
         </div>
       </div>
@@ -80,7 +80,7 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
                 <td className="muted">{i + 1}</td>
                 <td><input className="input" style={{ width: '100%' }} value={it.description} onChange={(e) => setItem(i, 'description', e.target.value)} placeholder="Item / scope description" /></td>
                 <td className="r"><input className="input num" type="number" min="0" step="0.001" style={{ width: 80 }} value={it.qty} onChange={(e) => setItem(i, 'qty', e.target.value)} /></td>
-                <td><input className="input" list="units" style={{ width: 110 }} value={it.unit} onChange={(e) => setItem(i, 'unit', e.target.value)} /></td>
+                <td><SuggestInput options={UNITS} style={{ width: 110 }} value={it.unit} onChange={(v) => setItem(i, 'unit', v)} /></td>
                 <td className="r"><input className="input num" type="number" min="0" step="0.01" style={{ width: 120 }} value={it.unit_price} onChange={(e) => setItem(i, 'unit_price', e.target.value)} /></td>
                 <td className="r strong">{fmtNum((Number(it.qty) || 0) * (Number(it.unit_price) || 0))}</td>
                 <td><button className="btn sm danger" aria-label="Remove line" disabled={items.length === 1} onClick={() => setItems((a) => a.filter((_, j) => j !== i))}>×</button></td>
@@ -88,7 +88,6 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
             ))}
           </tbody>
         </table></div>
-        <datalist id="units">{UNITS.map((u) => <option key={u} value={u} />)}</datalist>
         <div style={{ padding: 22, display: 'flex', justifyContent: 'flex-end' }}>
           <div className="kv" style={{ width: 340 }}>
             <span className="k">Subtotal</span><span className="v">{<Money v={t.subtotal} />}</span>

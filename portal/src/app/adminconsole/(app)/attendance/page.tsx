@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ATT_LABEL, ATT_STATUSES, ErrorBox, Select, Loading, PageHead } from '@/components/ui';
+import { ATT_LABEL, ATT_STATUSES, DatePicker, ErrorBox, Select, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { addDays, fmtDate, hrs, monthLabel, today } from '@/lib/format';
 import { can } from '@/lib/roles';
@@ -55,7 +55,7 @@ export default function DailyAttendance() {
       <PageHead eyebrow="Payroll" title="Daily Attendance" sub="Mark everyone present, then change only the exceptions and enter overtime." />
       <div className="toolbar no-print" style={{ marginBottom: 16 }}>
         <button className="btn" onClick={() => changeDate(addDays(date, -1))}>←</button>
-        <input className="input" type="date" value={date} onChange={(e) => changeDate(e.target.value)} />
+        <DatePicker value={date} onChange={changeDate} />
         <button className="btn" onClick={() => changeDate(addDays(date, 1))}>→</button>
         <button className="btn" onClick={() => changeDate(today())}>Today</button>
         <span className="muted">{fmtDate(date)}</span>

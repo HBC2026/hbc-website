@@ -4,7 +4,7 @@ import { Money, Riyal } from '@/components/Money';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ATT_CODE, ATT_LABEL, Badge, ErrorBox, Loading, PageHead, SlipBadge, Tabs } from '@/components/ui';
+import { ATT_CODE, ATT_LABEL, Badge, ErrorBox, Loading, MonthPicker, PageHead, SlipBadge, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate, hrs, monthEnd, monthLabel, monthStart, ymKey } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
@@ -61,7 +61,7 @@ export default function EmployeeDetail() {
       {tab === 'attendance' && (
         <div className="panel flush">
           <div className="panel-head">
-            <div className="toolbar"><input className="input" type="month" value={ym} onChange={(ev) => ev.target.value && setYm(ev.target.value)} /></div>
+            <div className="toolbar"><MonthPicker value={ym} onChange={setYm} /></div>
             <span className="muted">{monthLabel(y, m)} · Regular {hrs(sum('regular_hours'))} h · OT {hrs(sum('ot_hours'))} h</span>
           </div>
           <div className="table-wrap"><table className="table">

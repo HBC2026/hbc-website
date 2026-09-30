@@ -4,7 +4,7 @@ import { Money, Riyal } from '@/components/Money';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ErrorBox, Loading, PageHead, PeriodBadge } from '@/components/ui';
+import { ErrorBox, Loading, MonthPicker, PageHead, PeriodBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { monthLabel, ymKey } from '@/lib/format';
 import { can } from '@/lib/roles';
@@ -34,7 +34,7 @@ export default function PayrollList() {
       <PageHead eyebrow="Payroll" title="Payroll" sub="Attendance → Calculate → Review → Approve → Salary Slips → Signed Copies → Complete">
         {can(profile!.role, 'payroll:write') && (
           <div className="toolbar">
-            <input className="input" type="month" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} />
+            <MonthPicker value={ym} onChange={setYm} />
             <button className="btn primary" onClick={() => router.push(`/adminconsole/payroll/${ym}`)}>Process Payroll →</button>
           </div>
         )}
