@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ATT_LABEL, ATT_STATUSES, ErrorBox, Loading, PageHead } from '@/components/ui';
+import { ATT_LABEL, ATT_STATUSES, ErrorBox, Select, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { addDays, fmtDate, hrs, monthLabel, today } from '@/lib/format';
 import { can } from '@/lib/roles';
@@ -149,10 +149,10 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
                 <tr key={e.id}>
                   <td><span className="strong">{e.name}</span><div className="muted" style={{ fontSize: 10 }}>{e.emp_code} · {e.job_title}</div></td>
                   <td>
-                    <select className="select" style={{ width: 150 }} disabled={!editable} value={r.status} onChange={(ev) => setStatus(e.id, ev.target.value as AttendanceStatus | '')}>
+                    <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.status} onChange={(ev) => setStatus(e.id, ev.target.value as AttendanceStatus | '')}>
                       <option value="">— Not marked —</option>
                       {ATT_STATUSES.map((s) => <option key={s} value={s}>{ATT_LABEL[s]}</option>)}
-                    </select>
+                    </Select>
                   </td>
                   <td className="r"><input className="input num" type="number" min="0" max="24" step="0.25" disabled={!editable || !present} value={r.regular} onChange={(ev) => patch(e.id, { regular: ev.target.value })} /></td>
                   <td className="r"><input className="input num" type="number" min="0" max="16" step="0.25" disabled={!editable || !present} value={r.ot} onChange={(ev) => patch(e.id, { ot: ev.target.value })} /></td>

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApp } from './Providers';
+import { Select } from './ui';
 import { asset, isConfigured } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
 import { ATTENDANCE_SIDE, PAYROLL_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
@@ -117,9 +118,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="brand-subtitle">Administration Portal</div>
           {companies.length > 1 && (
-            <select className="company-switch" aria-label="Switch company" value={company.id} onChange={(e) => switchCompany(e.target.value)}>
+            <Select className="company-switch" aria-label="Switch company" value={company.id} onChange={(e) => switchCompany(e.target.value)}>
               {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            </Select>
           )}
         </div>
 

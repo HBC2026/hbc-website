@@ -16,6 +16,7 @@ export default function LoginPage() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!email.trim() || !password) return setError('Enter your email and password.');
     setBusy(true); setError('');
     const { error } = await supabase().auth.signInWithPassword({ email, password });
     setBusy(false);
@@ -29,11 +30,11 @@ export default function LoginPage() {
         <h1>Administration Portal</h1>
         <p className="sub">Sign in with your company account</p>
         {!isConfigured && <div className="banner warn">Supabase is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to .env.local.</div>}
-        <form onSubmit={submit}>
+        <form onSubmit={submit} noValidate>
           <div className="field"><label htmlFor="email">Email</label>
-            <input id="email" className="input" type="email" required autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+            <input id="email" className="input" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
           <div className="field"><label htmlFor="pw">Password</label>
-            <input id="pw" className="input" type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
+            <input id="pw" className="input" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></div>
           {error && <div className="banner error" style={{ marginBottom: 0 }}>{error}</div>}
           <button className="btn primary" style={{ justifyContent: 'center', height: 40 }} disabled={busy || !isConfigured}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </form>

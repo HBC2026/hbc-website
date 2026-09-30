@@ -4,7 +4,7 @@ import { Money, Riyal } from '@/components/Money';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ErrorBox, Loading, PageHead, QUOTE_LABEL, QUOTE_STATUSES, QuoteBadge } from '@/components/ui';
+import { ErrorBox, Select, Loading, PageHead, QUOTE_LABEL, QUOTE_STATUSES, QuoteBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate } from '@/lib/format';
 import { can } from '@/lib/roles';
@@ -33,10 +33,10 @@ export default function QuotationList() {
         <div className="panel-head">
           <div className="toolbar">
             <input className="input" placeholder="Search number, client, project…" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 260 }} />
-            <select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <Select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">All statuses</option>
               {QUOTE_STATUSES.map((s) => <option key={s} value={s}>{QUOTE_LABEL[s]}</option>)}
-            </select>
+            </Select>
           </div>
           <span className="muted">{rows.length} quotations</span>
         </div>

@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ErrorBox, Field, Loading, PageHead } from '@/components/ui';
+import { ErrorBox, Select, Field, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { can, ROLES, ROLE_LABEL } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -88,10 +88,10 @@ export default function SettingsPage() {
               <tbody>
                 {(team.data ?? []).map((p) => (
                   <tr key={p.user_id}><td className="strong">{p.full_name}</td><td>{p.email}</td>
-                    <td><select className="select" style={{ width: 170 }} value={p.role ?? ''} onChange={(e) => setRole(p.user_id, (e.target.value || null) as Role | null)}>
+                    <td><Select className="select" style={{ width: 170 }} value={p.role ?? ''} onChange={(e) => setRole(p.user_id, (e.target.value || null) as Role | null)}>
                       <option value="">No access</option>
                       {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-                    </select></td></tr>
+                    </Select></td></tr>
                 ))}
               </tbody>
             </table></div>

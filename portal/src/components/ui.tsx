@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, type ReactNode } from 'react';
+import { Children, isValidElement, useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type ReactNode } from 'react';
 import type { AttendanceStatus, PeriodStatus, QuotationStatus, SlipStatus } from '@/lib/types';
 
 /* ------------------------------------------------ status vocab */
@@ -95,5 +95,73 @@ export function Tabs<T extends string>({ tabs, value, onChange }: { tabs: [T, st
         <button key={k} className={`tab${value === k ? ' active' : ''}`} onClick={() => onChange(k)}>{label}</button>
       ))}
     </div>
+  );
+}
+
+/* ------------------------------------------------ in-app dropdown (replaces the browser's native <select> popup) */
+interface Opt { value: string; label: ReactNode; disabled?: boolean }
+function collectOptions(children: ReactNode, out: Opt[] = []): Opt[] {
+  Children.forEach(children, (c) => {
+    if (!isValidElement(c)) return;
+    const p = c.props as { value?: string | number; children?: ReactNode; disabled?: boolean };
+    if (c.type === 'option') out.push({ value: String(p.value ?? p.children ?? ''), label: p.children, disabled: p.disabled });
+    else collectOptions(p.children, out);
+  });
+  return out;
+}
+
+export function Select({ value, onChange, disabled, className = 'select', style, children, ...rest }: {
+  value: string; onChange: (e: ChangeEvent<HTMLSelectElement>) => void; disabled?: boolean;
+  className?: string; style?: CSSProperties; children: ReactNode; 'aria-label'?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxH: number } | null>(null);
+  const btn = useRef<HTMLButtonElement>(null);
+  const opts = collectOptions(children);
+  const current = opts.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const outside = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.dd-menu, .dd-btn')) close(); };
+    window.addEventListener('resize', close); window.addEventListener('keydown', key); document.addEventListener('mousedown', outside);
+    return () => { window.removeEventListener('resize', close); window.removeEventListener('keydown', key); document.removeEventListener('mousedown', outside); };
+  }, [open]);
+
+  function toggle() {
+    if (disabled) return;
+    if (!open && btn.current) {
+      const r = btn.current.getBoundingClientRect();
+      const below = window.innerHeight - r.bottom - 12;
+      const above = r.top - 12;
+      const up = below < 200 && above > below;
+      const maxH = Math.min(320, up ? above : below);
+      setPos({ left: r.left, width: Math.max(r.width, 160), top: up ? Math.max(8, r.top - Math.min(maxH, opts.length * 38 + 10) - 4) : r.bottom + 4, maxH });
+    }
+    setOpen(!open);
+  }
+
+  return (
+    <>
+      <button type="button" ref={btn} className={`${className} dd-btn`} style={style} disabled={disabled} aria-haspopup="listbox" aria-expanded={open}
+        aria-label={rest['aria-label']} onClick={toggle}>
+        <span className="dd-label">{current?.label ?? '—'}</span><span className="dd-caret" aria-hidden>▾</span>
+      </button>
+      {open && pos && (
+        <>
+          <div className="dd-backdrop" onClick={() => setOpen(false)} />
+          <ul className="dd-menu" role="listbox" style={{ top: pos.top, left: pos.left, minWidth: pos.width, maxHeight: pos.maxH }}>
+            {opts.map((o) => (
+              <li key={o.value} role="option" aria-selected={o.value === value} aria-disabled={o.disabled}
+                className={`dd-item${o.value === value ? ' sel' : ''}${o.disabled ? ' off' : ''}`}
+                onClick={() => { if (o.disabled) return; setOpen(false); onChange({ target: { value: o.value } } as ChangeEvent<HTMLSelectElement>); }}>
+                {o.label}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
   );
 }

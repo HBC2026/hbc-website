@@ -1,7 +1,7 @@
 'use client';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ATT_CODE, ATT_LABEL, ErrorBox, Loading, PageHead, Tabs } from '@/components/ui';
+import { ATT_CODE, ATT_LABEL, ErrorBox, Select, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { daysInMonth, hrs, monthEnd, monthLabel, monthStart, ymKey } from '@/lib/format';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
@@ -101,9 +101,9 @@ function MonthlyAttendance() {
       ) : (
         <div className="panel">
           <div className="toolbar" style={{ marginBottom: 14 }}>
-            <select className="select" style={{ minWidth: 260 }} value={selected} onChange={(e) => setEmpId(e.target.value)}>
+            <Select className="select" style={{ minWidth: 260 }} value={selected} onChange={(e) => setEmpId(e.target.value)}>
               {list.map((e) => <option key={e.id} value={e.id}>{e.emp_code} · {e.name}</option>)}
-            </select>
+            </Select>
             {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekly off {t.weekly_off_days} · Holidays {t.holiday_days} · Regular {hrs(t.regular_hours)} h · OT {hrs(t.ot_hours)} h</span>}
           </div>
           <div className="cal">

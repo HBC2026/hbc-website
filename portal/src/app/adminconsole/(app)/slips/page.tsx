@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Money, Riyal } from '@/components/Money';
 import { useState } from 'react';
 import { SlipUpload, ViewSigned } from '@/components/SlipActions';
-import { ErrorBox, Loading, PageHead, PeriodBadge, SlipBadge } from '@/components/ui';
+import { ErrorBox, Select, Loading, PageHead, PeriodBadge, SlipBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate, monthLabel, ymKey } from '@/lib/format';
 import { fetchAll, supabase } from '@/lib/supabase';
@@ -34,13 +34,13 @@ export default function SlipTracking() {
       <div className="panel flush">
         <div className="panel-head">
           <div className="toolbar">
-            <select className="select" value={period} onChange={(e) => setPeriod(e.target.value)}>
+            <Select className="select" value={period} onChange={(e) => setPeriod(e.target.value)}>
               <option value="">All months</option>
               {months.map((p) => <option key={p.id} value={p.id}>{monthLabel(p.year, p.month)}</option>)}
-            </select>
-            <select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
+            </Select>
+            <Select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="pending">Awaiting signed copy</option><option value="signed">Signed copy uploaded</option><option value="all">All</option>
-            </select>
+            </Select>
           </div>
           <span className="muted">{signed} of {total} signed copies uploaded</span>
         </div>

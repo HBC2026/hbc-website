@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Money, Riyal } from '@/components/Money';
 import { useMemo, useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { Badge, ErrorBox, Field, Loading, Modal, PageHead } from '@/components/ui';
+import { Badge, ErrorBox, Select, Field, Loading, Modal, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate, today } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
@@ -120,10 +120,10 @@ export default function EmployeesPage() {
             <Field label={<>Basic salary (<Riyal /> / month)</>}><input className="input num" type="number" min="0" step="0.01" value={draft.basic_salary} onChange={(e) => set('basic_salary', e.target.value)} /></Field>
             <Field label={<>Allowances (<Riyal /> / month)</>}><input className="input num" type="number" min="0" step="0.01" value={draft.allowances} onChange={(e) => set('allowances', e.target.value)} /></Field>
             <Field label="OT calculation">
-              <select className="select" value={draft.ot_method} onChange={(e) => set('ot_method', e.target.value)}>
+              <Select className="select" value={draft.ot_method} onChange={(e) => set('ot_method', e.target.value)}>
                 <option value="multiplier">Multiplier on hourly rate</option>
                 <option value="fixed">Fixed rate per hour</option>
-              </select>
+              </Select>
             </Field>
             <Field label={draft.ot_method === 'fixed' ? <>OT rate (<Riyal /> / hour)</> : `OT multiplier (blank = default ${settings.ot_multiplier}×)`}>
               <input className="input num" type="number" min="0" step="0.01" value={draft.ot_rate} onChange={(e) => set('ot_rate', e.target.value)} />

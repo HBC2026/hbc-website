@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { ErrorBox, Loading, PageHead } from '@/components/ui';
+import { ErrorBox, Select, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDateTime } from '@/lib/format';
 import { supabase, unwrap } from '@/lib/supabase';
@@ -32,7 +32,7 @@ export default function AuditPage() {
       <div className="panel flush">
         <div className="panel-head">
           <div className="toolbar">
-            <select className="select" value={type} onChange={(e) => { setType(e.target.value); setLimit(PAGE); }}>{TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+            <Select className="select" value={type} onChange={(e) => { setType(e.target.value); setLimit(PAGE); }}>{TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</Select>
             <input className="input" placeholder="Filter by user, action or record…" style={{ minWidth: 260 }} value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
           <span className="muted">Showing {rows.length}</span>

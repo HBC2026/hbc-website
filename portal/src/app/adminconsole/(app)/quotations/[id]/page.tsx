@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { QuotationDoc } from '@/components/Docs';
 import { useApp } from '@/components/Providers';
-import { ErrorBox, Loading, PageHead, QUOTE_LABEL, QUOTE_STATUSES } from '@/components/ui';
+import { ErrorBox, Select, Loading, PageHead, QUOTE_LABEL, QUOTE_STATUSES } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDateTime } from '@/lib/format';
 import { can } from '@/lib/roles';
@@ -50,9 +50,9 @@ export default function QuotationDetail() {
       <div className="grid-2 no-print" style={{ gridTemplateColumns: '1fr 1.3fr', marginBottom: 20 }}>
         <div className="panel">
           <div className="panel-title">Status</div>
-          <select className="select" disabled={!canWrite} value={q.status} onChange={(e) => setStatus(e.target.value as QuotationStatus)}>
+          <Select className="select" disabled={!canWrite} value={q.status} onChange={(e) => setStatus(e.target.value as QuotationStatus)}>
             {QUOTE_STATUSES.map((s) => <option key={s} value={s}>{QUOTE_LABEL[s]}</option>)}
-          </select>
+          </Select>
           <div className="muted" style={{ marginTop: 10, fontSize: 11 }}>Current amount {<Money v={q.amount} />} incl. VAT. Saving a revision marks the quotation “Revised”; set it back to Submitted once re-sent.</div>
         </div>
         <div className="panel flush">
