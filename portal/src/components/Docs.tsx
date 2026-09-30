@@ -7,7 +7,7 @@ import type { Employee, PayrollEntry, PayrollPeriod, QuotationItem, QuotationRev
 export function DocHead({ co, right }: { co: Settings['company']; right?: React.ReactNode }) {
   return (
     <div className="doc-head">
-      <img src={asset('/hbc-logo.webp')} alt="Hassan and Bilal Company" />
+      {co.logo ? <img src={asset(co.logo)} alt={co.name} /> : <div className="doc-logo-text">{co.name}</div>}
       <div className="doc-co">
         {right ?? (
           <>

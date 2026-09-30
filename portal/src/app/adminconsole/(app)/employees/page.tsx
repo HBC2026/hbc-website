@@ -22,7 +22,7 @@ function toDraft(e?: Employee, nextCode = ''): Draft {
 }
 
 export default function EmployeesPage() {
-  const { profile, settings, toast } = useApp();
+  const { profile, company, settings, toast } = useApp();
   const canWrite = can(profile!.role, 'employees:write');
   const sb = supabase();
   const { data, error, loading, reload } = useQuery(async () =>
@@ -38,8 +38,8 @@ export default function EmployeesPage() {
 
   const nextCode = useMemo(() => {
     const n = Math.max(0, ...(data ?? []).map((e) => Number(/(\d+)$/.exec(e.emp_code)?.[1] ?? 0)));
-    return `HBC-${String(n + 1).padStart(3, '0')}`;
-  }, [data]);
+    return `${company?.code ?? 'EMP'}-${String(n + 1).padStart(3, '0')}`;
+  }, [data, company?.code]);
 
   async function save() {
     if (!draft) return;

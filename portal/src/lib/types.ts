@@ -3,6 +3,8 @@ export type Role = 'administrator' | 'payroll' | 'attendance' | 'quotations' | '
 export type AttendanceStatus =
   | 'present' | 'absent' | 'annual_leave' | 'sick_leave' | 'unpaid_leave' | 'holiday' | 'weekly_off';
 
+export interface Company { id: string; code: string; name: string; name_ar: string }
+
 export interface Profile { id: string; full_name: string; email: string | null; role: Role; created_at: string }
 
 export interface Employee {
@@ -64,5 +66,5 @@ export interface AuditLog {
 
 export interface Settings {
   ot_multiplier: number; standard_hours: number; days_divisor: number; vat_rate: number; max_ot_per_day: number;
-  company: { name: string; name_ar: string; address: string; phone: string; email: string; vat_no: string; cr_no: string };
+  company: { name: string; name_ar: string; address: string; phone: string; email: string; vat_no: string; cr_no: string; logo?: string };
 }

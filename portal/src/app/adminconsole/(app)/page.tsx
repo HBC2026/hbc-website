@@ -13,7 +13,7 @@ const ACTION_ICON: Record<string, string> = { attendance: '◧', payroll: '◫',
 const actionText = (a: string) => a.replace('.', ' · ').replace(/_/g, ' ');
 
 export default function Dashboard() {
-  const { profile } = useApp();
+  const { profile, settings } = useApp();
   const role = profile!.role;
   const now = new Date();
   const year = now.getFullYear();
@@ -103,7 +103,7 @@ export default function Dashboard() {
               {showPayroll && <Link href="/adminconsole/slips" className="quick-action"><div className="quick-title">✎ View Salary Slips</div><div className="quick-description">Print, sign and upload signed copies</div></Link>}
             </div>
           </section>
-          <div className="footer-note">Hassan and Bilal Company · Administration Portal · Internal System</div>
+          <div className="footer-note">{settings.company.name} · Administration Portal · Internal System</div>
         </>
       )}
     </>

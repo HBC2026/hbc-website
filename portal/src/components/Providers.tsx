@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { isConfigured, supabase } from '@/lib/supabase';
-import type { Profile, Settings } from '@/lib/types';
+import { isConfigured, setCompanyId, supabase, getCompanyId } from '@/lib/supabase';
+import type { Company, Profile, Role, Settings } from '@/lib/types';
 
 export const DEFAULT_SETTINGS: Settings = {
   ot_multiplier: 1.5, standard_hours: 8, days_divisor: 30, vat_rate: 0.15, max_ot_per_day: 6,
@@ -11,6 +11,8 @@ export const DEFAULT_SETTINGS: Settings = {
 interface Toast { id: number; msg: string; error?: boolean }
 interface AppCtx {
   loading: boolean; userId: string | null; profile: Profile | null; settings: Settings;
+  /** Companies the user belongs to, and the one currently shown. `profile.role` is the role in that company. */
+  companies: Company[]; company: Company | null; switchCompany: (id: string) => void;
   signOut: () => Promise<void>; reloadSettings: () => Promise<void>;
   toast: (msg: string, error?: boolean) => void;
 }
@@ -27,6 +29,8 @@ export function Providers({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const toast = useCallback((msg: string, error = false) => {
@@ -50,11 +54,22 @@ export function Providers({ children }: { children: ReactNode }) {
 
     async function load(uid: string | null) {
       setUserId(uid);
-      if (!uid) { setProfile(null); setLoading(false); return; }
+      if (!uid) { setProfile(null); setCompanies([]); setCompany(null); setLoading(false); return; }
+
+      // Which companies can this user open, and in which role? The choice must be set before any other query.
+      const { data: mem } = await sb.from('company_members').select('role, companies(id, code, name, name_ar)').eq('user_id', uid);
+      const rows = ((mem ?? []) as unknown as { role: Role; companies: Company }[])
+        .filter((m) => m.companies)
+        .sort((a, b) => a.companies.name.localeCompare(b.companies.name));
+      const chosen = rows.find((m) => m.companies.id === getCompanyId()) ?? rows[0];
+      setCompanyId(chosen ? chosen.companies.id : null);
+
       const { data } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
       if (cancelled) return;
-      setProfile((data as Profile) ?? null);
-      await reloadSettings();
+      setCompanies(rows.map((m) => m.companies));
+      setCompany(chosen ? chosen.companies : null);
+      setProfile(data ? ({ ...(data as Profile), role: chosen ? chosen.role : 'viewer' }) : null);
+      if (chosen) await reloadSettings();
       if (!cancelled) setLoading(false);
     }
 
@@ -67,10 +82,16 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
   }, [reloadSettings]);
 
+  /** Switching reloads the app on the dashboard so no data from the other company stays on screen. */
+  const switchCompany = useCallback((id: string) => {
+    setCompanyId(id);
+    window.location.assign('/adminconsole');
+  }, []);
+
   const signOut = useCallback(async () => { await supabase().auth.signOut(); }, []);
 
   return (
-    <Ctx.Provider value={{ loading, userId, profile, settings, signOut, reloadSettings, toast }}>
+    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, toast }}>
       {children}
       <div className="toast-wrap">
         {toasts.map((t) => <div key={t.id} className={`toast${t.error ? ' error' : ''}`}>{t.msg}</div>)}

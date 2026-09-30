@@ -1,15 +1,15 @@
 # HBC Administration Portal
 
-Internal portal for **Hassan and Bilal Company** — Payroll and Quotations. Next.js (App Router, TypeScript) + Supabase (Auth, Postgres, Storage). Served at `hbcgcc.com/adminconsole` (the public website is served at `hbcgcc.com` from the same project).
+Internal portal for **Hassan and Bilal Company** and **Micro Data General Contracting Corporation** — Payroll and Quotations, with a company switcher. Next.js (App Router, TypeScript) + Supabase (Auth, Postgres, Storage). Served at `hbcgcc.com/adminconsole` (the public website is served at `hbcgcc.com` from the same project).
 
 ## 1. Supabase setup
 
 1. Create a Supabase project.
 2. In **SQL Editor**, run these files in order:
-   `supabase/migrations/0001_schema.sql` → `0002_helpers_audit_rls.sql` → `0003_payroll_functions.sql` → `0004_quotation_functions.sql` → `0005_storage.sql` → `0006_reporting.sql`
+   `supabase/migrations/0001_schema.sql` → `0002_helpers_audit_rls.sql` → `0003_payroll_functions.sql` → `0004_quotation_functions.sql` → `0005_storage.sql` → `0006_reporting.sql` → `0007_multi_company.sql`
 3. Optional demo data: run `supabase/seed.sql` (12 fictional employees, Aug–Sep 2026 attendance, 8 quotations). Delete later with
    `truncate employees, quotations, payroll_periods restart identity cascade;`
-4. **Authentication → Users → Add user** (email + password). The **first** user becomes *Administrator*; later users start as *Viewer* and an administrator changes their role in **Settings → Users & roles**.
+4. **Authentication → Users → Add user** (email + password). The **first** user becomes *Administrator* of every company; later users have **no access** until an administrator gives them a role for a company in **Settings → Users & roles** (roles are per company, so someone can be Payroll in one company and Viewer or No access in the other).
    (Turn off public sign-ups: Authentication → Providers → Email → disable “Allow new users to sign up”.)
 5. Storage: `0005_storage.sql` creates the private bucket `signed-salary-slips` (PDF only, 10 MB). Nothing is public; documents open through 60-second signed URLs.
 
@@ -32,6 +32,16 @@ The Vercel project `hbc-website` builds this Next.js app. The static HBC website
 2. Settings → Environment Variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 3. Push to the connected GitHub repo; Vercel auto-deploys. Test a preview deployment before merging to `master`.
 4. Supabase → Authentication → URL Configuration: Site URL `https://hbcgcc.com/adminconsole`, and add it to Redirect URLs.
+
+## Companies
+
+Two companies live in one database and are completely separate (employees, attendance, payroll, slips, quotations, settings, audit log). The sidebar switcher appears for users who belong to more than one. The browser sends the chosen company in an `x-company-id` header; the database only honours it for companies the user is a member of (`current_company()`), and row-level security does the rest.
+
+- Company 1: Hassan and Bilal Company (quotation prefix `HBC`). Everything that existed before migration 0007 belongs to it.
+- Company 2: Micro Data General Contracting Corporation (prefix `MDGC`). Fill in its address, CR and VAT numbers in **Settings → Company details** while viewing it.
+- Logo: copy the image into `portal/public/` (e.g. `md-logo.webp`) and set **Logo file** in Settings to `/md-logo.webp`. Until then the company name is shown instead.
+- Upgrading an existing database: run `0007_multi_company.sql` once. Existing users keep their role in Company 1 and existing administrators become administrators of Company 2.
+- Database tests (no Supabase needed): `npm i --no-save @electric-sql/pglite && node supabase/tests/run.mjs`
 
 ## Business rules (configurable in Settings)
 

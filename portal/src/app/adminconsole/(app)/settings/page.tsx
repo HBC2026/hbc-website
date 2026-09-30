@@ -5,17 +5,20 @@ import { ErrorBox, Field, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { can, ROLES, ROLE_LABEL } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
-import type { Profile, Role, Settings } from '@/lib/types';
+import type { Role, Settings } from '@/lib/types';
+
+interface TeamMember { user_id: string; full_name: string; email: string | null; role: Role | null }
 
 export default function SettingsPage() {
-  const { profile, settings, reloadSettings, toast } = useApp();
+  const { profile, company, settings, reloadSettings, toast } = useApp();
   const canWrite = can(profile!.role, 'settings:write');
   const sb = supabase();
   const [s, setS] = useState<Settings>(settings);
   const [busy, setBusy] = useState(false);
   useEffect(() => setS(settings), [settings]);
 
-  const team = useQuery(async () => unwrap(await sb.from('profiles').select('*').order('created_at')) as Profile[], []);
+  // Members of the current company (plus everyone else, so an administrator can add them). Administrators only.
+  const team = useQuery(async () => canWrite ? unwrap(await sb.rpc('list_company_team')) as TeamMember[] : [], [canWrite, company?.id]);
 
   const num = (k: 'ot_multiplier' | 'standard_hours' | 'days_divisor' | 'vat_rate' | 'max_ot_per_day', v: string) => setS((x) => ({ ...x, [k]: Number(v) }));
   const co = (k: keyof Settings['company'], v: string) => setS((x) => ({ ...x, company: { ...x.company, [k]: v } }));
@@ -23,19 +26,20 @@ export default function SettingsPage() {
   async function save() {
     if (!(s.ot_multiplier > 0) || !(s.standard_hours > 0) || !(s.days_divisor > 0) || s.vat_rate < 0) return toast('Please enter valid numbers', true);
     setBusy(true);
-    const rows = (['ot_multiplier', 'standard_hours', 'days_divisor', 'vat_rate', 'max_ot_per_day'] as const).map((key) => ({ key, value: s[key], updated_at: new Date().toISOString() }))
-      .concat([{ key: 'company' as never, value: s.company as never, updated_at: new Date().toISOString() }]);
-    const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
+    const rows = (['ot_multiplier', 'standard_hours', 'days_divisor', 'vat_rate', 'max_ot_per_day'] as const).map((key) => ({ company_id: company!.id, key, value: s[key], updated_at: new Date().toISOString() }))
+      .concat([{ company_id: company!.id, key: 'company' as never, value: s.company as never, updated_at: new Date().toISOString() }]);
+    const { error } = await sb.from('settings').upsert(rows, { onConflict: 'company_id,key' });
     setBusy(false);
     if (error) return toast(error.message, true);
     toast('Settings saved'); reloadSettings();
   }
 
-  async function setRole(id: string, role: Role) {
-    if (id === profile!.id && role !== 'administrator' && !confirm('You are changing your own role. You will lose administrator access. Continue?')) return;
-    const { error } = await sb.from('profiles').update({ role }).eq('id', id);
+  /** role = null removes the user from this company. */
+  async function setRole(id: string, role: Role | null) {
+    if (id === profile!.id && role !== 'administrator' && !confirm('You are changing your own access to this company. You will lose administrator access here. Continue?')) return;
+    const { error } = await sb.rpc('set_company_member', { p_user: id, p_role: role });
     if (error) return toast(error.message, true);
-    toast('Role updated'); team.reload();
+    toast('Access updated'); team.reload();
   }
 
   return (
@@ -70,23 +74,28 @@ export default function SettingsPage() {
             <Field label="Email"><input className="input" disabled={!canWrite} value={s.company.email} onChange={(e) => co('email', e.target.value)} /></Field>
             <Field label="Commercial registration (CR) no."><input className="input" disabled={!canWrite} value={s.company.cr_no} onChange={(e) => co('cr_no', e.target.value)} /></Field>
             <Field label="VAT registration no."><input className="input" disabled={!canWrite} value={s.company.vat_no} onChange={(e) => co('vat_no', e.target.value)} /></Field>
+            <Field label="Logo file (path under /public, e.g. /md-logo.webp — leave empty to show the company name)"><input className="input" disabled={!canWrite} value={s.company.logo ?? ''} onChange={(e) => co('logo', e.target.value)} /></Field>
           </div>
         </div>
 
         <div className="panel flush">
-          <div className="panel-head"><div className="panel-title">Users &amp; roles</div><span className="muted">Create users in Supabase → Authentication; they appear here after first sign-in.</span></div>
+          <div className="panel-head"><div className="panel-title">Users &amp; roles — {company?.name}</div><span className="muted">Create users in Supabase → Authentication, then give them a role for this company here. “No access” hides the company from that user.</span></div>
+          {!canWrite && <div className="muted" style={{ padding: 16 }}>Only administrators can manage users.</div>}
           {team.error && <ErrorBox error={team.error} />}
-          {team.loading ? <Loading /> : (
+          {canWrite && (team.loading ? <Loading /> : (
             <div className="table-wrap"><table className="table">
               <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
               <tbody>
                 {(team.data ?? []).map((p) => (
-                  <tr key={p.id}><td className="strong">{p.full_name}</td><td>{p.email}</td>
-                    <td><select className="select" style={{ width: 170 }} disabled={!canWrite} value={p.role} onChange={(e) => setRole(p.id, e.target.value as Role)}>{ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}</select></td></tr>
+                  <tr key={p.user_id}><td className="strong">{p.full_name}</td><td>{p.email}</td>
+                    <td><select className="select" style={{ width: 170 }} value={p.role ?? ''} onChange={(e) => setRole(p.user_id, (e.target.value || null) as Role | null)}>
+                      <option value="">No access</option>
+                      {ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                    </select></td></tr>
                 ))}
               </tbody>
             </table></div>
-          )}
+          ))}
         </div>
       </div>
     </>

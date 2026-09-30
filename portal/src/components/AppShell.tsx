@@ -38,7 +38,7 @@ function activeHref(pathname: string): string | undefined {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { loading, userId, profile, signOut } = useApp();
+  const { loading, userId, profile, company, companies, switchCompany, settings, signOut } = useApp();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -63,6 +63,16 @@ export function AppShell({ children }: { children: ReactNode }) {
     );
   }
 
+  if (!company) {
+    return (
+      <div className="login-wrap"><div className="login-card">
+        <h1>No company access</h1>
+        <p className="sub">Your account is not assigned to any company yet. Ask an administrator to add you, then sign in again.</p>
+        <button className="btn" onClick={signOut}>Sign out</button>
+      </div></div>
+    );
+  }
+
   const current = activeHref(pathname);
   const currentLabel = ALL.find((i) => i.href === current)?.label ?? 'Portal';
   const initials = profile.full_name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'U';
@@ -71,8 +81,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <aside className="sidebar no-print">
         <div className="brand">
-          <Link href="/adminconsole" className="brand-logo" aria-label="Hassan and Bilal Company"><img src={asset('/hbc-logo.webp')} alt="Hassan and Bilal Company" /></Link>
+          <Link href="/adminconsole" className="brand-logo" aria-label={company.name}>
+            {settings.company.logo ? <img src={asset(settings.company.logo)} alt={company.name} /> : <span className="brand-text">{company.name}</span>}
+          </Link>
           <div className="brand-subtitle">Administration Portal</div>
+          {companies.length > 1 && (
+            <select className="company-switch" aria-label="Switch company" value={company.id} onChange={(e) => switchCompany(e.target.value)}>
+              {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          )}
         </div>
 
         {NAV.map((g) => {
@@ -107,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="main">
         <header className="topbar no-print">
-          <div className="breadcrumb">HBC &nbsp;/&nbsp; <strong>{currentLabel}</strong></div>
+          <div className="breadcrumb">{company.name} &nbsp;/&nbsp; <strong>{currentLabel}</strong></div>
           <div className="date">{fmtLongDate(new Date())}</div>
         </header>
         <div className="content">{children}</div>
