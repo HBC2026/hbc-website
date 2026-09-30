@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { if (!loading && userId) router.replace('/'); }, [loading, userId, router]);
+  useEffect(() => { if (!loading && userId) router.replace('/adminconsole'); }, [loading, userId, router]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

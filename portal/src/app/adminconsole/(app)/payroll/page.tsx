@@ -35,7 +35,7 @@ export default function PayrollList() {
         {can(profile!.role, 'payroll:write') && (
           <div className="toolbar">
             <input className="input" type="month" value={ym} onChange={(e) => e.target.value && setYm(e.target.value)} />
-            <button className="btn primary" onClick={() => router.push(`/payroll/${ym}`)}>Process Payroll →</button>
+            <button className="btn primary" onClick={() => router.push(`/adminconsole/payroll/${ym}`)}>Process Payroll →</button>
           </div>
         )}
       </PageHead>
@@ -46,11 +46,11 @@ export default function PayrollList() {
             <thead><tr><th>Payroll Month</th><th>Status</th><th className="r">Employees</th><th className="r">Net Payroll</th><th className="r">Signed Slips</th><th /></tr></thead>
             <tbody>
               {(data ?? []).map(({ p, count, net, slips, signed }) => (
-                <tr key={p.id} className="click" onClick={() => router.push(`/payroll/${ymKey(p.year, p.month)}`)}>
+                <tr key={p.id} className="click" onClick={() => router.push(`/adminconsole/payroll/${ymKey(p.year, p.month)}`)}>
                   <td className="strong">{monthLabel(p.year, p.month)}</td><td><PeriodBadge s={p.status} /></td>
                   <td className="r">{count}</td><td className="r strong">{<Money v={net} />}</td>
                   <td className="r">{slips ? `${signed} / ${slips}` : '—'}</td>
-                  <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/payroll/${ymKey(p.year, p.month)}`}>Open</Link></td>
+                  <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/adminconsole/payroll/${ymKey(p.year, p.month)}`}>Open</Link></td>
                 </tr>
               ))}
               {(data ?? []).length === 0 && <tr><td colSpan={6}><div className="empty">No payroll processed yet. Choose a month above and start with “Process Payroll”.</div></td></tr>}

@@ -46,7 +46,7 @@ export default function EmployeeDetail() {
   return (
     <>
       <PageHead eyebrow={`Employee · ${e.emp_code}`} title={e.name} sub={`${e.job_title} · ${e.department}`}>
-        <Link href="/employees" className="btn">← Employees</Link>
+        <Link href="/adminconsole/employees" className="btn">← Employees</Link>
       </PageHead>
 
       <div className="stats">
@@ -84,7 +84,7 @@ export default function EmployeeDetail() {
           <tbody>
             {(pay.data ?? []).map((p) => (
               <tr key={p.id}>
-                <td><Link className="strong" href={`/payroll/${ymKey(p.payroll_periods.year, p.payroll_periods.month)}`}>{monthLabel(p.payroll_periods.year, p.payroll_periods.month)}</Link></td>
+                <td><Link className="strong" href={`/adminconsole/payroll/${ymKey(p.payroll_periods.year, p.payroll_periods.month)}`}>{monthLabel(p.payroll_periods.year, p.payroll_periods.month)}</Link></td>
                 <td className="r">{<Money v={p.basic} />}</td><td className="r">{<Money v={p.allowances} />}</td><td className="r">{hrs(p.ot_hours)}</td>
                 <td className="r">{<Money v={p.ot_amount} />}</td><td className="r">{<Money v={p.deductions} />}</td><td className="r strong">{<Money v={p.net_salary} />}</td>
                 <td><Badge tone={p.payroll_periods.status === 'completed' ? 'green' : ''}>{p.payroll_periods.status}</Badge></td>
@@ -102,7 +102,7 @@ export default function EmployeeDetail() {
             {(slips.data ?? []).map((s) => (
               <tr key={s.id}><td className="mono">{s.slip_no}</td><td>{monthLabel(s.payroll_periods.year, s.payroll_periods.month)}</td>
                 <td className="r">{<Money v={s.net_snapshot} />}</td><td><SlipBadge s={s.status} /></td>
-                <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/slips/${s.id}`}>Open</Link></td></tr>
+                <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/adminconsole/slips/${s.id}`}>Open</Link></td></tr>
             ))}
             {!slips.loading && (slips.data ?? []).length === 0 && <tr><td colSpan={5}><div className="empty">No salary slips yet. They are generated when payroll is approved.</div></td></tr>}
           </tbody>

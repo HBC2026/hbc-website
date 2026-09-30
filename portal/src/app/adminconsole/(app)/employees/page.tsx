@@ -90,13 +90,13 @@ export default function EmployeesPage() {
               {rows.map((e) => (
                 <tr key={e.id}>
                   <td className="mono">{e.emp_code}</td>
-                  <td><Link href={`/employees/${e.id}`} className="strong">{e.name}</Link></td>
+                  <td><Link href={`/adminconsole/employees/${e.id}`} className="strong">{e.name}</Link></td>
                   <td>{e.job_title}</td><td>{e.department}</td><td>{fmtDate(e.joining_date)}</td>
                   <td className="r">{<Money v={e.basic_salary} />}</td><td className="r">{<Money v={e.allowances} />}</td>
                   <td><OtRule e={e} defMult={settings.ot_multiplier} /></td>
                   <td><Badge tone={e.status === 'active' ? 'green' : ''}>{e.status === 'active' ? 'Active' : 'Inactive'}</Badge></td>
                   <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
-                    <Link className="btn sm" href={`/employees/${e.id}`}>View</Link>{' '}
+                    <Link className="btn sm" href={`/adminconsole/employees/${e.id}`}>View</Link>{' '}
                     {canWrite && <button className="btn sm" onClick={() => setDraft(toDraft(e))}>Edit</button>}{' '}
                     {canWrite && <button className={`btn sm${e.status === 'active' ? ' danger' : ''}`} onClick={() => toggle(e)}>{e.status === 'active' ? 'Deactivate' : 'Activate'}</button>}
                   </td>

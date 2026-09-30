@@ -85,9 +85,9 @@ export default function PayrollPeriodPage() {
   return (
     <>
       <PageHead eyebrow="Payroll" title={label} sub={period ? undefined : 'Payroll has not been calculated for this month yet.'}>
-        <Link href="/payroll" className="btn">← All periods</Link>
-        <Link href={`/attendance/monthly?ym=${params.ym}`} className="btn">Attendance</Link>
-        {period && entries.length > 0 && <Link href={`/payroll/${params.ym}/report`} className="btn">Report</Link>}
+        <Link href="/adminconsole/payroll" className="btn">← All periods</Link>
+        <Link href={`/adminconsole/attendance/monthly?ym=${params.ym}`} className="btn">Attendance</Link>
+        {period && entries.length > 0 && <Link href={`/adminconsole/payroll/${params.ym}/report`} className="btn">Report</Link>}
         {canWrite && !locked && <button className="btn" disabled={busy} onClick={calculate}>{period ? '↻ Recalculate' : 'Calculate Payroll'}</button>}
         {canWrite && period?.status === 'calculated' && <button className="btn green" disabled={busy || errors.length > 0} title={errors.length ? 'Resolve the validation errors first' : ''} onClick={approve}>Approve Payroll</button>}
         {can(role, 'payroll:reopen') && locked && <button className="btn danger" onClick={() => setReopen(true)}>Reopen Payroll</button>}
@@ -146,7 +146,7 @@ export default function PayrollPeriodPage() {
             <div className="panel flush">
               <div className="panel-head">
                 <div className="panel-title">Salary slips</div>
-                {locked && slips.length > 0 && <Link className="btn primary sm" href={`/payroll/${params.ym}/slips`}>Print all slips (A4)</Link>}
+                {locked && slips.length > 0 && <Link className="btn primary sm" href={`/adminconsole/payroll/${params.ym}/slips`}>Print all slips (A4)</Link>}
               </div>
               <div className="table-wrap"><table className="table">
                 <thead><tr><th>Employee</th><th className="r">Net Salary</th><th>Printed</th><th>Signed</th><th>Status</th><th /></tr></thead>
@@ -154,7 +154,7 @@ export default function PayrollPeriodPage() {
                   {slips.map((s) => (
                     <tr key={s.id}><td><span className="strong">{s.employees.name}</span><div className="muted" style={{ fontSize: 10 }}>{s.slip_no}</div></td>
                       <td className="r">{<Money v={s.net_snapshot} />}</td><td>{s.printed_at ? '✓' : '—'}</td><td>{s.signed_path ? '✓' : '—'}</td>
-                      <td><SlipBadge s={s.status} /></td><td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/slips/${s.id}`}>Open</Link></td></tr>
+                      <td><SlipBadge s={s.status} /></td><td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/adminconsole/slips/${s.id}`}>Open</Link></td></tr>
                   ))}
                   {slips.length === 0 && <tr><td colSpan={6}><div className="empty">Salary slips are generated when payroll is approved.</div></td></tr>}
                 </tbody>

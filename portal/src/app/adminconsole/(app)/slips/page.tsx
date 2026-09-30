@@ -57,7 +57,7 @@ export default function SlipTracking() {
                   <td>{s.signed_path ? `✓ ${fmtDate(s.signed_uploaded_at)}` : '—'}</td>
                   <td><SlipBadge s={s.status} /></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <Link className="btn sm" href={`/slips/${s.id}`}>Preview</Link>{' '}
+                    <Link className="btn sm" href={`/adminconsole/slips/${s.id}`}>Preview</Link>{' '}
                     <SlipUpload small slipId={s.id} hasSigned={!!s.signed_path} onDone={reload} />{' '}
                     {s.signed_path && <ViewSigned small path={s.signed_path} />}
                   </td>
@@ -68,7 +68,7 @@ export default function SlipTracking() {
           </table></div>
         )}
       </div>
-      {months.length > 0 && <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Tip: open a payroll month and use “Print all slips” to print every slip in one go. Latest month: <Link href={`/payroll/${ymKey(months[0].year, months[0].month)}`} className="strong">{monthLabel(months[0].year, months[0].month)}</Link>.</div>}
+      {months.length > 0 && <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Tip: open a payroll month and use “Print all slips” to print every slip in one go. Latest month: <Link href={`/adminconsole/payroll/${ymKey(months[0].year, months[0].month)}`} className="strong">{monthLabel(months[0].year, months[0].month)}</Link>.</div>}
     </>
   );
 }

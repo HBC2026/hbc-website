@@ -53,7 +53,7 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
     setSaving(false);
     if (res.error) return toast(res.error.message, true);
     toast(revising ? `Revision R${res.data} saved — previous version kept` : 'Quotation created');
-    router.push(`/quotations/${revising ? quotationId : res.data}`);
+    router.push(`/adminconsole/quotations/${revising ? quotationId : res.data}`);
   }
 
   return (

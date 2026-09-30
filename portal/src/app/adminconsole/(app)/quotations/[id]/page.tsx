@@ -41,8 +41,8 @@ export default function QuotationDetail() {
   return (
     <>
       <PageHead eyebrow="Quotation" title={q.number} sub={`${q.client}${q.project ? ` · ${q.project}` : ''}`}>
-        <Link href="/quotations" className="btn">← Quotations</Link>
-        {canWrite && <Link href={`/quotations/${id}/revise`} className="btn">Revise</Link>}
+        <Link href="/adminconsole/quotations" className="btn">← Quotations</Link>
+        {canWrite && <Link href={`/adminconsole/quotations/${id}/revise`} className="btn">Revise</Link>}
         <button className="btn primary" onClick={() => window.print()}>Print</button>
         <button className="btn" onClick={() => window.print()} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>
       </PageHead>

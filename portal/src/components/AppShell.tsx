@@ -12,28 +12,28 @@ interface NavItem { href: string; label: string; icon: string; roles?: Role[] }
 interface NavGroup { label: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
-  { label: 'WORKSPACE', items: [{ href: '/', label: 'Dashboard', icon: '⌂' }] },
+  { label: 'WORKSPACE', items: [{ href: '/adminconsole', label: 'Dashboard', icon: '⌂' }] },
   {
     label: 'PAYROLL', items: [
-      { href: '/employees', label: 'Employees', icon: '♙', roles: ATTENDANCE_SIDE },
-      { href: '/attendance', label: 'Daily Attendance', icon: '◧', roles: ATTENDANCE_SIDE },
-      { href: '/attendance/monthly', label: 'Monthly Attendance', icon: '▦', roles: ATTENDANCE_SIDE },
-      { href: '/payroll', label: 'Payroll', icon: '◫', roles: PAYROLL_SIDE },
-      { href: '/slips', label: 'Salary Slips', icon: '✎', roles: PAYROLL_SIDE },
-      { href: '/archive', label: 'Payroll Archive', icon: '▣', roles: PAYROLL_SIDE },
+      { href: '/adminconsole/employees', label: 'Employees', icon: '♙', roles: ATTENDANCE_SIDE },
+      { href: '/adminconsole/attendance', label: 'Daily Attendance', icon: '◧', roles: ATTENDANCE_SIDE },
+      { href: '/adminconsole/attendance/monthly', label: 'Monthly Attendance', icon: '▦', roles: ATTENDANCE_SIDE },
+      { href: '/adminconsole/payroll', label: 'Payroll', icon: '◫', roles: PAYROLL_SIDE },
+      { href: '/adminconsole/slips', label: 'Salary Slips', icon: '✎', roles: PAYROLL_SIDE },
+      { href: '/adminconsole/archive', label: 'Payroll Archive', icon: '▣', roles: PAYROLL_SIDE },
     ],
   },
-  { label: 'QUOTATIONS', items: [{ href: '/quotations', label: 'Quotations', icon: '▤', roles: QUOTE_SIDE }] },
+  { label: 'QUOTATIONS', items: [{ href: '/adminconsole/quotations', label: 'Quotations', icon: '▤', roles: QUOTE_SIDE }] },
   { label: 'SYSTEM', items: [
-    { href: '/audit', label: 'Audit Log', icon: '◈' },
-    { href: '/settings', label: 'Settings', icon: '⚙', roles: ['administrator'] },
+    { href: '/adminconsole/audit', label: 'Audit Log', icon: '◈' },
+    { href: '/adminconsole/settings', label: 'Settings', icon: '⚙', roles: ['administrator'] },
   ] },
 ];
 
 const ALL = NAV.flatMap((g) => g.items);
 
 function activeHref(pathname: string): string | undefined {
-  return ALL.filter((i) => (i.href === '/' ? pathname === '/' : pathname === i.href || pathname.startsWith(i.href + '/')))
+  return ALL.filter((i) => (i.href === '/adminconsole' ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 }
 
@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => { if (!loading && isConfigured && !userId) router.replace('/login'); }, [loading, userId, router]);
+  useEffect(() => { if (!loading && isConfigured && !userId) router.replace('/adminconsole/login'); }, [loading, userId, router]);
 
   if (!isConfigured) {
     return (
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <aside className="sidebar no-print">
         <div className="brand">
-          <Link href="/" className="brand-logo" aria-label="Hassan and Bilal Company"><img src={asset('/hbc-logo.webp')} alt="Hassan and Bilal Company" /></Link>
+          <Link href="/adminconsole" className="brand-logo" aria-label="Hassan and Bilal Company"><img src={asset('/hbc-logo.webp')} alt="Hassan and Bilal Company" /></Link>
           <div className="brand-subtitle">Administration Portal</div>
         </div>
 

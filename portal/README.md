@@ -1,6 +1,6 @@
 # HBC Administration Portal
 
-Internal portal for **Hassan and Bilal Company** — Payroll and Quotations. Next.js (App Router, TypeScript) + Supabase (Auth, Postgres, Storage). Served at `hbcgcc.com/adminconsole`.
+Internal portal for **Hassan and Bilal Company** — Payroll and Quotations. Next.js (App Router, TypeScript) + Supabase (Auth, Postgres, Storage). Served at `hbcgcc.com/adminconsole` (the public website is served at `hbcgcc.com` from the same project).
 
 ## 1. Supabase setup
 
@@ -24,21 +24,14 @@ npm run dev                    # http://localhost:3100/adminconsole
 
 Only the public anon key is used. **The service-role key is never used or needed** — all access is enforced by Row Level Security and security-definer functions.
 
-## 3. Deploy at hbcgcc.com/adminconsole
+## 3. Deploy (one Vercel project for the website and the portal)
 
-1. Create a Vercel project from this repo with **Root Directory = `portal`** and add the two env vars.
-2. The static HBC site (repo root) needs a `vercel.json` that forwards the path to the portal project:
+The Vercel project  builds this Next.js app. The static HBC website lives in  (served at  via a rewrite in ) and the portal at .
 
-```json
-{
-  "rewrites": [
-    { "source": "/adminconsole", "destination": "https://YOUR-PORTAL.vercel.app/adminconsole" },
-    { "source": "/adminconsole/:path*", "destination": "https://YOUR-PORTAL.vercel.app/adminconsole/:path*" }
-  ]
-}
-```
-
-3. In Supabase → Authentication → URL configuration, set Site URL to `https://hbcgcc.com/adminconsole`.
+1. Vercel → project  → Settings → General: **Root Directory = **, **Framework Preset = Next.js** (clear any custom build/output overrides).
+2. Settings → Environment Variables (Production and Preview): , .
+3. Push to the connected GitHub repo; Vercel auto-deploys. Test a preview deployment before merging to .
+4. Supabase → Authentication → URL Configuration: Site URL , and add it to Redirect URLs.
 
 ## Business rules (configurable in Settings)
 
@@ -76,7 +69,9 @@ supabase/migrations   schema, RLS, payroll & quotation functions, storage, repor
 supabase/seed.sql     demo data
 src/lib               supabase client, formatters, roles, types, slip upload helpers
 src/components        AppShell (sidebar), ui, Docs (A4 slip / quotation), forms
-src/app/(app)         dashboard, employees, attendance, payroll, slips, archive, quotations, audit, settings
+src/app/adminconsole    dashboard, login and all portal pages
+public/                the static HBC website (index.html, css/, assets/) + portal logo files
+src/app/adminconsole/(app)  dashboard, employees, attendance, payroll, slips, archive, quotations, audit, settings
 ```
 
 Printing: "Print" and "Download PDF" use the browser print dialog with A4 print CSS (choose *Save as PDF* to download).

@@ -26,7 +26,7 @@ export default function QuotationList() {
   return (
     <>
       <PageHead eyebrow="Quotations" title="Quotations" sub="Create, revise and track client quotations">
-        {can(profile!.role, 'quotations:write') && <Link href="/quotations/new" className="btn primary">＋ New Quotation</Link>}
+        {can(profile!.role, 'quotations:write') && <Link href="/adminconsole/quotations/new" className="btn primary">＋ New Quotation</Link>}
       </PageHead>
       {error && <ErrorBox error={error} />}
       <div className="panel flush">
@@ -45,7 +45,7 @@ export default function QuotationList() {
             <thead><tr><th>Quotation No.</th><th>Client</th><th>Project</th><th>Date</th><th className="r">Amount</th><th>Revision</th><th>Status</th></tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="click" onClick={() => router.push(`/quotations/${r.id}`)}>
+                <tr key={r.id} className="click" onClick={() => router.push(`/adminconsole/quotations/${r.id}`)}>
                   <td className="strong mono">{r.number}</td><td>{r.client}</td><td>{r.project}</td><td>{fmtDate(r.quote_date)}</td>
                   <td className="r strong">{<Money v={r.amount} />}</td><td>{r.current_revision === 0 ? 'Original' : `R${r.current_revision}`}</td><td><QuoteBadge s={r.status} /></td>
                 </tr>

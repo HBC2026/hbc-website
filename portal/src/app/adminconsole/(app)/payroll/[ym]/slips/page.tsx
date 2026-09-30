@@ -37,7 +37,7 @@ export default function PrintAllSlips() {
   return (
     <>
       <PageHead eyebrow="Payroll" title={`Salary slips — ${monthLabel(parsed.year, parsed.month)}`} sub={`${data?.length ?? 0} slips, one A4 page each`}>
-        <Link className="btn" href={`/payroll/${ym}`}>← Payroll</Link>
+        <Link className="btn" href={`/adminconsole/payroll/${ym}`}>← Payroll</Link>
         <button className="btn primary" disabled={!data?.length} onClick={print}>Print all</button>
         <button className="btn" disabled={!data?.length} onClick={print} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>
       </PageHead>

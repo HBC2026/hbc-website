@@ -36,10 +36,10 @@ export default function Archive() {
                     <td className="strong">{monthLabel(p.year, p.month)}</td><td><PeriodBadge s={p.status} /></td>
                     <td className="r">{count}</td><td className="r strong">{<Money v={net} />}</td><td>{fmtDate(p.approved_at)}</td><td className="r">{signed} / {slips}</td>
                     <td style={{ whiteSpace: 'nowrap' }}>
-                      <Link className="btn sm" href={`/payroll/${k}`}>Payroll & Audit</Link>{' '}
-                      <Link className="btn sm" href={`/payroll/${k}/report`}>Report</Link>{' '}
-                      <Link className="btn sm" href={`/attendance/monthly?ym=${k}`}>Attendance</Link>{' '}
-                      <Link className="btn sm" href={`/payroll/${k}/slips`}>Slips</Link>
+                      <Link className="btn sm" href={`/adminconsole/payroll/${k}`}>Payroll & Audit</Link>{' '}
+                      <Link className="btn sm" href={`/adminconsole/payroll/${k}/report`}>Report</Link>{' '}
+                      <Link className="btn sm" href={`/adminconsole/attendance/monthly?ym=${k}`}>Attendance</Link>{' '}
+                      <Link className="btn sm" href={`/adminconsole/payroll/${k}/slips`}>Slips</Link>
                     </td>
                   </tr>
                 );

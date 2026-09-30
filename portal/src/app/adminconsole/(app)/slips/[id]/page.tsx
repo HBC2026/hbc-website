@@ -33,7 +33,7 @@ export default function SlipPage() {
   return (
     <>
       <PageHead eyebrow={`Salary Slip · ${s.slip_no}`} title={`${s.employees.name} — ${monthLabel(p.year, p.month)}`}>
-        <Link className="btn" href={`/payroll/${ymKey(p.year, p.month)}`}>← Payroll</Link>
+        <Link className="btn" href={`/adminconsole/payroll/${ymKey(p.year, p.month)}`}>← Payroll</Link>
         <button className="btn primary" onClick={print}>Print</button>
         <button className="btn" onClick={print} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>
         <SlipUpload slipId={s.id} hasSigned={!!s.signed_path} onDone={reload} />

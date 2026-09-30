@@ -97,10 +97,10 @@ export default function Dashboard() {
 
             <div className="panel">
               <div className="panel-title">Quick Actions</div>
-              {can(role, 'attendance:write') && <Link href="/attendance" className="quick-action"><div className="quick-title">◧ Mark Attendance</div><div className="quick-description">Record today’s attendance and overtime</div></Link>}
-              {can(role, 'payroll:write') && <Link href={`/payroll/${ym}`} className="quick-action"><div className="quick-title">◫ Process Payroll</div><div className="quick-description">Calculate and review {monthLabel(year, month)}</div></Link>}
-              {can(role, 'quotations:write') && <Link href="/quotations/new" className="quick-action"><div className="quick-title">＋ New Quotation</div><div className="quick-description">Create a new client quotation</div></Link>}
-              {showPayroll && <Link href="/slips" className="quick-action"><div className="quick-title">✎ View Salary Slips</div><div className="quick-description">Print, sign and upload signed copies</div></Link>}
+              {can(role, 'attendance:write') && <Link href="/adminconsole/attendance" className="quick-action"><div className="quick-title">◧ Mark Attendance</div><div className="quick-description">Record today’s attendance and overtime</div></Link>}
+              {can(role, 'payroll:write') && <Link href={`/adminconsole/payroll/${ym}`} className="quick-action"><div className="quick-title">◫ Process Payroll</div><div className="quick-description">Calculate and review {monthLabel(year, month)}</div></Link>}
+              {can(role, 'quotations:write') && <Link href="/adminconsole/quotations/new" className="quick-action"><div className="quick-title">＋ New Quotation</div><div className="quick-description">Create a new client quotation</div></Link>}
+              {showPayroll && <Link href="/adminconsole/slips" className="quick-action"><div className="quick-title">✎ View Salary Slips</div><div className="quick-description">Print, sign and upload signed copies</div></Link>}
             </div>
           </section>
           <div className="footer-note">Hassan and Bilal Company · Administration Portal · Internal System</div>

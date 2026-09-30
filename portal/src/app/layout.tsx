@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: 'HBC Administration Portal',
   description: 'Hassan and Bilal Company — internal payroll and quotation administration',
   robots: { index: false, follow: false },
-  icons: { icon: '/adminconsole/hbc-logo.webp' },
+  icons: { icon: '/hbc-logo.webp' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

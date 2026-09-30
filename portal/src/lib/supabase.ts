@@ -14,7 +14,7 @@ export function supabase(): SupabaseClient {
   return client;
 }
 
-export const BASE_PATH = '/adminconsole';
+export const BASE_PATH = ''; // portal is served at /adminconsole by its routes, not a Next basePath
 /** URL for a file in /public (plain <img> tags do not get the basePath automatically). */
 export const asset = (p: string) => `${BASE_PATH}${p}`;
 

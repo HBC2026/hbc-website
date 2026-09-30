@@ -36,7 +36,7 @@ export default function PayrollReport() {
     <>
       <style>{'@media print { @page { size: A4 landscape; margin: 0; } }'}</style>
       <PageHead eyebrow="Payroll" title={`Payroll report — ${label}`}>
-        <Link className="btn" href={`/payroll/${ym}`}>← Payroll</Link>
+        <Link className="btn" href={`/adminconsole/payroll/${ym}`}>← Payroll</Link>
         <button className="btn primary" onClick={() => window.print()}>Print</button>
         <button className="btn" onClick={() => window.print()} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>
       </PageHead>
