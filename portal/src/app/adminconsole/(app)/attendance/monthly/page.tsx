@@ -62,8 +62,8 @@ function MonthlyAttendance() {
   const days = Array.from({ length: dim }, (_, i) => i + 1);
   const dow = (d: number) => new Date(y, m - 1, d).getDay();
   // the month is laid out in two rows of days per employee so cells stay roomy
-  const HALF = 16;
-  const halves = [days.slice(0, HALF), days.slice(HALF)];
+  const HALF = 16;   // grid columns: the second row can hold up to 16 days (16th to 31st)
+  const halves = [days.slice(0, 15), days.slice(15)];   // 1st-15th and 16th-end of month
   const emp = list.find((e) => e.id === selected);
   const t = data?.tmap.get(selected);
 
