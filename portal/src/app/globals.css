@@ -267,7 +267,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sheet { table-layout: fixed; }
 .sheet td, .sheet th { padding: 6px 0; text-align: center; font-size: 9px; overflow-wrap: normal; }
 .sheet .att-code { min-width: 0; width: 19px; padding: 2px 0; font-size: 9px; }
-.sheet td:first-child, .sheet th:first-child { text-align: left; padding-left: 10px; width: 130px; background: white; }
+.sheet td.emp, .sheet th:first-child { text-align: left; padding-left: 10px; width: 130px; background: white; }
 .sheet th:first-child { background: var(--surface-soft); }
 .sheet .ot { font-size: 8px; color: var(--gold); font-weight: 700; vertical-align: super; }
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -337,7 +337,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .content img, .content canvas { max-width: 100%; height: auto; }
   .tabs { overflow-x: auto; }
   .tab { white-space: nowrap; }
-  .modal-back { padding: 12px; align-items: start; }
+  .modal-back { padding: 12px; align-items: safe center; }
   .modal-body { padding: 16px; }
   .modal-head, .modal-foot { padding-left: 16px; padding-right: 16px; }
   .modal-foot { flex-wrap: wrap; }
@@ -447,3 +447,13 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sheet th .dh-n { line-height: 1.3; }
 .table tbody tr.fri, .table tbody tr.fri td, .table tbody tr.click.fri:hover td { background: var(--gold-soft); }
 .fri-tag { margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #f1e4cc; color: #8d6528; }
+
+/* ---------------- monthly timesheet: two rows of days per employee ---------------- */
+.sheet td.dcell { padding: 5px 0 6px; }
+.sheet td.dcell .dh-i, .sheet td.dcell .dh-n { display: block; line-height: 1.25; }
+.sheet td.dcell .dh-i { font-size: 8px; font-weight: 600; color: var(--muted); }
+.sheet td.dcell .dh-n { font-size: 10px; font-weight: 700; margin-bottom: 3px; }
+.sheet td.dcell.fri .dh-i, .sheet td.dcell.fri .dh-n { color: #8d6528; }
+.sheet tr.half1 td { border-bottom: 1px dashed #e4e4df; }
+.sheet td.pad { background: transparent; }
+.sheet td[rowspan] { vertical-align: middle; }

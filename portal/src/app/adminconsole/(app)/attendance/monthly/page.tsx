@@ -61,6 +61,9 @@ function MonthlyAttendance() {
 
   const days = Array.from({ length: dim }, (_, i) => i + 1);
   const dow = (d: number) => new Date(y, m - 1, d).getDay();
+  // the month is laid out in two rows of days per employee so cells stay roomy
+  const HALF = 16;
+  const halves = [days.slice(0, HALF), days.slice(HALF)];
   const emp = list.find((e) => e.id === selected);
   const t = data?.tmap.get(selected);
 
@@ -76,30 +79,34 @@ function MonthlyAttendance() {
       {loading || !data ? <Loading /> : view === 'timesheet' ? (
         <div className="panel flush"><div className="table-wrap"><table className="table sheet">
           <thead><tr>
-            <th>Employee</th>
-            {days.map((d) => <th key={d} className={dow(d) === 5 ? 'fri' : ''}><span className="dh-i">{'SMTWTFS'[dow(d)]}</span><span className="dh-n">{d}</span></th>)}
+            <th>Employee</th><th colSpan={HALF}>Days of the month</th>
             <th>Pres</th><th>Abs</th><th>Leave</th><th>W/O</th><th>Hol</th><th>Reg Hrs</th><th>OT Hrs</th>
           </tr></thead>
           <tbody>
             {list.map((e) => {
               const tt = data.tmap.get(e.id); const cells = data.byEmp.get(e.id);
-              return (
-                <tr key={e.id}>
-                  <td><span className="strong">{e.name}</span> <span className="muted">{e.emp_code}</span></td>
-                  {days.map((d) => {
+              return [halves[0], halves[1]].map((row, hi) => (
+                <tr key={`${e.id}-${hi}`} className={hi === 1 ? 'half2' : 'half1'}>
+                  {hi === 0 && <td rowSpan={2} className="emp"><span className="strong">{e.name}</span> <span className="muted">{e.emp_code}</span></td>}
+                  {Array.from({ length: HALF }, (_, i) => {
+                    const d = row[i];
+                    if (d === undefined) return <td key={`x${i}`} className="pad" />;
                     const r = cells?.get(d);
-                    return <td key={d} className={dow(d) === 5 ? 'fri' : ''} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h + ${hrs(r.ot_hours)} OT` : 'Not marked'}>
+                    return <td key={d} className={`dcell${dow(d) === 5 ? ' fri' : ''}`} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h + ${hrs(r.ot_hours)} OT` : 'Not marked'}>
+                      <span className="dh-i">{'SMTWTFS'[dow(d)]}</span><span className="dh-n">{d}</span>
                       {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_hours) > 0 && <span className="ot">+{hrs(r.ot_hours)}</span>}</> : <span className="muted">·</span>}
                     </td>;
                   })}
-                  <td className="strong">{tt?.present_days ?? 0}</td><td>{tt?.absent_days ?? 0}</td><td>{tt?.leave_days ?? 0}</td>
-                  <td>{tt?.weekly_off_days ?? 0}</td><td>{tt?.holiday_days ?? 0}</td><td>{hrs(tt?.regular_hours ?? 0)}</td><td className="strong">{hrs(tt?.ot_hours ?? 0)}</td>
+                  {hi === 0 && <>
+                    <td rowSpan={2} className="strong">{tt?.present_days ?? 0}</td><td rowSpan={2}>{tt?.absent_days ?? 0}</td><td rowSpan={2}>{tt?.leave_days ?? 0}</td>
+                    <td rowSpan={2}>{tt?.weekly_off_days ?? 0}</td><td rowSpan={2}>{tt?.holiday_days ?? 0}</td><td rowSpan={2}>{hrs(tt?.regular_hours ?? 0)}</td><td rowSpan={2} className="strong">{hrs(tt?.ot_hours ?? 0)}</td>
+                  </>}
                 </tr>
-              );
+              ));
             })}
           </tbody>
           <tfoot><tr>
-            <td>Total</td>{days.map((d) => <td key={d} className={dow(d) === 5 ? 'fri' : ''} />)}
+            <td>Total</td><td colSpan={HALF} />
             <td>{grand.p}</td><td>{grand.a}</td><td>{grand.l}</td><td>{grand.w}</td><td>{grand.h}</td><td>{hrs(grand.r)}</td><td>{hrs(grand.o)}</td>
           </tr></tfoot>
         </table></div></div>
