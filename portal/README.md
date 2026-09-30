@@ -26,12 +26,12 @@ Only the public anon key is used. **The service-role key is never used or needed
 
 ## 3. Deploy (one Vercel project for the website and the portal)
 
-The Vercel project  builds this Next.js app. The static HBC website lives in  (served at  via a rewrite in ) and the portal at .
+The Vercel project `hbc-website` builds this Next.js app. The static HBC website lives in `public/` (served at `/` via a rewrite in `next.config.mjs`) and the portal at `/adminconsole`.
 
-1. Vercel → project  → Settings → General: **Root Directory = **, **Framework Preset = Next.js** (clear any custom build/output overrides).
-2. Settings → Environment Variables (Production and Preview): , .
-3. Push to the connected GitHub repo; Vercel auto-deploys. Test a preview deployment before merging to .
-4. Supabase → Authentication → URL Configuration: Site URL , and add it to Redirect URLs.
+1. Vercel → project `hbc-website` → Settings → General: **Root Directory = `portal`**, **Framework Preset = Next.js** (clear any custom build/output overrides).
+2. Settings → Environment Variables (Production and Preview): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Push to the connected GitHub repo; Vercel auto-deploys. Test a preview deployment before merging to `master`.
+4. Supabase → Authentication → URL Configuration: Site URL `https://hbcgcc.com/adminconsole`, and add it to Redirect URLs.
 
 ## Business rules (configurable in Settings)
 
@@ -69,9 +69,8 @@ supabase/migrations   schema, RLS, payroll & quotation functions, storage, repor
 supabase/seed.sql     demo data
 src/lib               supabase client, formatters, roles, types, slip upload helpers
 src/components        AppShell (sidebar), ui, Docs (A4 slip / quotation), forms
-src/app/adminconsole    dashboard, login and all portal pages
-public/                the static HBC website (index.html, css/, assets/) + portal logo files
-src/app/adminconsole/(app)  dashboard, employees, attendance, payroll, slips, archive, quotations, audit, settings
+src/app/adminconsole  login + (app)/ dashboard, employees, attendance, payroll, slips, archive, quotations, audit, settings
+public/               static HBC website (index.html, css/, assets/) plus portal logo files
 ```
 
 Printing: "Print" and "Download PDF" use the browser print dialog with A4 print CSS (choose *Save as PDF* to download).
