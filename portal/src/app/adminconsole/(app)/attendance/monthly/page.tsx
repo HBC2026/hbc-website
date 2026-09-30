@@ -1,5 +1,5 @@
 'use client';
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ATT_CODE, ATT_LABEL, ErrorBox, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
@@ -20,6 +20,8 @@ function MonthlyAttendance() {
   const qp = useSearchParams().get('ym');
   const [ym, setYm] = useState(qp && /^\d{4}-(0[1-9]|1[0-2])$/.test(qp) ? qp : ymKey(now.getFullYear(), now.getMonth() + 1));
   const [view, setView] = useState<View>('timesheet');
+  // the wide timesheet grid can't fit a phone; start on the calendar there
+  useEffect(() => { if (window.matchMedia('(max-width: 800px)').matches) setView('calendar'); }, []);
   const [empId, setEmpId] = useState('');
   const [y, m] = ym.split('-').map(Number);
   const dim = daysInMonth(y, m);

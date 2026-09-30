@@ -82,7 +82,8 @@ h1, h2, h3 { font-family: var(--font-head); }
 .signout:hover { background: var(--navy-2); color: white; }
 
 /* ---------------- main ---------------- */
-.main { margin-left: 260px; min-height: 100vh; }
+.main { margin-left: 260px; min-height: 100vh; min-width: 0; }
+html, body { max-width: 100%; overflow-x: clip; }
 .topbar {
   height: 66px; padding: 0 42px; background: rgba(244,245,242,.92); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
@@ -172,9 +173,9 @@ h1 { font-size: 27px; letter-spacing: -1px; font-weight: 700; }
 table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .table th {
   text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
-  color: var(--muted); background: var(--surface-soft); padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  color: var(--muted); background: var(--surface-soft); padding: 10px 14px; border-bottom: 1px solid var(--border);
 }
-.table td { padding: 9px 14px; border-bottom: 1px solid #efefec; vertical-align: middle; }
+.table td { overflow-wrap: anywhere; padding: 9px 14px; border-bottom: 1px solid #efefec; vertical-align: middle; }
 .table tr:last-child td { border-bottom: none; }
 .table tbody tr.click { cursor: pointer; }
 .table tbody tr.click:hover td { background: var(--surface-soft); }
@@ -263,8 +264,10 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .att-code.absent, .att-code.unpaid_leave { background: var(--red-soft); color: var(--red); }
 .att-code.annual_leave, .att-code.sick_leave { background: var(--gold-soft); color: #8d6528; }
 .att-code.holiday { background: var(--blue-soft); color: var(--blue); }
-.sheet td, .sheet th { padding: 6px 4px; text-align: center; font-size: 10px; }
-.sheet td:first-child, .sheet th:first-child { text-align: left; padding-left: 12px; min-width: 150px; position: sticky; left: 0; background: white; }
+.sheet { table-layout: fixed; }
+.sheet td, .sheet th { padding: 6px 0; text-align: center; font-size: 9px; overflow-wrap: normal; }
+.sheet .att-code { min-width: 0; width: 19px; padding: 2px 0; font-size: 9px; }
+.sheet td:first-child, .sheet th:first-child { text-align: left; padding-left: 10px; width: 130px; background: white; }
 .sheet th:first-child { background: var(--surface-soft); }
 .sheet .ot { font-size: 8px; color: var(--gold); font-weight: 700; vertical-align: super; }
 .cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
@@ -311,7 +314,27 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .stat-card { padding: 14px; }
   .stat-number { font-size: 18px; margin-top: 10px; overflow-wrap: anywhere; }
   .panel-head { padding: 12px 14px; }
-  .table th, .table td { white-space: nowrap; }
+  /* tables become stacked cards: one card per row, each cell labelled by its column header */
+  table.table:not(.sheet), table.table:not(.sheet) tbody, table.table:not(.sheet) tfoot,
+  table.table:not(.sheet) tr, table.table:not(.sheet) td { display: block; width: 100%; }
+  table.table:not(.sheet) thead { display: none; }
+  table.table:not(.sheet) tbody tr, table.table:not(.sheet) tfoot tr { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  table.table:not(.sheet) tr:last-child { border-bottom: none; }
+  table.table:not(.sheet) td {
+    display: flex; justify-content: space-between; align-items: center; gap: 14px; text-align: right;
+    padding: 6px 0; border: 0; overflow-wrap: anywhere; min-width: 0;
+  }
+  table.table:not(.sheet) td[data-label]:not([data-label=""])::before {
+    content: attr(data-label); flex: 0 0 38%; max-width: 45%; text-align: left; color: var(--muted);
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  }
+  table.table:not(.sheet) td[data-label=""] { display: block; text-align: left; }
+  table.table:not(.sheet) td:empty { display: none; }
+  table.table:not(.sheet) td .input, table.table:not(.sheet) td .select { flex: 1; min-width: 0; width: 100% !important; }
+  .toolbar .input, .toolbar .select, .toolbar select, .toolbar input { min-width: 0 !important; max-width: 100%; }
+  .kv { width: 100% !important; }
+  .panel, .panel-head, .stat-card, .quick-action { min-width: 0; }
+  .content img, .content canvas { max-width: 100%; height: auto; }
   .tabs { overflow-x: auto; }
   .tab { white-space: nowrap; }
   .modal-back { padding: 12px; align-items: start; }

@@ -44,6 +44,29 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);   // phone-size slide-out menu
   useEffect(() => setNavOpen(false), [pathname]);
 
+  // Label every table cell with its column header so phone layouts can stack rows as cards (see .table in globals.css).
+  useEffect(() => {
+    const label = () => {
+      document.querySelectorAll<HTMLTableElement>('table.table:not(.sheet)').forEach((t) => {
+        const heads = Array.from(t.querySelectorAll('thead th')).map((h) => (h.textContent ?? '').trim());
+        if (!heads.length) return;
+        t.querySelectorAll('tbody tr, tfoot tr').forEach((tr) => {
+          let col = 0;
+          Array.from(tr.children).forEach((c) => {
+            const td = c as HTMLTableCellElement;
+            const l = td.colSpan > 1 ? '' : heads[col] ?? '';
+            if (td.getAttribute('data-label') !== l) td.setAttribute('data-label', l);
+            col += td.colSpan;
+          });
+        });
+      });
+    };
+    label();
+    const mo = new MutationObserver(label);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+
   useEffect(() => { if (!loading && isConfigured && !userId) router.replace('/adminconsole/login'); }, [loading, userId, router]);
 
   if (!isConfigured) {
