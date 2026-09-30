@@ -1,0 +1,5 @@
+.vision-emblem.official{border:0;border-radius:0;background:none;height:auto;min-height:330px}
+.vision-emblem.official:before,.vision-emblem.official:after{display:none}
+.vision-emblem.official img{width:100%;max-width:330px;height:auto;object-fit:contain}
+.vision-emblem.official small{display:block;max-width:290px;margin-top:24px;padding-top:18px;border-top:1px solid rgba(255,255,255,.25);font-size:12px;line-height:1.6;color:#d9defb}
+@media(max-width:900px){.vision-emblem.official{width:100%;max-width:300px}.vision-emblem.official img{max-width:300px}}
