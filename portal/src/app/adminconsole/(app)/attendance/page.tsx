@@ -59,6 +59,7 @@ export default function DailyAttendance() {
         <button className="btn" onClick={() => changeDate(addDays(date, 1))}>→</button>
         <button className="btn" onClick={() => changeDate(today())}>Today</button>
         <span className="muted">{fmtDate(date)}</span>
+        {new Date(`${date}T00:00:00`).getDay() === 5 && <span className="badge gold">Friday</span>}
       </div>
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : (

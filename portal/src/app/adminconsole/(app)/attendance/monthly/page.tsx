@@ -77,7 +77,7 @@ function MonthlyAttendance() {
         <div className="panel flush"><div className="table-wrap"><table className="table sheet">
           <thead><tr>
             <th>Employee</th>
-            {days.map((d) => <th key={d} style={{ color: dow(d) === 5 ? 'var(--gold)' : undefined }}>{d}</th>)}
+            {days.map((d) => <th key={d} className={dow(d) === 5 ? 'fri' : ''}><span className="dh-i">{'SMTWTFS'[dow(d)]}</span><span className="dh-n">{d}</span></th>)}
             <th>Pres</th><th>Abs</th><th>Leave</th><th>W/O</th><th>Hol</th><th>Reg Hrs</th><th>OT Hrs</th>
           </tr></thead>
           <tbody>
@@ -88,7 +88,7 @@ function MonthlyAttendance() {
                   <td><span className="strong">{e.name}</span> <span className="muted">{e.emp_code}</span></td>
                   {days.map((d) => {
                     const r = cells?.get(d);
-                    return <td key={d} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h + ${hrs(r.ot_hours)} OT` : 'Not marked'}>
+                    return <td key={d} className={dow(d) === 5 ? 'fri' : ''} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h + ${hrs(r.ot_hours)} OT` : 'Not marked'}>
                       {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_hours) > 0 && <span className="ot">+{hrs(r.ot_hours)}</span>}</> : <span className="muted">·</span>}
                     </td>;
                   })}
@@ -99,7 +99,7 @@ function MonthlyAttendance() {
             })}
           </tbody>
           <tfoot><tr>
-            <td>Total</td>{days.map((d) => <td key={d} />)}
+            <td>Total</td>{days.map((d) => <td key={d} className={dow(d) === 5 ? 'fri' : ''} />)}
             <td>{grand.p}</td><td>{grand.a}</td><td>{grand.l}</td><td>{grand.w}</td><td>{grand.h}</td><td>{hrs(grand.r)}</td><td>{hrs(grand.o)}</td>
           </tr></tfoot>
         </table></div></div>
@@ -112,12 +112,12 @@ function MonthlyAttendance() {
             {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekly off {t.weekly_off_days} · Holidays {t.holiday_days} · Regular {hrs(t.regular_hours)} h · OT {hrs(t.ot_hours)} h</span>}
           </div>
           <div className="cal">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <div className="cal-h" key={d}>{d}</div>)}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <div className={`cal-h${d === 'Fri' ? ' fri' : ''}`} key={d}>{d}</div>)}
             {Array.from({ length: new Date(y, m - 1, 1).getDay() }, (_, i) => <div key={`b${i}`} className="cal-d blank" />)}
             {days.map((d) => {
               const r = data.byEmp.get(selected)?.get(d);
               return (
-                <div className="cal-d" key={d}>
+                <div className={`cal-d${dow(d) === 5 ? ' fri' : ''}`} key={d}>
                   <div className="dn">{d}</div>
                   {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>
                     <div className="h">{r.status === 'present' ? `${hrs(r.regular_hours)}h` : ATT_LABEL[r.status]}{Number(r.ot_hours) > 0 && <b style={{ color: 'var(--gold)' }}> +{hrs(r.ot_hours)} OT</b>}</div></>

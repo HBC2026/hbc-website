@@ -227,11 +227,11 @@ export function DatePicker({ value, onChange, className = 'input', style, disabl
               <button type="button" className="pick-nav" aria-label="Next month" onClick={() => step(1)}>›</button>
             </div>
             <div className="pick-grid">
-              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i} className="pick-dow">{d}</div>)}
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i} className={`pick-dow${i === 5 ? ' fri' : ''}`}>{d}</div>)}
               {Array.from({ length: first }, (_, i) => <div key={`b${i}`} />)}
               {Array.from({ length: count }, (_, i) => {
                 const s = `${view.y}-${p2(view.m + 1)}-${p2(i + 1)}`;
-                return <button type="button" key={s} className={`pick-day${s === sel ? ' sel' : ''}${s === todayStr ? ' today' : ''}`}
+                return <button type="button" key={s} className={`pick-day${s === sel ? ' sel' : ''}${s === todayStr ? ' today' : ''}${new Date(view.y, view.m, i + 1).getDay() === 5 ? ' fri' : ''}`}
                   onClick={() => { pop.setOpen(false); onChange(s); }}>{i + 1}</button>;
               })}
             </div>

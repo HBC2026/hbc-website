@@ -434,3 +434,14 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .pick-day { height: 42px; }
   .dd-menu.suggest { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: 100%; border-radius: 18px 18px 0 0; }
 }
+
+/* ---------------- Fridays (weekly off) are highlighted everywhere ---------------- */
+.sheet th.fri, .sheet td.fri, .cal-d.fri, .pick-day.fri { background: var(--gold-soft); }
+.sheet th.fri { color: #8d6528; background: #f1e4cc; }
+.sheet .fri, .cal-h.fri, .pick-dow.fri { color: #8d6528; }
+.cal-d.fri { border-color: #e6d3ad; }
+.cal-h.fri, .pick-dow.fri { font-weight: 800; }
+.pick-day.fri.sel { background: var(--navy); color: white; }
+.sheet th .dh-i, .sheet th .dh-n { display: block; }
+.sheet th .dh-i { font-size: 8px; font-weight: 600; opacity: .75; line-height: 1.2; }
+.sheet th .dh-n { line-height: 1.3; }
