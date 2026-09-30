@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useApp } from './Providers';
 import { asset, isConfigured } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
@@ -41,6 +41,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { loading, userId, profile, company, companies, switchCompany, settings, signOut } = useApp();
   const router = useRouter();
   const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);   // phone-size slide-out menu
+  useEffect(() => setNavOpen(false), [pathname]);
 
   useEffect(() => { if (!loading && isConfigured && !userId) router.replace('/adminconsole/login'); }, [loading, userId, router]);
 
@@ -79,7 +81,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <aside className="sidebar no-print">
+      <div className="mobile-bar no-print">
+        <button className="menu-btn" aria-label="Open menu" aria-expanded={navOpen} onClick={() => setNavOpen(true)}>☰</button>
+        <div className="mobile-title">{company.name}</div>
+      </div>
+      {navOpen && <div className="nav-backdrop no-print" onClick={() => setNavOpen(false)} />}
+      <aside className={`sidebar no-print${navOpen ? ' open' : ''}`}>
+        <button className="nav-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>×</button>
         <div className="brand">
           <Link href="/adminconsole" className="brand-logo" aria-label={company.name}>
             {settings.company.logo ? <img src={asset(settings.company.logo)} alt={company.name} /> : <span className="brand-text">{company.name}</span>}

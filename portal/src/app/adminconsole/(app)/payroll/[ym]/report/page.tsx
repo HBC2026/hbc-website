@@ -4,6 +4,7 @@ import { Money, Riyal } from '@/components/Money';
 import { useParams } from 'next/navigation';
 import { DocHead } from '@/components/Docs';
 import { useApp } from '@/components/Providers';
+import { usePaperZoom } from '@/components/usePaperZoom';
 import { ErrorBox, Loading, PageHead, PeriodBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { fmtDate, fmtNum, hrs, monthLabel, parseYm } from '@/lib/format';
@@ -17,6 +18,7 @@ export default function PayrollReport() {
   const parsed = parseYm(ym);
   const { settings } = useApp();
   const sb = supabase();
+  const fit = usePaperZoom(true);
 
   const { data, error, loading } = useQuery(async () => {
     if (!parsed) throw new Error('Invalid month');
@@ -42,7 +44,7 @@ export default function PayrollReport() {
       </PageHead>
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : (
-        <div className="paper landscape" style={{ padding: '10mm 12mm' }}>
+        <div className="paper landscape" ref={fit.ref} style={{ padding: '10mm 12mm', ...fit.style }}>
           <DocHead co={settings.company} right={<><div className="doc-title" style={{ fontSize: 17 }}>MONTHLY PAYROLL REPORT</div><b>{label}</b><br />Status: {data.period.status}{data.period.approved_at ? ` · Approved ${fmtDate(data.period.approved_at)}` : ' · not yet approved'}</>} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 14 }}>

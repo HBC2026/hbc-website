@@ -1,4 +1,5 @@
 'use client';
+import { usePaperZoom } from '@/components/usePaperZoom';
 import { asset } from '@/lib/supabase';
 import { Money, Riyal } from '@/components/Money';
 import { fmtDate, fmtNum, hrs, monthLabel, addDays } from '@/lib/format';
@@ -29,8 +30,9 @@ export type SlipFull = SalarySlip & { employees: Employee; payroll_periods: Payr
 export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['company'] }) {
   const e = slip.payroll_entries; const emp = slip.employees; const p = slip.payroll_periods;
   const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + Number(e.other_earnings);
+  const fit = usePaperZoom();
   return (
-    <div className="paper">
+    <div className="paper" ref={fit.ref} style={fit.style}>
       <DocHead co={co} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
         <div><div className="doc-title">SALARY SLIP</div><div style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel(p.year, p.month)}</div></div>
@@ -84,8 +86,9 @@ export type QuoteHeader = { number: string; status?: string };
 export function QuotationDoc({ number, rev, items, co }: { number: string; rev: QuotationRevision; items: QuotationItem[]; co: Settings['company'] }) {
   const validUntil = addDays(rev.quote_date, rev.validity_days);
   const label = rev.revision > 0 ? `${number}-R${rev.revision}` : number;
+  const fit = usePaperZoom();
   return (
-    <div className="paper">
+    <div className="paper" ref={fit.ref} style={fit.style}>
       <DocHead co={co} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
         <div className="doc-title">QUOTATION</div>

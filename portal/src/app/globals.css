@@ -290,11 +290,35 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .lower-grid, .grid-2 { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr 1fr; }
 }
+.mobile-bar, .nav-close { display: none; }
 @media (max-width: 800px) {
-  .sidebar { position: static; width: 100%; height: auto; }
+  /* the sidebar becomes a slide-out menu opened from the top bar */
+  .mobile-bar {
+    display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 20;
+    background: var(--navy); color: white; padding: 8px 12px;
+  }
+  .menu-btn { background: none; border: 0; color: white; font-size: 24px; line-height: 1; padding: 6px 10px; cursor: pointer; border-radius: 8px; }
+  .menu-btn:active { background: rgba(255,255,255,.12); }
+  .mobile-title { font-family: var(--font-head); font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar { width: min(300px, 86vw); transform: translateX(-100%); transition: transform .22s ease; z-index: 40; }
+  .sidebar.open { transform: none; box-shadow: 0 0 50px rgba(0,0,0,.45); }
+  .nav-backdrop { position: fixed; inset: 0; background: rgba(17,24,39,.55); z-index: 30; }
+  .nav-close { display: block; position: absolute; top: 10px; right: 12px; background: none; border: 0; color: #c7cedb; font-size: 28px; line-height: 1; cursor: pointer; }
+  .topbar { display: none; }
   .main { margin-left: 0; }
-  .content, .topbar { padding-left: 18px; padding-right: 18px; }
-  .stats { grid-template-columns: 1fr; }
+  .content { padding: 20px 14px 48px; }
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px; }
+  .stat-number { font-size: 18px; margin-top: 10px; overflow-wrap: anywhere; }
+  .panel-head { padding: 12px 14px; }
+  .table th, .table td { white-space: nowrap; }
+  .tabs { overflow-x: auto; }
+  .tab { white-space: nowrap; }
+  .modal-back { padding: 12px; align-items: start; }
+  .modal-body { padding: 16px; }
+  .modal-head, .modal-foot { padding-left: 16px; padding-right: 16px; }
+  .modal-foot { flex-wrap: wrap; }
+  .toolbar .input, .toolbar .select { min-width: 0; flex: 1 1 140px; }
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .span-2 { grid-column: auto; }
 }
@@ -335,7 +359,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .sidebar, .topbar, .no-print, .toast-wrap { display: none !important; }
   .main { margin-left: 0; }
   .content { padding: 0; max-width: none; }
-  .paper { margin: 0; border: none; box-shadow: none; }
+  .paper { margin: 0; border: none; box-shadow: none; zoom: 1 !important; }
 }
 
 /* Saudi Riyal symbol */
