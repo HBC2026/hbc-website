@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MDGCC Admin Portal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --navy: #111827;
+      --navy-2: #172033;
+      --navy-3: #222d43;
+
+      --background: #f4f5f2;
+      --surface: #ffffff;
+      --surface-soft: #f8f8f6;
+
+      --text: #15171a;
+      --muted: #747b86;
+      --border: #e5e7e3;
+
+      --green: #176b55;
+      --green-soft: #e8f3ef;
+
+      --gold: #b98a45;
+      --gold-soft: #f6efe3;
+
+      --red: #b84848;
+      --red-soft: #faeded;
+
+      --radius: 18px;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: var(--background);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    /* ================================
+       SIDEBAR
+    ================================= */
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100vh;
+      padding: 28px 20px;
+      background: var(--navy);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 10px 30px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: white;
+      color: var(--navy);
+      display: grid;
+      place-items: center;
+      font-family: "Manrope";
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name {
+      font-family: "Manrope";
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .brand-subtitle {
+      color: #8993a7;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .nav-label {
+      color: #69758c;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      padding: 0 12px;
+      margin: 18px 0 8px;
+    }
+
+    .nav-item {
+      height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 0 14px;
+      margin-bottom: 5px;
+      border-radius: 11px;
+      color: #aeb7c7;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .nav-item:hover {
+      background: var(--navy-2);
+      color: white;
+    }
+
+    .nav-item.active {
+      background: var(--navy-3);
+      color: white;
+    }
+
+    .nav-icon {
+      width: 21px;
+      text-align: center;
+      font-size: 17px;
+    }
+
+    .coming-soon {
+      margin-left: auto;
+      font-size: 9px;
+      padding: 4px 7px;
+      border-radius: 20px;
+      color: #8490a6;
+      background: #1c2639;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid #273247;
+      padding: 22px 10px 0;
+    }
+
+    .user {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .avatar {
+      width: 36px;
+      height: 36px;
+      background: #2c3850;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .user-name {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 10px;
+      color: #77839a;
+      margin-top: 2px;
+    }
+
+    /* ================================
+       MAIN
+    ================================= */
+
+    .main {
+      margin-left: 260px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 78px;
+      padding: 0 42px;
+      background: rgba(244,245,242,.92);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      backdrop-filter: blur(14px);
+      z-index: 5;
+    }
+
+    .breadcrumb {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .breadcrumb strong {
+      color: var(--text);
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search {
+      width: 240px;
+      height: 40px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0 14px;
+      outline: none;
+      font-size: 12px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .content {
+      padding: 38px 42px 60px;
+      max-width: 1500px;
+      margin: auto;
+    }
+
+    /* ================================
+       WELCOME
+    ================================= */
+
+    .welcome {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+
+    .eyebrow {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    h1 {
+      font-family: "Manrope";
+      font-size: 30px;
+      letter-spacing: -1px;
+      font-weight: 700;
+    }
+
+    .welcome p {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* ================================
+       STATS
+    ================================= */
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 21px;
+    }
+
+    .stat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .stat-icon {
+      width: 31px;
+      height: 31px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--surface-soft);
+    }
+
+    .stat-number {
+      font-family: "Manrope";
+      font-size: 23px;
+      font-weight: 700;
+      margin-top: 15px;
+    }
+
+    .stat-note {
+      margin-top: 5px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ================================
+       MODULES
+    ================================= */
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 30px 0 14px;
+    }
+
+    .section-heading h2 {
+      font-family: "Manrope";
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .section-heading span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .modules {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .module {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      min-height: 225px;
+      transition: .25s ease;
+    }
+
+    .module:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(17,24,39,.06);
+    }
+
+    .module-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .module-icon {
+      width: 47px;
+      height: 47px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+    }
+
+    .payroll-icon {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .quote-icon {
+      background: var(--gold-soft);
+      color: var(--gold);
+    }
+
+    .module h3 {
+      font-family: "Manrope";
+      margin-top: 19px;
+      font-size: 17px;
+    }
+
+    .module-description {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 7px;
+      max-width: 420px;
+    }
+
+    .module-footer {
+      margin-top: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .module-stat {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .module-stat strong {
+      color: var(--text);
+    }
+
+    .primary-btn {
+      border: 0;
+      padding: 10px 15px;
+      border-radius: 9px;
+      background: var(--navy);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .primary-btn:hover {
+      background: #27344d;
+    }
+
+    /* ================================
+       ACTIVITY
+    ================================= */
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1.5fr .8fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .panel {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .panel-title {
+      font-family: "Manrope";
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 19px;
+    }
+
+    .activity-row {
+      display: grid;
+      grid-template-columns: 38px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #efefec;
+    }
+
+    .activity-row:last-child {
+      border-bottom: none;
+    }
+
+    .activity-icon {
+      width: 35px;
+      height: 35px;
+      border-radius: 9px;
+      background: var(--surface-soft);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+    }
+
+    .activity-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .activity-sub {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .activity-time {
+      font-size: 10px;
+      color: #9a9fa7;
+    }
+
+    /* ================================
+       QUICK ACTIONS
+    ================================= */
+
+    .quick-action {
+      padding: 15px;
+      background: var(--surface-soft);
+      border: 1px solid #ededeb;
+      border-radius: 11px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .quick-action:hover {
+      background: white;
+      border-color: #d8dad6;
+    }
+
+    .quick-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .quick-description {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .footer-note {
+      text-align: center;
+      color: #9b9fa5;
+      font-size: 10px;
+      margin-top: 35px;
+    }
+
+    @media (max-width: 1050px) {
+      .stats {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .modules,
+      .lower-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <aside class="sidebar">
+
+    <div class="brand">
+      <div class="brand-mark">MD</div>
+      <div>
+        <div class="brand-name">MDGCC</div>
+        <div class="brand-subtitle">Administration Portal</div>
+      </div>
+    </div>
+
+    <div class="nav-label">WORKSPACE</div>
+
+    <div class="nav-item active">
+      <div class="nav-icon">⌂</div>
+      Dashboard
+    </div>
+
+    <div class="nav-item">
+      <div class="nav-icon">◫</div>
+      Payroll
+    </div>
+
+    <div class="nav-item">
+      <div class="nav-icon">▤</div>
+      Quotations
+    </div>
+
+    <div class="nav-label">COMING LATER</div>
+
+    <div class="nav-item">
+      <div class="nav-icon">▧</div>
+      Invoices
+      <div class="coming-soon">SOON</div>
+    </div>
+
+    <div class="nav-item">
+      <div class="nav-icon">◈</div>
+      Reports
+      <div class="coming-soon">SOON</div>
+    </div>
+
+    <div class="nav-label">SYSTEM</div>
+
+    <div class="nav-item">
+      <div class="nav-icon">⚙</div>
+      Settings
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user">
+        <div class="avatar">AB</div>
+        <div>
+          <div class="user-name">Ahsan Bilal</div>
+          <div class="user-role">Administrator</div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+
+  <main class="main">
+
+    <header class="topbar">
+
+      <div class="breadcrumb">
+        MDGCC &nbsp;/&nbsp; <strong>Dashboard</strong>
+      </div>
+
+      <div class="top-actions">
+        <input class="search" placeholder="Search portal..." />
+        <button class="icon-btn">⌕</button>
+        <button class="icon-btn">♢</button>
+      </div>
+
+    </header>
+
+
+    <div class="content">
+
+      <section class="welcome">
+
+        <div>
+          <div class="eyebrow">Administration</div>
+          <h1>Good morning, Ahsan.</h1>
+          <p>Here’s an overview of your company administration.</p>
+        </div>
+
+        <div class="date">
+          Wednesday, 30 September 2026
+        </div>
+
+      </section>
+
+
+      <section class="stats">
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">EMPLOYEES</span>
+            <span class="stat-icon">♙</span>
+          </div>
+
+          <div class="stat-number">48</div>
+          <div class="stat-note">Active employees</div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">MONTHLY PAYROLL</span>
+            <span class="stat-icon">﷼</span>
+          </div>
+
+          <div class="stat-number">184,250</div>
+          <div class="stat-note">SAR · September 2026</div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">OPEN QUOTATIONS</span>
+            <span class="stat-icon">▤</span>
+          </div>
+
+          <div class="stat-number">12</div>
+          <div class="stat-note">4 awaiting client response</div>
+        </div>
+
+
+        <div class="stat-card">
+          <div class="stat-top">
+            <span class="stat-label">QUOTATION VALUE</span>
+            <span class="stat-icon">↗</span>
+          </div>
+
+          <div class="stat-number">642K</div>
+          <div class="stat-note">SAR · Currently open</div>
+        </div>
+
+      </section>
+
+
+      <div class="section-heading">
+        <h2>Core Operations</h2>
+        <span>2 active modules</span>
+      </div>
+
+
+      <section class="modules">
+
+        <!-- PAYROLL -->
+
+        <div class="module">
+
+          <div class="module-header">
+            <div class="module-icon payroll-icon">﷼</div>
+          </div>
+
+          <h3>Payroll Processing</h3>
+
+          <p class="module-description">
+            Prepare monthly salaries, overtime, deductions,
+            allowances and employee payroll records.
+          </p>
+
+          <div class="module-footer">
+
+            <div class="module-stat">
+              <strong>September 2026</strong><br>
+              Payroll period
+            </div>
+
+            <button class="primary-btn">
+              Open Payroll →
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- QUOTATIONS -->
+
+        <div class="module">
+
+          <div class="module-header">
+            <div class="module-icon quote-icon">▤</div>
+          </div>
+
+          <h3>Quotations</h3>
+
+          <p class="module-description">
+            Create professional quotations, manage items,
+            pricing, revisions and client submissions.
+          </p>
+
+          <div class="module-footer">
+
+            <div class="module-stat">
+              <strong>12 Active</strong><br>
+              Current quotations
+            </div>
+
+            <button class="primary-btn">
+              Manage Quotations →
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <section class="lower-grid">
+
+        <!-- ACTIVITY -->
+
+        <div class="panel">
+
+          <div class="panel-title">Recent Activity</div>
+
+          <div class="activity-row">
+
+            <div class="activity-icon">▤</div>
+
+            <div>
+              <div class="activity-title">
+                Quotation QT-2026-0148 created
+              </div>
+
+              <div class="activity-sub">
+                Tenaris Saudi Steel Pipe
+              </div>
+            </div>
+
+            <div class="activity-time">
+              18 min ago
+            </div>
+
+          </div>
+
+
+          <div class="activity-row">
+
+            <div class="activity-icon">﷼</div>
+
+            <div>
+              <div class="activity-title">
+                Payroll record updated
+              </div>
+
+              <div class="activity-sub">
+                September 2026 payroll
+              </div>
+            </div>
+
+            <div class="activity-time">
+              1 hr ago
+            </div>
+
+          </div>
+
+
+          <div class="activity-row">
+
+            <div class="activity-icon">✓</div>
+
+            <div>
+              <div class="activity-title">
+                Quotation QT-2026-0142 approved
+              </div>
+
+              <div class="activity-sub">
+                SAR 84,500
+              </div>
+            </div>
+
+            <div class="activity-time">
+              Yesterday
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- QUICK ACTIONS -->
+
+        <div class="panel">
+
+          <div class="panel-title">Quick Actions</div>
+
+          <div class="quick-action">
+            <div class="quick-title">＋ New Quotation</div>
+            <div class="quick-description">
+              Create a new client quotation
+            </div>
+          </div>
+
+          <div class="quick-action">
+            <div class="quick-title">﷼ Process Payroll</div>
+            <div class="quick-description">
+              Start this month's payroll
+            </div>
+          </div>
+
+          <div class="quick-action">
+            <div class="quick-title">＋ Add Employee</div>
+            <div class="quick-description">
+              Create an employee payroll profile
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <div class="footer-note">
+        MDGCC Administration Portal · Internal System
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

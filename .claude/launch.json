@@ -4,8 +4,25 @@
     {
       "name": "hbc-static",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "-l", "5566", "."],
+      "runtimeArgs": [
+        "-y",
+        "serve",
+        "-l",
+        "5566",
+        "."
+      ],
       "port": 5566
+    },
+    {
+      "name": "hbc-portal",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "portal",
+        "run",
+        "dev"
+      ],
+      "port": 3100
     }
   ]
 }
