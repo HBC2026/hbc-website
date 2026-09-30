@@ -70,9 +70,9 @@ export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['comp
 
       <div style={{ marginTop: 26, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>
       <div className="sign-row">
-        <div><div className="line" /><div className="cap">Employee Signature: __________________</div></div>
-        <div><div className="line" /><div className="cap">Date: __________________</div></div>
-        <div><div className="line" /><div className="cap">Authorized Signature: __________________</div></div>
+        <div><div className="line" /><div className="cap">Employee Signature</div></div>
+        <div><div className="line" /><div className="cap">Date</div></div>
+        <div><div className="line" /><div className="cap">Authorized Signature</div></div>
       </div>
       <div className="doc-foot">{co.name} · This is a computer-generated salary slip and is valid only when signed.</div>
     </div>
