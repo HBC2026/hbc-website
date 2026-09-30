@@ -188,5 +188,17 @@ ok(true, 'legacy path (no company segment) treated as Company 1');
 await as(U3, MD);
 ok(await count(`storage.objects where bucket_id = 'signed-salary-slips'`) === 0, 'Company 2 viewer sees no Company 1 files');
 
+// ---- administrators edit employee information (every editable field), in each company
+for (const [co, name] of [[HBC, 'Company 1'], [MD, 'Company 2']]) {
+  await as(U1, co);
+  await db.exec(`update employees set name = 'Edited', job_title = 'Lead', department = 'HQ', joining_date = '2025-05-05',
+    basic_salary = 7777, allowances = 111, ot_method = 'fixed', ot_rate = 15, status = 'inactive', emp_code = 'E-EDIT'`);
+  const r = (await q(`select name, basic_salary::int b, status, emp_code from employees`))[0];
+  ok(r.name === 'Edited' && r.b === 7777 && r.status === 'inactive' && r.emp_code === 'E-EDIT', `administrator edits employee information in ${name}`);
+}
+await as(U3, MD);
+await db.exec(`update employees set name = 'Hacked'`);
+ok((await q(`select name from employees`))[0].name === 'Edited', 'viewer edit is silently blocked (0 rows)');
+
 console.log(failed ? `\n${failed} FAILED` : '\nAll passed');
 process.exit(failed ? 1 : 0);
