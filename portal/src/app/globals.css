@@ -445,3 +445,5 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .sheet th .dh-i, .sheet th .dh-n { display: block; }
 .sheet th .dh-i { font-size: 8px; font-weight: 600; opacity: .75; line-height: 1.2; }
 .sheet th .dh-n { line-height: 1.3; }
+.table tbody tr.fri, .table tbody tr.fri td, .table tbody tr.click.fri:hover td { background: var(--gold-soft); }
+.fri-tag { margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; background: #f1e4cc; color: #8d6528; }

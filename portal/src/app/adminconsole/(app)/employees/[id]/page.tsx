@@ -14,6 +14,8 @@ import type { AttendanceRow, Employee, PayrollEntry, PayrollPeriod, SalarySlip }
 
 type Tab = 'attendance' | 'payroll' | 'slips';
 
+const isFri = (d: string) => new Date(`${d}T00:00:00`).getDay() === 5;
+
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const { profile, settings } = useApp();
@@ -68,7 +70,7 @@ export default function EmployeeDetail() {
             <thead><tr><th>Date</th><th>Status</th><th className="r">Regular Hrs</th><th className="r">OT Hrs</th><th>Remarks</th></tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id}><td>{fmtDate(r.work_date)}</td>
+                <tr key={r.id} className={isFri(r.work_date) ? "fri" : ""}><td>{fmtDate(r.work_date)}{isFri(r.work_date) && <span className="fri-tag">Fri</span>}</td>
                   <td><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span> {ATT_LABEL[r.status]}</td>
                   <td className="r">{hrs(r.regular_hours)}</td><td className="r">{hrs(r.ot_hours)}</td><td className="muted">{r.remarks}</td></tr>
               ))}
