@@ -86,6 +86,9 @@ h1, h2, h3 { font-family: var(--font-head); }
 }
 .sidebar-footer { margin-top: auto; border-top: 1px solid #273247; padding: 20px 6px 0; }
 .user { display: flex; align-items: center; gap: 11px; }
+.user-link { display: flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; min-width: 0; }
+.user-link:hover .user-name { text-decoration: underline; }
+.profile-avatar { width: 64px; height: 64px; font-size: 20px; }
 .avatar {
   width: 36px; height: 36px; background: #2c3850; border-radius: 50%;
   display: grid; place-items: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
@@ -116,6 +119,19 @@ html, body { max-width: 100%; overflow-x: clip; }
 h1 { font-size: 27px; letter-spacing: -1px; font-weight: 700; }
 .page-head p { margin-top: 6px; color: var(--muted); font-size: 13px; }
 .head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ---------------- dashboard header actions ---------------- */
+.hero-btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; border-radius: 11px; color: white;
+  font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 3px 10px rgba(17, 24, 39, .14); transition: transform .2s, box-shadow .2s, filter .2s;
+}
+.hero-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(17, 24, 39, .2); filter: brightness(1.08); }
+.hero-green { background: linear-gradient(135deg, #16705a, #0f4f3f); }
+.hero-navy { background: linear-gradient(135deg, #2c3b58, #1b2538); }
+.hero-icon { width: 26px; height: 26px; flex: none; border-radius: 7px; background: rgba(255, 255, 255, .18); display: grid; place-items: center; font-size: 13px; }
+@media (max-width: 700px) {
+  .hero-btn { flex: 1; justify-content: center; }
+}
 
 /* ---------------- stats ---------------- */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 22px; }

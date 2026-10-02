@@ -56,10 +56,15 @@ export default function Dashboard() {
   const showAtt = ATTENDANCE_SIDE.includes(role);
   const showQuotes = QUOTE_SIDE.includes(role);
   const ym = ymKey(year, month);
+  const canMark = can(role, 'attendance:write');
+  const canPetty = can(role, 'pettycash:write');
 
   return (
     <>
-      <PageHead eyebrow="Administration" title={`${greet}, ${first}.`} sub="Here’s an overview of your company administration." />
+      <PageHead eyebrow="Administration" title={`${greet}, ${first}.`} sub="Here’s an overview of your company administration.">
+        {canMark && <Link href="/adminconsole/attendance" className="hero-btn hero-green"><span className="hero-icon">◧</span>Mark Attendance</Link>}
+        {canPetty && <Link href="/adminconsole/pettycash?new=1" className="hero-btn hero-navy"><span className="hero-icon"><Riyal /></span>Record Petty Cash</Link>}
+      </PageHead>
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : (
         <>

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Money } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { Badge, DatePicker, ErrorBox, Field, Loading, Modal, PageHead, Select, StatCard } from '@/components/ui';
@@ -30,6 +30,14 @@ export default function PettyCashPage() {
   const [q, setQ] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // dashboard shortcut: /pettycash?new=1 opens the new-transaction dialog straight away
+  useEffect(() => {
+    if (canWrite && new URLSearchParams(window.location.search).get('new') === '1') {
+      setDraft({ employee: '', amount: '', date: today(), note: '', given_by: profile!.full_name });
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, [canWrite, profile]);
 
   // only employees who have had petty cash activity; anyone else is reached through "New transaction"
   const rows = useMemo(() => (data?.emps ?? [])
