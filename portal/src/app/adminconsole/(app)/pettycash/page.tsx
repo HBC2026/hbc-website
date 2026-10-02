@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Money } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { Badge, DatePicker, ErrorBox, Field, Loading, Modal, PageHead, Select, StatCard } from '@/components/ui';
@@ -31,11 +32,15 @@ export default function PettyCashPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const router = useRouter();
+  const fromDash = useRef(false);   // opened by the dashboard shortcut, so cancelling goes back there
+  const closeDraft = () => { setDraft(null); if (fromDash.current) { fromDash.current = false; router.push('/adminconsole'); } };
 
   // dashboard shortcut: /pettycash?new=1 opens the new-transaction dialog straight away
   useEffect(() => {
     if (canWrite && new URLSearchParams(window.location.search).get('new') === '1') {
       setDraft({ employee: '', amount: '', date: today(), note: '', given_by: profile!.full_name });
+      fromDash.current = true;
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, [canWrite, profile]);
@@ -60,7 +65,7 @@ export default function PettyCashPage() {
     setSaving(false);
     if (error) return toast(error.message, true);
     toast('Cash recorded');
-    setDraft(null); reload();
+    fromDash.current = false; setDraft(null); reload();
   }
 
   async function exportXlsx() {
@@ -126,8 +131,8 @@ export default function PettyCashPage() {
       </div>
 
       {draft && (
-        <Modal title="New transaction" onClose={() => setDraft(null)}
-          footer={<><button className="btn" onClick={() => setDraft(null)}>Cancel</button><button className="btn primary" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button></>}>
+        <Modal title="New transaction" onClose={closeDraft}
+          footer={<><button className="btn" onClick={closeDraft}>Cancel</button><button className="btn primary" disabled={saving} onClick={save}>{saving ? 'Saving…' : 'Save'}</button></>}>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
             <Field label="Employee">
               <Select className="select" value={draft.employee} onChange={(e) => setDraft({ ...draft, employee: e.target.value })}>
