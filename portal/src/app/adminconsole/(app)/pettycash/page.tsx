@@ -8,7 +8,7 @@ import { useQuery } from '@/lib/hooks';
 import { today } from '@/lib/format';
 import { can } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
-import type { Employee, PcSummaryRow } from '@/lib/types';
+import type { Employee, PcCash, PcReceipt, PcSummaryRow } from '@/lib/types';
 
 type Emp = Pick<Employee, 'id' | 'emp_code' | 'name' | 'job_title' | 'status'>;
 interface Draft { employee: string; amount: string; date: string; note: string; given_by: string }
@@ -30,6 +30,7 @@ export default function PettyCashPage() {
   const [q, setQ] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // dashboard shortcut: /pettycash?new=1 opens the new-transaction dialog straight away
   useEffect(() => {
@@ -62,9 +63,31 @@ export default function PettyCashPage() {
     setDraft(null); reload();
   }
 
+  async function exportXlsx() {
+    setExporting(true);
+    try {
+      const ids = rows.map(({ e }) => e.id);
+      const all = async <T,>(table: string, order: string) => {
+        const out: T[] = [];
+        for (let from = 0; ; from += 1000) {
+          const page = unwrap(await sb.from(table).select('*').in('employee_id', ids).order(order).range(from, from + 999)) as T[];
+          out.push(...page);
+          if (page.length < 1000) return out;
+        }
+      };
+      const [cash, receipts] = await Promise.all([all<PcCash & { employee_id: string }>('pc_cash_given', 'created_at'), all<PcReceipt & { employee_id: string }>('pc_receipts', 'created_at')]);
+      const { exportPettyCash } = await import('@/lib/pettyExport');
+      await exportPettyCash(rows.map(({ e }) => e), cash, receipts, company?.name ?? '');
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Export failed', true);
+    }
+    setExporting(false);
+  }
+
   return (
     <>
       <PageHead eyebrow="Petty Cash" title="Petty Cash" sub="Cash given to employees, receipts uploaded and what each still holds">
+        <button className="btn" disabled={exporting || loading || rows.length === 0} onClick={exportXlsx}>{exporting ? 'Exporting…' : '⬇ Export Excel'}</button>
         {canWrite && <button className="btn primary" onClick={() => setDraft({ employee: '', amount: '', date: today(), note: '', given_by: profile!.full_name })}>＋ New transaction</button>}
       </PageHead>
       {error && <ErrorBox error={error} />}
