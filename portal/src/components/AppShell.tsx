@@ -37,7 +37,7 @@ const NAV: NavGroup[] = [
   ] },
 ];
 
-const ALL = NAV.flatMap((g) => g.items);
+const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }];
 
 function activeHref(pathname: string): string | undefined {
   return ALL.filter((i) => (i.href === '/adminconsole' ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')))
@@ -121,6 +121,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={`sidebar no-print${navOpen ? ' open' : ''}`}>
         <button className="nav-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>×</button>
         <div className="brand">
+          {companies.length > 1 && (
+            <Link href="/adminconsole/overview" className={`nav-item nav-top${pathname === '/adminconsole/overview' ? ' active' : ''}`}>
+              <span className="nav-icon">◈</span>All Companies
+            </Link>
+          )}
           <div className="brand-subtitle">Administration Portal</div>
           {companies.length > 1 && (
             <Select className="company-switch" aria-label="Switch company" value={company.id} onChange={(e) => switchCompany(e.target.value)}>
@@ -168,11 +173,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="sidebar-footer">
           <div className="user">
-            <div className="avatar">{initials}</div>
-            <div>
-              <div className="user-name">{profile.full_name}</div>
-              <div className="user-role">{ROLE_LABEL[profile.role]}</div>
-            </div>
+            <Link href="/adminconsole/profile" className="user-link" title="My profile">
+              <div className="avatar">{initials}</div>
+              <div>
+                <div className="user-name">{profile.full_name}</div>
+                <div className="user-role">{ROLE_LABEL[profile.role]}</div>
+              </div>
+            </Link>
             <button className="signout" onClick={signOut}>Sign out</button>
           </div>
         </div>

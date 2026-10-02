@@ -529,3 +529,43 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 @media (max-width: 800px) {
   .pc-modal { max-height: 94vh; overflow: auto; }
 }
+
+/* ---------------- phones: larger text and touch targets for easier use ---------------- */
+@media (max-width: 800px) {
+  body { font-size: 15px; }
+  .content { padding: 18px 14px 56px; }
+  h1 { font-size: 26px; }
+  .page-head p, .eyebrow { font-size: 13px; }
+  .mobile-bar { padding: 10px 12px; }
+  .mobile-title { font-size: 16px; }
+  .menu-btn { font-size: 28px; padding: 8px 12px; }
+  .nav-item, .nav-group { font-size: 15.5px; padding-top: 13px; padding-bottom: 13px; }
+  .nav-sub-item { font-size: 14.5px; padding-top: 11px; padding-bottom: 11px; }
+  .nav-icon { font-size: 18px; }
+  .brand-subtitle { font-size: 12.5px; }
+  .company-switch { font-size: 15px; min-height: 44px; }
+  .user-name { font-size: 14px; }
+  .user-role { font-size: 12px; }
+  .signout { font-size: 13px; padding: 9px 12px; }
+  .stat-label { font-size: 12px; }
+  .stat-number { font-size: 22px; }
+  .stat-note { font-size: 12px; }
+  .panel-title { font-size: 16px; }
+  .btn { font-size: 14.5px; min-height: 44px; padding: 10px 16px; }
+  .btn.sm { font-size: 13.5px; min-height: 38px; padding: 8px 12px; }
+  .hero-btn { font-size: 14.5px; padding-top: 12px; padding-bottom: 12px; }
+  .input, .select, .textarea { font-size: 16px; min-height: 44px; }   /* 16px also stops iOS zooming into fields */
+  .field > label, .label { font-size: 12.5px; }
+  .table:not(.sheet) td { font-size: 14.5px; }
+  .table:not(.sheet) td[data-label]:not([data-label=""])::before { font-size: 11.5px; }
+  .table td .input, .table td .select { height: 40px; font-size: 15px; }
+  .table td .input.num { width: 96px; }
+  .badge { font-size: 12px; padding: 4px 10px; }
+  .tab { font-size: 14.5px; padding: 12px 14px; }
+  .activity-title, .quick-title { font-size: 14.5px; }
+  .activity-sub, .quick-description, .activity-time { font-size: 12.5px; }
+  .quick-action { padding: 14px; }
+  .dd-item { font-size: 15.5px; }
+  .pick-day { font-size: 15px; }
+  .breadcrumb, .footer-note { font-size: 13px; }
+}

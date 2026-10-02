@@ -38,6 +38,16 @@ export function supabase(): SupabaseClient {
   return client;
 }
 
+/** A separate client pinned to one company (same login), for screens that read several companies at once. */
+export function supabaseFor(id: string): SupabaseClient {
+  const pinned: typeof fetch = (input, init) => {
+    const headers = new Headers(init?.headers);
+    headers.set('x-company-id', id);
+    return fetch(input, { ...init, headers });
+  };
+  return createBrowserClient(url!, anon!, { isSingleton: false, global: { fetch: pinned } });
+}
+
 export const BASE_PATH = ''; // portal is served at /adminconsole by its routes, not a Next basePath
 /** URL for a file in /public (plain <img> tags do not get the basePath automatically). */
 export const asset = (p: string) => `${BASE_PATH}${p}`;

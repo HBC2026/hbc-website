@@ -15,8 +15,8 @@ interface Toast { id: number; msg: string; error?: boolean }
 interface AppCtx {
   loading: boolean; userId: string | null; profile: Profile | null; settings: Settings;
   /** Companies the user belongs to, and the one currently shown. `profile.role` is the role in that company. */
-  companies: Company[]; company: Company | null; switchCompany: (id: string) => void;
-  signOut: () => Promise<void>; reloadSettings: () => Promise<void>;
+  companies: Company[]; company: Company | null; switchCompany: (id: string, to?: string) => void;
+  signOut: () => Promise<void>; reloadSettings: () => Promise<void>; reloadProfile: () => Promise<void>;
   toast: (msg: string, error?: boolean) => void;
   /** In-app replacement for window.confirm: resolves true on OK, false on Cancel / Esc / click outside. */
   confirmDialog: (o: string | ConfirmOptions) => Promise<boolean>;
@@ -94,15 +94,23 @@ export function Providers({ children }: { children: ReactNode }) {
   }, [reloadSettings]);
 
   /** Switching reloads the app on the dashboard so no data from the other company stays on screen. */
-  const switchCompany = useCallback((id: string) => {
+  const switchCompany = useCallback((id: string, to = '/adminconsole') => {
     setCompanyId(id);
-    window.location.assign('/adminconsole');
+    window.location.assign(to);
+  }, []);
+
+  const reloadProfile = useCallback(async () => {
+    const sb = supabase();
+    const { data: u } = await sb.auth.getUser();
+    if (!u.user) return;
+    const { data } = await sb.from('profiles').select('*').eq('id', u.user.id).maybeSingle();
+    if (data) setProfile((p) => ({ ...(data as Profile), role: p?.role ?? 'viewer' }));
   }, []);
 
   const signOut = useCallback(async () => { await supabase().auth.signOut(); }, []);
 
   return (
-    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, toast, confirmDialog }}>
+    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, reloadProfile, toast, confirmDialog }}>
       {children}
       {dialog && (
         <Modal title={dialog.title ?? 'Please confirm'} onClose={() => answer(false)}
