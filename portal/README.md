@@ -6,7 +6,7 @@ Internal portal for **Hassan and Bilal Company** and **Micro Data General Contra
 
 1. Create a Supabase project.
 2. In **SQL Editor**, run these files in order:
-   `supabase/migrations/0001_schema.sql` → `0002_helpers_audit_rls.sql` → `0003_payroll_functions.sql` → `0004_quotation_functions.sql` → `0005_storage.sql` → `0006_reporting.sql` → `0007_multi_company.sql`
+   `supabase/migrations/0001_schema.sql` → `0002_helpers_audit_rls.sql` → `0003_payroll_functions.sql` → `0004_quotation_functions.sql` → `0005_storage.sql` → `0006_reporting.sql` → `0007_multi_company.sql` → `0008_petty_cash.sql` → `0010_petty_cash_given_by.sql` → `0009_clients.sql`
 3. Optional demo data: run `supabase/seed.sql` (12 fictional employees, Aug–Sep 2026 attendance, 8 quotations). Delete later with
    `truncate employees, quotations, payroll_periods restart identity cascade;`
 4. **Authentication → Users → Add user** (email + password). The **first** user becomes *Administrator* of every company; later users have **no access** until an administrator gives them a role for a company in **Settings → Users & roles** (roles are per company, so someone can be Payroll in one company and Viewer or No access in the other).
@@ -84,3 +84,12 @@ public/               static HBC website (index.html, css/, assets/) plus portal
 ```
 
 Printing: "Print" and "Download PDF" use the browser print dialog with A4 print CSS (choose *Save as PDF* to download).
+
+## Petty cash
+
+**Petty Cash** in the sidebar (administrator / payroll write, viewer read). Give cash to an employee, and they upload receipts against it from a phone; the employee's balance is *cash given − receipts that are not rejected*.
+
+- Employees do not sign in. Open an employee in Petty Cash → **Copy link** and send them `https://hbcgcc.com/pettycash/<token>` (WhatsApp etc.). **New link** revokes the old one.
+- The employee page works only through token-checked database functions (`pc_statement`, `pc_add_receipt`, `pc_delete_receipt`) and an insert-only upload folder in the private bucket `petty-cash-receipts`; it can never see another employee.
+- **Reject** a receipt (a reason is required) and it stops counting; the employee sees the reason and uploads it again. Approved receipts can't be removed by the employee.
+- Run `0008_petty_cash.sql` then `0010_petty_cash_given_by.sql` once. Each cash entry records who gave the money. Existing databases need nothing else.

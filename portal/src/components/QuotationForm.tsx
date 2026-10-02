@@ -3,10 +3,11 @@ import { useRouter } from 'next/navigation';
 import { Money, Riyal } from '@/components/Money';
 import { useMemo, useState } from 'react';
 import { useApp } from './Providers';
-import { DatePicker, Field, SuggestInput } from './ui';
+import { DatePicker, Field, Select, SuggestInput } from './ui';
 import { fmtNum, today } from '@/lib/format';
-import { supabase } from '@/lib/supabase';
-import type { QuotationItem, QuotationRevision } from '@/lib/types';
+import { useQuery } from '@/lib/hooks';
+import { supabase, unwrap } from '@/lib/supabase';
+import type { Client, QuotationItem, QuotationRevision } from '@/lib/types';
 
 const UNITS = ['Nos', 'Lot', 'm', 'm2', 'm3', 'kg', 'ton', 'Hour', 'Day', 'Man-month', 'Visit'];
 interface ItemDraft { description: string; qty: string; unit: string; unit_price: string }
@@ -25,7 +26,19 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
   const [items, setItems] = useState<ItemDraft[]>(baseItems?.length
     ? baseItems.map((i) => ({ description: i.description, qty: String(Number(i.qty)), unit: i.unit, unit_price: String(Number(i.unit_price)) })) : [blank()]);
   const [saving, setSaving] = useState(false);
-  const set = (k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
+  const { data: clients } = useQuery(async () =>
+    unwrap(await supabase().from('clients').select('*').order('name')) as Client[], []);
+  // '' = one-off client typed by hand; otherwise a saved profile
+  const [clientId, setClientId] = useState<string | null>(null);
+  const picked = clientId ?? (clients?.find((c) => c.name.toLowerCase() === f.client.trim().toLowerCase())?.id ?? '');
+  const options = (clients ?? []).filter((c) => c.status === 'active' || c.id === picked);
+  function pickClient(id: string) {
+    setClientId(id);
+    const c = clients?.find((x) => x.id === id);
+    if (!c) return;
+    setF((s) => ({ ...s, client: c.name, attention: c.attention || s.attention, payment_terms: c.payment_terms || s.payment_terms }));
+  }
+  const set =(k: keyof typeof f, v: string) => setF((s) => ({ ...s, [k]: v }));
   const setItem = (i: number, k: keyof ItemDraft, v: string) => setItems((a) => a.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
 
   const t = useMemo(() => {
@@ -61,7 +74,13 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
       <div className="panel">
         <div className="panel-title">Quotation details</div>
         <div className="form-grid">
-          <Field label="Client *" className="span-2"><input className="input" value={f.client} onChange={(e) => set('client', e.target.value)} /></Field>
+          <Field label="Client *" className="span-2">
+            <Select className="select" value={picked} onChange={(e) => { const v = e.target.value; if (v) pickClient(v); else { setClientId(''); set('client', ''); } }}>
+              <option value="">Other (type a name)…</option>
+              {options.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </Field>
+          {!picked && <Field label="Client name *"><input className="input" value={f.client} onChange={(e) => set('client', e.target.value)} placeholder="One-off client" /></Field>}
           <Field label="Attention"><input className="input" value={f.attention} onChange={(e) => set('attention', e.target.value)} /></Field>
           <Field label="Project" className="span-2"><input className="input" value={f.project} onChange={(e) => set('project', e.target.value)} /></Field>
           <Field label="Reference"><input className="input" value={f.reference} onChange={(e) => set('reference', e.target.value)} placeholder="Client RFQ / enquiry no." /></Field>

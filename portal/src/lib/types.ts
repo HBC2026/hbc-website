@@ -49,6 +49,10 @@ export interface Quotation {
   id: string; number: string; current_revision: number; status: QuotationStatus; client: string;
   project: string; quote_date: string; amount: number; created_at: string;
 }
+export interface Client {
+  id: string; name: string; attention: string; email: string; phone: string; address: string;
+  vat_no: string; payment_terms: string; notes: string; status: 'active' | 'inactive';
+}
 export interface QuotationItem { id?: string; position?: number; description: string; qty: number; unit: string; unit_price: number }
 export interface QuotationRevision {
   id: string; quotation_id: string; revision: number; client: string; attention: string; project: string;
@@ -67,4 +71,21 @@ export interface AuditLog {
 export interface Settings {
   ot_multiplier: number; standard_hours: number; days_divisor: number; vat_rate: number; max_ot_per_day: number;
   company: { name: string; name_ar: string; address: string; phone: string; email: string; vat_no: string; cr_no: string; logo?: string };
+}
+
+export type ReceiptStatus = 'pending' | 'approved' | 'rejected';
+export interface PcSummaryRow {
+  employee_id: string; given: number; spent: number; pending_count: number; rejected_count: number; balance: number; has_link: boolean;
+}
+export interface PcCash { id: string; amount: number; given_on: string; note: string; given_by: string; created_at: string }
+export interface PcReceipt {
+  id: string; amount: number; spent_on: string; description: string; file_path: string;
+  status: ReceiptStatus; reject_reason: string; created_at: string;
+}
+/** What the employee's private page receives from pc_statement(token). */
+export interface PcStatement {
+  name: string; emp_code: string; company: string; active: boolean;
+  given: number; spent: number; balance: number;
+  cash: { id: string; amount: number; date: string; note: string; given_by: string }[];
+  receipts: { id: string; amount: number; date: string; description: string; status: ReceiptStatus; reject_reason: string }[];
 }

@@ -3,7 +3,7 @@ import type { Role } from './types';
 /** UI-level permissions. The database (RLS + functions) is the real enforcement; this only hides controls. */
 export type Action =
   | 'employees:write' | 'attendance:write' | 'payroll:write' | 'payroll:reopen'
-  | 'quotations:write' | 'settings:write';
+  | 'quotations:write' | 'clients:write' | 'settings:write' | 'pettycash:write';
 
 const RULES: Record<Action, Role[]> = {
   'employees:write': ['administrator', 'payroll'],
@@ -11,7 +11,9 @@ const RULES: Record<Action, Role[]> = {
   'payroll:write': ['administrator', 'payroll'],
   'payroll:reopen': ['administrator'],
   'quotations:write': ['administrator', 'quotations'],
+  'clients:write': ['administrator', 'quotations'],
   'settings:write': ['administrator'],
+  'pettycash:write': ['administrator', 'payroll'],
 };
 
 export const can = (role: Role | undefined, action: Action) => !!role && RULES[action].includes(role);
@@ -25,4 +27,5 @@ export const ROLES: Role[] = ['administrator', 'payroll', 'attendance', 'quotati
 
 export const PAYROLL_SIDE: Role[] = ['administrator', 'payroll', 'viewer'];
 export const ATTENDANCE_SIDE: Role[] = ['administrator', 'payroll', 'attendance', 'viewer'];
+export const PETTY_SIDE: Role[] = ['administrator', 'payroll', 'viewer'];
 export const QUOTE_SIDE: Role[] = ['administrator', 'quotations', 'viewer'];

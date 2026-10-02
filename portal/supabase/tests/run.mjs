@@ -200,5 +200,86 @@ await as(U3, MD);
 await db.exec(`update employees set name = 'Hacked'`);
 ok((await q(`select name from employees`))[0].name === 'Edited', 'viewer edit is silently blocked (0 rows)');
 
+// ---- petty cash (0008)
+await db.exec('reset role');
+await db.exec(mig('0008_petty_cash.sql'));
+await db.exec(mig('0010_petty_cash_given_by.sql'));
+await db.exec(`grant usage on schema public, storage to anon;
+  grant all on all tables in schema public to authenticated;
+  grant all on all tables in schema storage to authenticated;
+  grant insert on storage.objects to anon;
+  grant execute on all functions in schema public to authenticated;
+  grant execute on function pc_statement(text), pc_add_receipt(text, numeric, date, text, text),
+    pc_delete_receipt(text, uuid), pc_token_valid(text) to anon;`);
+
+await as(U1, HBC);
+await db.exec(`update employees set status = 'active'`);
+const E1 = (await q(`select id from employees where company_id = '${HBC}' limit 1`))[0].id;
+const TOKEN = (await q(`select pc_get_link('${E1}') t`))[0].t;
+ok(TOKEN.length === 64, 'admin gets a 64-char private link');
+ok((await q(`select pc_get_link('${E1}') t`))[0].t === TOKEN, 'link is stable until regenerated');
+await db.exec(`select pc_give_cash('${E1}', 500, '2026-09-01', 'Site supplies', 'Hassan')`);
+await db.exec(`select pc_give_cash('${E1}', 250.5, '2026-09-10', '', 'Bilal')`);
+await throws(`select pc_give_cash('${E1}', 0, '2026-09-01', '', 'Hassan')`, 'zero cash rejected', /greater than zero/);
+await throws(`select pc_give_cash('${E1}', 5, '2026-09-01', '', ' ')`, 'giver name is required', /name of the person/);
+
+// employee side (anon, token only)
+async function anon() { await db.exec('reset role'); await db.exec(`select set_config('request.jwt.claim.sub', '', false)`); await db.exec(`select set_config('request.headers', '{}', false)`); await db.exec('set role anon'); }
+await anon();
+let st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
+ok(st.given == 750.5 && st.spent == 0 && st.balance == 750.5, 'employee sees cash given and balance');
+ok(st.cash.some((c) => c.given_by === 'Bilal'), 'employee sees who gave the cash');
+ok((await q(`select pc_statement('nope') s`))[0].s === null, 'bad token returns nothing');
+await throws(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', 'nope/a.jpg')`, 'cannot upload into a folder that is not a valid token', /row-level security/);
+await throws(`select * from pc_receipts`, 'anon cannot read tables directly', /permission denied/);
+await db.exec(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', '${TOKEN}/r1.jpg'), ('petty-cash-receipts', '${TOKEN}/r2.jpg')`);
+await throws(`select pc_add_receipt('${TOKEN}', 10, '2026-09-02', 'x', 'othertoken/r1.jpg')`, 'receipt must point into own folder', /Attach a photo/);
+await throws(`select pc_add_receipt('${TOKEN}', 10, '2026-09-02', 'x', '${TOKEN}/missing.jpg')`, 'receipt needs an uploaded file', /did not upload/);
+const R1 = (await q(`select pc_add_receipt('${TOKEN}', 200, '2026-09-02', 'Cement', '${TOKEN}/r1.jpg') id`))[0].id;
+const R2 = (await q(`select pc_add_receipt('${TOKEN}', 100.25, '2026-09-03', 'Taxi', '${TOKEN}/r2.jpg') id`))[0].id;
+st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
+ok(st.spent == 300.25 && st.balance == 450.25, 'balance nets receipts against cash given');
+
+// admin rejects -> stops counting, employee sees reason, can delete and re-upload
+await as(U1, HBC);
+await throws(`select pc_review_receipt('${R2}', 'rejected', '')`, 'reject needs a reason', /reason/);
+await db.exec(`select pc_review_receipt('${R2}', 'rejected', 'Photo is blurry')`);
+await db.exec(`select pc_review_receipt('${R1}', 'approved', '')`);
+await anon();
+st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
+ok(st.spent == 200 && st.balance == 550.5, 'rejected receipt no longer counts');
+ok(st.receipts.find((r) => r.id === R2).reject_reason === 'Photo is blurry', 'employee sees the rejection reason');
+await throws(`select pc_delete_receipt('${TOKEN}', '${R1}')`, 'approved receipt cannot be removed by employee', /approved/);
+await db.exec(`select pc_delete_receipt('${TOKEN}', '${R2}')`);
+ok((await q(`select pc_statement('${TOKEN}') s`))[0].s.receipts.length === 1, 'employee removes the rejected receipt');
+
+// permissions and isolation
+await as(U3, MD);
+ok(await count('pc_receipts') === 0 && await count('pc_cash_given') === 0, 'other company sees no petty cash');
+await throws(`select pc_give_cash('${E1}', 5, '2026-09-01', '', 'X')`, 'viewer/other company cannot give cash', /Not permitted|No company|not found/i);
+await as(U2, HBC);
+ok(await count('pc_cash_given') === 2, 'payroll role reads petty cash');
+ok((await q(`select balance from pc_summary() where employee_id = '${E1}'`))[0].balance == 550.5, 'pc_summary matches the statement');
+await as(U1, HBC);
+const NEW = (await q(`select pc_get_link('${E1}', true) t`))[0].t;
+ok(NEW !== TOKEN, 'regenerating issues a new link');
+await anon();
+ok((await q(`select pc_statement('${TOKEN}') s`))[0].s === null, 'old link stops working');
+await throws(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', '${TOKEN}/late.jpg')`, 'old link can no longer upload', /row-level security/);
+
+// ---- client profiles (0009)
+await db.exec('reset role');
+await db.exec(mig('0009_clients.sql'));
+await db.exec(`grant select, insert, update, delete on clients to authenticated`);
+ok(await count('clients') >= 1, 'existing quotation clients seeded as profiles');
+await as(U1, HBC);
+await db.exec(`insert into clients (name, attention) values ('Acme Co', 'Sam')`);
+await throws(`insert into clients (name) values (' acme co ')`, 'duplicate client name rejected (case-insensitive)', /duplicate|unique/i);
+await as(U3, MD);
+ok((await q(`select name from clients where name = 'Acme Co'`)).length === 0, 'other company cannot see HBC client profiles');
+await throws(`insert into clients (name) values ('X')`, 'viewer cannot add clients', /row-level security/);
+await as(U2, HBC);
+await throws(`insert into clients (name) values ('Pay Co')`, 'payroll role cannot add clients', /row-level security/);
+
 console.log(failed ? `\n${failed} FAILED` : '\nAll passed');
 process.exit(failed ? 1 : 0);

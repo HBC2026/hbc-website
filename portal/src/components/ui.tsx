@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { Children, isValidElement, useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type ReactNode } from 'react';
 import type { AttendanceStatus, PeriodStatus, QuotationStatus, SlipStatus } from '@/lib/types';
 
@@ -52,14 +53,17 @@ export function PageHead({ eyebrow, title, sub, children }: { eyebrow?: string; 
   );
 }
 
-export function StatCard({ label, icon, value, note }: { label: string; icon: ReactNode; value: ReactNode; note?: ReactNode }) {
-  return (
-    <div className="stat-card">
+export function StatCard({ label, icon, value, note, href }: { label: string; icon: ReactNode; value: ReactNode; note?: ReactNode; href?: string }) {
+  const body = (
+    <>
       <div className="stat-top"><span className="stat-label">{label}</span><span className="stat-icon">{icon}</span></div>
       <div className="stat-number">{value}</div>
       {note && <div className="stat-note">{note}</div>}
-    </div>
+    </>
   );
+  return href
+    ? <Link href={href} className="stat-card stat-link">{body}</Link>
+    : <div className="stat-card">{body}</div>;
 }
 
 export function Modal({ title, onClose, children, footer, wide }: {

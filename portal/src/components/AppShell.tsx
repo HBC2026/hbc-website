@@ -4,18 +4,18 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApp } from './Providers';
 import { Select } from './ui';
-import { asset, isConfigured } from '@/lib/supabase';
+import { isConfigured } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
-import { ATTENDANCE_SIDE, PAYROLL_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
+import { ATTENDANCE_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
 import type { Role } from '@/lib/types';
 
 interface NavItem { href: string; label: string; icon: string; roles?: Role[] }
-interface NavGroup { label: string; items: NavItem[] }
+interface NavGroup { label: string; icon: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
-  { label: 'WORKSPACE', items: [{ href: '/adminconsole', label: 'Dashboard', icon: '⌂' }] },
+  { label: 'Workspace', icon: '⌂', items: [{ href: '/adminconsole', label: 'Dashboard', icon: '⌂' }] },
   {
-    label: 'PAYROLL', items: [
+    label: 'Payroll', icon: '◫', items: [
       { href: '/adminconsole/employees', label: 'Employees', icon: '♙', roles: ATTENDANCE_SIDE },
       { href: '/adminconsole/attendance', label: 'Daily Attendance', icon: '◧', roles: ATTENDANCE_SIDE },
       { href: '/adminconsole/attendance/monthly', label: 'Monthly Attendance', icon: '▦', roles: ATTENDANCE_SIDE },
@@ -24,8 +24,14 @@ const NAV: NavGroup[] = [
       { href: '/adminconsole/archive', label: 'Payroll Archive', icon: '▣', roles: PAYROLL_SIDE },
     ],
   },
-  { label: 'QUOTATIONS', items: [{ href: '/adminconsole/quotations', label: 'Quotations', icon: '▤', roles: QUOTE_SIDE }] },
-  { label: 'SYSTEM', items: [
+  {
+    label: 'Quotations', icon: '▤', items: [
+      { href: '/adminconsole/quotations', label: 'Quotations', icon: '▤', roles: QUOTE_SIDE },
+      { href: '/adminconsole/clients', label: 'Clients', icon: '♖', roles: QUOTE_SIDE },
+    ],
+  },
+  { label: 'Petty Cash', icon: '◉', items: [{ href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉', roles: PETTY_SIDE }] },
+  { label: 'System', icon: '⚙', items: [
     { href: '/adminconsole/audit', label: 'Audit Log', icon: '◈' },
     { href: '/adminconsole/settings', label: 'Settings', icon: '⚙', roles: ['administrator'] },
   ] },
@@ -39,11 +45,13 @@ function activeHref(pathname: string): string | undefined {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { loading, userId, profile, company, companies, switchCompany, settings, signOut } = useApp();
+  const { loading, userId, profile, company, companies, switchCompany, signOut } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);   // phone-size slide-out menu
   useEffect(() => setNavOpen(false), [pathname]);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});   // submenu overrides; unset = open only if it holds the current page
+  useEffect(() => setOpenGroups({}), [pathname]);
 
   // Label every table cell with its column header so phone layouts can stack rows as cards (see .table in globals.css).
   useEffect(() => {
@@ -113,9 +121,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className={`sidebar no-print${navOpen ? ' open' : ''}`}>
         <button className="nav-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>×</button>
         <div className="brand">
-          <Link href="/adminconsole" className="brand-logo" aria-label={company.name}>
-            {settings.company.logo ? <img src={asset(settings.company.logo)} alt={company.name} /> : <span className="brand-text">{company.name}</span>}
-          </Link>
           <div className="brand-subtitle">Administration Portal</div>
           {companies.length > 1 && (
             <Select className="company-switch" aria-label="Switch company" value={company.id} onChange={(e) => switchCompany(e.target.value)}>
@@ -127,19 +132,38 @@ export function AppShell({ children }: { children: ReactNode }) {
         {NAV.map((g) => {
           const items = g.items.filter((i) => !i.roles || i.roles.includes(profile.role));
           if (!items.length) return null;
+          if (items.length === 1) {
+            const i = items[0];
+            return (
+              <Link key={g.label} href={i.href} className={`nav-item nav-top${current === i.href ? ' active' : ''}`}>
+                <span className="nav-icon">{i.icon}</span>{i.label}
+              </Link>
+            );
+          }
+          const hasActive = items.some((i) => i.href === current);
+          const open = g.label in openGroups ? openGroups[g.label] : hasActive;
           return (
             <div key={g.label}>
-              <div className="nav-label">{g.label}</div>
-              {items.map((i) => (
-                <Link key={i.href} href={i.href} className={`nav-item${current === i.href ? ' active' : ''}`}>
-                  <span className="nav-icon">{i.icon}</span>{i.label}
-                </Link>
-              ))}
+              <button type="button" className={`nav-group${hasActive ? ' has-active' : ''}`} aria-expanded={open}
+                onClick={() => setOpenGroups((o) => ({ ...o, [g.label]: !open }))}>
+                <span className="nav-icon">{g.icon}</span>
+                <span className="nav-group-label">{g.label}</span>
+                <span className={`nav-chevron${open ? ' open' : ''}`}>›</span>
+              </button>
+              {open && (
+                <div className="nav-sub">
+                  {items.map((i) => (
+                    <Link key={i.href} href={i.href} className={`nav-sub-item${current === i.href ? ' active' : ''}`}>
+                      {i.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
 
-        <div className="nav-label">COMING LATER</div>
+        <div className="nav-label">Coming later</div>
         <div className="nav-item disabled"><span className="nav-icon">▧</span>Invoices<span className="coming-soon">SOON</span></div>
 
         <div className="sidebar-footer">

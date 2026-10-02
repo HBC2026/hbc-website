@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Money, Riyal } from '@/components/Money';
+import { Riyal } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { ErrorBox, Loading, OPEN_QUOTE, PageHead, StatCard } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
@@ -21,11 +21,10 @@ export default function Dashboard() {
   const sb = supabase();
 
   const { data, error, loading } = useQuery(async () => {
-    const [emp, att, period, totals, quotes, slips, audit] = await Promise.all([
+    const [emp, att, period, quotes, slips, audit] = await Promise.all([
       sb.from('employees').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       sb.from('attendance').select('status').eq('work_date', today()),
       sb.from('payroll_periods').select('id').eq('year', year).eq('month', month).maybeSingle(),
-      sb.rpc('attendance_month_totals', { p_year: year, p_month: month }),
       sb.from('quotations').select('amount').in('status', OPEN_QUOTE),
       sb.from('salary_slips').select('id', { count: 'exact', head: true }).in('status', ['generated', 'awaiting_signature']),
       sb.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(6),
@@ -44,9 +43,7 @@ export default function Dashboard() {
       absent: attRows.filter((r) => r.status === 'absent').length,
       marked: attRows.length,
       payroll,
-      ot: (unwrap(totals) as { ot_hours: number }[]).reduce((s, r) => s + Number(r.ot_hours), 0),
       openQuotes: q.length,
-      openValue: q.reduce((s, r) => s + Number(r.amount), 0),
       slips: slips.count ?? 0,
       audit: unwrap(audit) as AuditLog[],
     };
@@ -67,16 +64,13 @@ export default function Dashboard() {
       {loading || !data ? <Loading /> : (
         <>
           <section className="stats">
-            {showAtt && <StatCard label="Active Employees" icon="♙" value={data.employees} note="Currently on payroll" />}
-            {showAtt && <StatCard label="Attendance Today" icon="◧"
+            {showAtt && <StatCard label="Attendance Today" icon="◧" href="/adminconsole/attendance"
               value={data.marked ? `${data.present} / ${data.employees}` : 'Not marked'}
               note={data.marked ? `Present · ${data.absent} absent · ${Math.max(0, data.employees - data.marked)} unmarked` : 'No attendance saved for today'} />}
-            {showPayroll && <StatCard label="Monthly Payroll" icon={<Riyal />} value={data.payroll === null ? '—' : fmtNum(data.payroll)}
+            {showPayroll && <StatCard label="Monthly Payroll" icon={<Riyal />} href={data.payroll === null ? '/adminconsole/payroll' : `/adminconsole/payroll/${ym}`} value={data.payroll === null ? '—' : fmtNum(data.payroll)}
               note={<><Riyal /> · {monthLabel(year, month)}{data.payroll === null && " not calculated"}</>} />}
-            {showAtt && <StatCard label="Overtime This Month" icon="◔" value={`${fmtNum(data.ot, 1)} hrs`} note={monthLabel(year, month)} />}
-            {showQuotes && <StatCard label="Open Quotations" icon="▤" value={data.openQuotes} note="Draft, submitted or revised" />}
-            {showQuotes && <StatCard label="Open Quotation Value" icon="↗" value={<Money v={data.openValue} />} note="Incl. VAT" />}
-            {showPayroll && <StatCard label="Slips Awaiting Signature" icon="✎" value={data.slips} note="Signed copy not yet uploaded" />}
+            {showQuotes && <StatCard label="Open Quotations" icon="▤" href="/adminconsole/quotations" value={data.openQuotes} note="Draft, submitted or revised" />}
+            {showPayroll && <StatCard label="Slips Awaiting Signature" icon="✎" href="/adminconsole/slips" value={data.slips} note="Signed copy not yet uploaded" />}
           </section>
 
           <section className="lower-grid">

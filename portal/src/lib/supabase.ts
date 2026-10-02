@@ -43,6 +43,7 @@ export const BASE_PATH = ''; // portal is served at /adminconsole by its routes,
 export const asset = (p: string) => `${BASE_PATH}${p}`;
 
 export const SIGNED_BUCKET = 'signed-salary-slips';
+export const PETTY_BUCKET = 'petty-cash-receipts';
 
 /** Throws a readable Error when a Supabase response contains an error. */
 export function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
