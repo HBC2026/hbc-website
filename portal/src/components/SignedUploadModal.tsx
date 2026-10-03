@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from './Providers';
 import { Modal } from './ui';
+import { ScanDocument } from './ScanDocument';
 import { imageToPdf } from '@/lib/pdf';
 import { uploadSignedSlip } from '@/lib/slips';
 
@@ -15,11 +16,11 @@ export function SignedUploadModal({ slipId, hasSigned, onClose, onDone }: {
 }) {
   const { toast, confirmDialog } = useApp();
   const fileRef = useRef<HTMLInputElement>(null);
-  const camRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
     if (!file || !isImage(file)) { setPreview(null); return; }
@@ -55,7 +56,6 @@ export function SignedUploadModal({ slipId, hasSigned, onClose, onDone }: {
         <button className="btn primary" disabled={!file || busy} onClick={upload}>{busy ? 'Uploading…' : 'Upload'}</button>
       </>}>
       <input ref={fileRef} type="file" accept="application/pdf,.pdf,image/*" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
-      <input ref={camRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { choose(e.target.files?.[0]); e.target.value = ''; }} />
 
       <div className={`dropzone${over ? ' over' : ''}`} role="button" tabIndex={0}
         onClick={() => fileRef.current?.click()}
@@ -69,7 +69,7 @@ export function SignedUploadModal({ slipId, hasSigned, onClose, onDone }: {
       </div>
 
       <div className="dropzone-or">or</div>
-      <button className="btn block" disabled={busy} onClick={() => camRef.current?.click()}>📷 Take a photo</button>
+      <button className="btn block" disabled={busy} onClick={() => setScanning(true)}>📷 Scan document</button>
 
       {file && (
         <div className="dropzone-file">
@@ -81,6 +81,7 @@ export function SignedUploadModal({ slipId, hasSigned, onClose, onDone }: {
           <button className="btn sm" disabled={busy} onClick={() => setFile(null)}>Remove</button>
         </div>
       )}
+      {scanning && <ScanDocument title="Scan signed slip" onClose={() => setScanning(false)} onScan={(f) => { setScanning(false); choose(f); }} />}
     </Modal>
   );
 }

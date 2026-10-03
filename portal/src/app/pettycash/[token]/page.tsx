@@ -2,6 +2,7 @@
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Money } from '@/components/Money';
+import { ScanDocument } from '@/components/ScanDocument';
 import { DatePicker } from '@/components/ui';
 import { fmtDate, today } from '@/lib/format';
 import { prepareReceipt } from '@/lib/receipt';
@@ -129,6 +130,7 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
 
@@ -167,9 +169,13 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
         <div className="modal-head"><h3>Add a receipt</h3><button type="button" className="modal-x" onClick={onClose} disabled={busy} aria-label="Close">×</button></div>
         <div className="modal-body">
           <input ref={input} type="file" accept="image/*,application/pdf" hidden onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-          <button type="button" className="pc-photo" onClick={() => input.current?.click()}>
-            {preview ? <img src={preview} alt="Receipt preview" /> : file ? <span>📄 {file.name}</span> : <span>📷<br />Take or choose a photo of the receipt</span>}
+          <button type="button" className="pc-photo" onClick={() => setScanning(true)}>
+            {preview ? <img src={preview} alt="Receipt preview" /> : file ? <span>📄 {file.name}</span> : <span>📷<br />Scan the receipt</span>}
           </button>
+          <button type="button" className="btn block" style={{ marginTop: 8 }} onClick={() => input.current?.click()}>
+            {file ? 'Choose a different file' : 'Or choose a photo / PDF from your phone'}
+          </button>
+          {scanning && <ScanDocument title="Scan receipt" onClose={() => setScanning(false)} onScan={(f) => { setScanning(false); setFile(f); }} />}
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', marginTop: 14 }}>
             <div className="field"><label>Amount on the receipt (SAR)</label>
               <input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
