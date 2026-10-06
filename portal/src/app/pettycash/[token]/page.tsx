@@ -175,7 +175,7 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
           <button type="button" className="btn block" style={{ marginTop: 8 }} onClick={() => input.current?.click()}>
             {file ? 'Choose a different file' : 'Or choose a photo / PDF from your phone'}
           </button>
-          {scanning && <ScanDocument title="Scan receipt" onClose={() => setScanning(false)} onScan={(f) => { setScanning(false); setFile(f); }} />}
+          {scanning && <ScanDocument title="Scan receipt" originalOnlyonClose={() => setScanning(false)} onScan={(f) => { setScanning(false); setFile(f); }} />}
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', marginTop: 14 }}>
             <div className="field"><label>Amount on the receipt (SAR)</label>
               <input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>

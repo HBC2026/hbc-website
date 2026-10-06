@@ -13,8 +13,8 @@ const FILTERS: { id: ScanFilter; label: string }[] = [
 ];
 
 /** Full-screen document scanner: live camera, automatic edge detection with draggable corners, flatten, clean-up filter. */
-export function ScanDocument({ title = 'Scan document', onScan, onClose }: {
-  title?: string; onScan: (file: File) => void; onClose: () => void;
+export function ScanDocument({ title = 'Scan document', originalOnly = false, onScan, onClose }: {
+  title?: string; originalOnly?: boolean; onScan: (file: File) => void; onClose: () => void;
 }) {
   const [step, setStep] = useState<Step>('camera');
   const [camError, setCamError] = useState('');
@@ -119,7 +119,13 @@ export function ScanDocument({ title = 'Scan document', onScan, onClose }: {
     if (!source) return;
     setBusy(true); setError('');
     try {
-      setPage(await warpPage(source, corners));
+      const warped = await warpPage(source, corners);
+      if (originalOnly) {
+        const blob = await canvasToJpeg(await applyFilter(warped, 'original'), 0.88);
+        onScan(new File([blob], `scan-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+        return;
+      }
+      setPage(warped);
       setFilter('document'); setStep('result');
     } catch { setError('Could not crop the page. Move the corners and try again.'); }
     setBusy(false);
