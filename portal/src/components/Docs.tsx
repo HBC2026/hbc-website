@@ -49,7 +49,7 @@ export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['comp
         <tbody>
           <tr><td>Basic Salary</td><td className="r">{fmtNum(e.basic)}</td></tr>
           <tr><td>Allowances</td><td className="r">{fmtNum(e.allowances)}</td></tr>
-          <tr><td>Overtime — {hrs(e.ot_hours)} hours × {<Money v={e.ot_rate} />}</td><td className="r">{fmtNum(e.ot_amount)}</td></tr>
+          {Number(e.ot_amount) > 0 && <tr><td>Overtime</td><td className="r">{fmtNum(e.ot_amount)}</td></tr>}
           {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{fmtNum(e.other_earnings)}</td></tr>}
         </tbody>
         <tfoot><tr><td>Total Earnings</td><td className="r">{fmtNum(gross)}</td></tr></tfoot>
@@ -64,10 +64,11 @@ export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['comp
         <tfoot><tr><td>Total Deductions</td><td className="r">{fmtNum(e.deductions)}</td></tr></tfoot>
       </table>
 
-      <div className="doc-totals"><div className="grand"><span>NET SALARY</span><span>{<Money v={e.net_salary} />}</span></div></div>
+      <div className="doc-totals"><div className="grand"><span>NET PAY</span><span>{<Money v={e.net_salary} />}</span></div></div>
 
       <div style={{ marginTop: 14, fontSize: 10, color: '#555' }}>
-        Attendance: {e.present_days} day(s) present · {e.unpaid_days} unpaid day(s) · Regular hours {hrs(e.regular_hours)} · Overtime hours {hrs(e.ot_hours)}
+        Attendance: {e.present_days} day(s) present · {e.unpaid_days} unpaid day(s)
+        {Number(e.ot_paid_amount ?? 0) > 0 && <><br />Overtime of <Money v={e.ot_paid_amount ?? 0} /> was already paid separately and is not included above.</>}
       </div>
 
       <div style={{ marginTop: 26, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>

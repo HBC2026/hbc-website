@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useApp } from '@/components/Providers';
 import { ATT_CODE, ATT_LABEL, Badge, ErrorBox, Loading, MonthPicker, PageHead, SlipBadge, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDate, hrs, monthEnd, monthLabel, monthStart, ymKey, periodLabel } from '@/lib/format';
+import { fmtDate, fmtNum, hrs, monthEnd, monthLabel, monthStart, ymKey, periodLabel } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
 import { supabase, unwrap } from '@/lib/supabase';
 import { PAYROLL_SIDE } from '@/lib/roles';
@@ -43,7 +43,7 @@ export default function EmployeeDetail() {
   const e = emp.data;
   const tabs: [Tab, string][] = [['attendance', 'Attendance'], ...(showPayroll ? [['payroll', 'Payroll History'], ['slips', 'Salary Slips']] as [Tab, string][] : [])];
   const rows = att.data ?? [];
-  const sum = (k: 'ot_hours' | 'regular_hours') => rows.reduce((s, r) => s + Number(r[k]), 0);
+  const sum = (k: 'ot_amount' | 'regular_hours') => rows.reduce((s, r) => s + Number(r[k] ?? 0), 0);
 
   return (
     <>
@@ -64,15 +64,15 @@ export default function EmployeeDetail() {
         <div className="panel flush">
           <div className="panel-head">
             <div className="toolbar"><MonthPicker value={ym} onChange={setYm} /></div>
-            <span className="muted">{monthLabel(y, m)} · Regular {hrs(sum('regular_hours'))} h · OT {hrs(sum('ot_hours'))} h</span>
+            <span className="muted">{monthLabel(y, m)} · Regular {hrs(sum('regular_hours'))} h · Overtime {fmtNum(sum('ot_amount'))}</span>
           </div>
           <div className="table-wrap"><table className="table">
-            <thead><tr><th>Date</th><th>Status</th><th className="r">Regular Hrs</th><th className="r">OT Hrs</th><th>Remarks</th></tr></thead>
+            <thead><tr><th>Date</th><th>Status</th><th className="r">Regular Hrs</th><th className="r">Overtime</th><th>Remarks</th></tr></thead>
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className={isFri(r.work_date) ? "fri" : ""}><td>{fmtDate(r.work_date)}{isFri(r.work_date) && <span className="fri-tag">Fri</span>}</td>
                   <td><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span> {ATT_LABEL[r.status]}</td>
-                  <td className="r">{hrs(r.regular_hours)}</td><td className="r">{hrs(r.ot_hours)}</td><td className="muted">{r.remarks}</td></tr>
+                  <td className="r">{hrs(r.regular_hours)}</td><td className="r">{Number(r.ot_amount ?? 0) > 0 ? <>{fmtNum(r.ot_amount)} <span className={`badge ${r.ot_paid ? 'green' : 'gold'}`}>{r.ot_paid ? 'Paid' : 'Unpaid'}</span></> : '—'}</td><td className="muted">{r.remarks}</td></tr>
               ))}
               {rows.length === 0 && <tr><td colSpan={5}><div className="empty">No attendance recorded for this month.</div></td></tr>}
             </tbody>
@@ -82,13 +82,13 @@ export default function EmployeeDetail() {
 
       {tab === 'payroll' && (
         <div className="panel flush"><div className="table-wrap"><table className="table">
-          <thead><tr><th>Pay Period</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Hrs</th><th className="r">OT Amount</th><th className="r">Deductions</th><th className="r">Net Pay</th><th>Period</th></tr></thead>
+          <thead><tr><th>Pay Period</th><th className="r">Basic Salary</th><th className="r">Allowances</th><th className="r">Overtime Due</th><th className="r">Overtime Paid Earlier</th><th className="r">Deductions</th><th className="r">Net Pay</th><th>Status</th></tr></thead>
           <tbody>
             {(pay.data ?? []).map((p) => (
               <tr key={p.id}>
                 <td><Link className="strong" href={`/adminconsole/payroll/${ymKey(p.payroll_periods.year, p.payroll_periods.month)}`}>{periodLabel(p.payroll_periods)}</Link></td>
-                <td className="r">{<Money v={p.basic} />}</td><td className="r">{<Money v={p.allowances} />}</td><td className="r">{hrs(p.ot_hours)}</td>
-                <td className="r">{<Money v={p.ot_amount} />}</td><td className="r">{<Money v={p.deductions} />}</td><td className="r strong">{<Money v={p.net_salary} />}</td>
+                <td className="r">{<Money v={p.basic} />}</td><td className="r">{<Money v={p.allowances} />}</td><td className="r">{<Money v={p.ot_amount} />}</td>
+                <td className="r muted">{<Money v={p.ot_paid_amount ?? 0} />}</td><td className="r">{<Money v={p.deductions} />}</td><td className="r strong">{<Money v={p.net_salary} />}</td>
                 <td><Badge tone={p.payroll_periods.status === 'completed' ? 'green' : ''}>{p.payroll_periods.status}</Badge></td>
               </tr>
             ))}
