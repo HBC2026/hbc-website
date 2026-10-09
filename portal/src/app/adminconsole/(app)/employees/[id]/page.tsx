@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useApp } from '@/components/Providers';
 import { ATT_CODE, ATT_LABEL, Badge, ErrorBox, Loading, MonthPicker, PageHead, SlipBadge, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDate, hrs, monthEnd, monthLabel, monthStart, ymKey } from '@/lib/format';
+import { fmtDate, hrs, monthEnd, monthLabel, monthStart, ymKey, periodLabel } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
 import { supabase, unwrap } from '@/lib/supabase';
 import { PAYROLL_SIDE } from '@/lib/roles';
@@ -82,11 +82,11 @@ export default function EmployeeDetail() {
 
       {tab === 'payroll' && (
         <div className="panel flush"><div className="table-wrap"><table className="table">
-          <thead><tr><th>Month</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Hrs</th><th className="r">OT Amount</th><th className="r">Deductions</th><th className="r">Net Salary</th><th>Period</th></tr></thead>
+          <thead><tr><th>Pay Period</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Hrs</th><th className="r">OT Amount</th><th className="r">Deductions</th><th className="r">Net Pay</th><th>Period</th></tr></thead>
           <tbody>
             {(pay.data ?? []).map((p) => (
               <tr key={p.id}>
-                <td><Link className="strong" href={`/adminconsole/payroll/${ymKey(p.payroll_periods.year, p.payroll_periods.month)}`}>{monthLabel(p.payroll_periods.year, p.payroll_periods.month)}</Link></td>
+                <td><Link className="strong" href={`/adminconsole/payroll/${ymKey(p.payroll_periods.year, p.payroll_periods.month)}`}>{periodLabel(p.payroll_periods)}</Link></td>
                 <td className="r">{<Money v={p.basic} />}</td><td className="r">{<Money v={p.allowances} />}</td><td className="r">{hrs(p.ot_hours)}</td>
                 <td className="r">{<Money v={p.ot_amount} />}</td><td className="r">{<Money v={p.deductions} />}</td><td className="r strong">{<Money v={p.net_salary} />}</td>
                 <td><Badge tone={p.payroll_periods.status === 'completed' ? 'green' : ''}>{p.payroll_periods.status}</Badge></td>
@@ -99,10 +99,10 @@ export default function EmployeeDetail() {
 
       {tab === 'slips' && (
         <div className="panel flush"><div className="table-wrap"><table className="table">
-          <thead><tr><th>Slip No.</th><th>Month</th><th className="r">Net Salary</th><th>Status</th><th /></tr></thead>
+          <thead><tr><th>Slip No.</th><th>Pay Period</th><th className="r">Net Pay</th><th>Status</th><th /></tr></thead>
           <tbody>
             {(slips.data ?? []).map((s) => (
-              <tr key={s.id}><td className="mono">{s.slip_no}</td><td>{monthLabel(s.payroll_periods.year, s.payroll_periods.month)}</td>
+              <tr key={s.id}><td className="mono">{s.slip_no}</td><td>{periodLabel(s.payroll_periods)}</td>
                 <td className="r">{<Money v={s.net_snapshot} />}</td><td><SlipBadge s={s.status} /></td>
                 <td style={{ textAlign: 'right' }}><Link className="btn sm" href={`/adminconsole/slips/${s.id}`}>Open</Link></td></tr>
             ))}

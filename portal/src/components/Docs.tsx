@@ -2,7 +2,7 @@
 import { usePaperZoom } from '@/components/usePaperZoom';
 import { asset } from '@/lib/supabase';
 import { Money, Riyal } from '@/components/Money';
-import { fmtDate, fmtNum, hrs, monthLabel, addDays } from '@/lib/format';
+import { fmtDate, fmtNum, hrs, addDays, periodLabel } from '@/lib/format';
 import type { Employee, PayrollEntry, PayrollPeriod, QuotationItem, QuotationRevision, SalarySlip, Settings } from '@/lib/types';
 
 export function DocHead({ co, right }: { co: Settings['company']; right?: React.ReactNode }) {
@@ -35,13 +35,13 @@ export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['comp
     <div className="paper" ref={fit.ref} style={fit.style}>
       <DocHead co={co} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
-        <div><div className="doc-title">SALARY SLIP</div><div style={{ fontSize: 13, fontWeight: 600 }}>{monthLabel(p.year, p.month)}</div></div>
+        <div><div className="doc-title">SALARY SLIP</div><div style={{ fontSize: 13, fontWeight: 600 }}>{periodLabel(p)}</div></div>
         <div style={{ textAlign: 'right', fontSize: 10, color: '#555' }}>Slip No. {slip.slip_no}</div>
       </div>
 
       <div className="doc-meta">
         <div className="doc-box"><div className="l">Employee</div><b style={{ fontSize: 13 }}>{emp.name}</b><br />Employee ID: {emp.emp_code}<br />Job Title: {emp.job_title}</div>
-        <div className="doc-box"><div className="l">Details</div>Department: {emp.department}<br />Joining Date: {fmtDate(emp.joining_date)}<br />Pay Period: {monthLabel(p.year, p.month)}</div>
+        <div className="doc-box"><div className="l">Details</div>Department: {emp.department}<br />Joining Date: {fmtDate(emp.joining_date)}<br />Pay Period: {periodLabel(p)}</div>
       </div>
 
       <table className="doc-table">

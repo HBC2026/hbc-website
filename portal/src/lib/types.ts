@@ -22,6 +22,7 @@ export type PeriodStatus = 'open' | 'calculated' | 'approved' | 'completed';
 export interface PayrollPeriod {
   id: string; year: number; month: number; status: PeriodStatus; calculated_at: string | null;
   approved_by: string | null; approved_at: string | null; reopen_reason: string | null; completed_at: string | null;
+  start_date?: string | null; end_date?: string | null; employee_ids?: string[] | null;
 }
 
 export interface PayrollEntry {

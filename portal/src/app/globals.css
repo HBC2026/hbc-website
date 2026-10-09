@@ -138,6 +138,12 @@ h1 { font-size: 27px; letter-spacing: -1px; font-weight: 700; }
 .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 15px; padding: 20px; box-shadow: 0 1px 3px rgba(15,23,42,.08), 0 6px 16px rgba(15,23,42,.06); }
 .stat-link { display: block; transition: .2s; }
 .stat-link:hover { border-color: #cfd3cc; box-shadow: 0 4px 14px rgba(17, 24, 39, .07); transform: translateY(-1px); }
+.stats.compact { gap: 10px; margin-bottom: 16px; }
+.stats.compact .stat-card { padding: 11px 14px; border-radius: 11px; }
+.stats.compact .stat-icon { width: 22px; height: 22px; border-radius: 6px; font-size: 11px; }
+.stats.compact .stat-label { font-size: 10px; }
+.stats.compact .stat-number { font-size: 17px; margin-top: 6px; }
+.stats.compact .stat-note { margin-top: 2px; font-size: 9.5px; }
 .stat-top { display: flex; justify-content: space-between; align-items: center; }
 .stat-label { color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
 .stat-icon { width: 31px; height: 31px; border-radius: 8px; display: grid; place-items: center; background: var(--surface-soft); }
@@ -644,3 +650,40 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .check:disabled { cursor: not-allowed; opacity: .4; }
 .ot-paid { display: inline-flex; align-items: center; gap: 6px; min-width: 70px; justify-content: center; font-size: 11px; font-weight: 700; color: var(--gold); }
 .ot-paid.off { visibility: hidden; }
+
+/* ---------------- payroll screens: phone layout ---------------- */
+.m-only { display: none; }
+.pcard { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 13px 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(15,23,42,.06); }
+.pcard:active { background: var(--surface-soft); }
+.pcard-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.pcard-name { font-family: var(--font-head); font-weight: 700; font-size: 15.5px; line-height: 1.25; }
+.pcard-sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.pcard-net { text-align: right; font-weight: 700; font-size: 15px; white-space: nowrap; }
+.pcard-net > span:first-child, .pcard-big > span:first-child, .pcard-grid > div > span { display: block; color: var(--muted); font-size: 10.5px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; margin-bottom: 1px; }
+.pcard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--border); font-size: 13.5px; font-weight: 600; }
+.pcard-grid .neg { color: var(--red); }
+.pcard-big { margin-top: 12px; font-family: var(--font-head); font-weight: 800; font-size: 21px; }
+.pcard-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); color: var(--muted); font-size: 12.5px; }
+.pcard-btns { display: flex; gap: 6px; }
+.m-steps { margin-bottom: 14px; }
+.m-steps-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 6px; }
+.m-steps-top span { color: var(--muted); font-size: 12px; }
+.m-bar { height: 6px; border-radius: 6px; background: #e6e8e3; overflow: hidden; }
+.m-bar i { display: block; height: 100%; background: var(--green); border-radius: 6px; }
+@media (max-width: 800px) {
+  .m-only { display: block; }
+  .d-only { display: none !important; }
+  .payroll-screen .page-head { margin-bottom: 14px; }
+  .payroll-screen .head-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 8px; }
+  .payroll-screen .head-actions .btn, .payroll-screen .head-actions .toolbar { width: 100%; justify-content: center; text-align: center; }
+  .payroll-screen .head-actions .btn.green, .payroll-screen .head-actions .btn.primary, .payroll-screen .head-actions .toolbar { grid-column: 1 / -1; }
+  .payroll-screen .head-actions .toolbar .btn { width: 100%; }
+  .payroll-screen .banner { font-size: 13px; line-height: 1.45; }
+  .payroll-screen .stats.compact .stat-card { padding: 11px 12px; }
+  .payroll-screen .stats.compact .stat-number { font-size: 17px; margin-top: 6px; }
+  .payroll-screen .stats.compact .stat-label { font-size: 10.5px; }
+  .payroll-screen .stats.compact .stat-note { font-size: 10.5px; }
+  .payroll-screen .tabs { scrollbar-width: none; margin-bottom: 14px; }
+  .payroll-screen .tabs::-webkit-scrollbar { display: none; }
+  .payroll-screen .tab { flex: 1 0 auto; text-align: center; }
+}

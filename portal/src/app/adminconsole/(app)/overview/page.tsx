@@ -4,7 +4,7 @@ import { Money, Riyal } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { ErrorBox, Loading, OPEN_QUOTE, PageHead, StatCard } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { monthLabel } from '@/lib/format';
+import { monthLabel, periodLabel } from '@/lib/format';
 import { PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE } from '@/lib/roles';
 import { fetchAll, supabase, supabaseFor, unwrap } from '@/lib/supabase';
 import type { Company, PayrollPeriod, PcSummaryRow, QuotationStatus, Role } from '@/lib/types';
@@ -64,7 +64,7 @@ export default function AllCompanies() {
         }
         const done = periods.filter((p) => p.status === 'approved' || p.status === 'completed');
         const pend: { label: string; status: string; net: number }[] = periods.filter((p) => p.status === 'open' || p.status === 'calculated').sort((a, b) => a.month - b.month)
-          .map((p) => ({ label: monthLabel(p.year, p.month), status: p.status, net: net.get(p.id) ?? 0 }));
+          .map((p) => ({ label: periodLabel(p), status: p.status, net: net.get(p.id) ?? 0 }));
         if (!periods.some((p) => p.month === month)) pend.push({ label: monthLabel(year, month), status: 'not started', net: 0 });
         row.payroll = {
           processed: done.length, processedTotal: sum(done.map((p) => net.get(p.id) ?? 0)),

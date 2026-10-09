@@ -6,7 +6,7 @@ import { useApp } from '@/components/Providers';
 import { SlipUpload, ViewSigned } from '@/components/SlipActions';
 import { ErrorBox, Loading, PageHead, SlipBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDateTime, monthLabel, ymKey } from '@/lib/format';
+import { fmtDateTime, ymKey, periodLabel } from '@/lib/format';
 import { can } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -32,7 +32,7 @@ export default function SlipPage() {
 
   return (
     <>
-      <PageHead eyebrow={`Salary Slip · ${s.slip_no}`} title={`${s.employees.name} — ${monthLabel(p.year, p.month)}`}>
+      <PageHead eyebrow={`Salary Slip · ${s.slip_no}`} title={`${s.employees.name} — ${periodLabel(p)}`}>
         <Link className="btn" href={`/adminconsole/payroll/${ymKey(p.year, p.month)}`}>← Payroll</Link>
         <button className="btn primary" onClick={print}>Print</button>
         <button className="btn" onClick={print} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { SlipUpload, ViewSigned } from '@/components/SlipActions';
 import { ErrorBox, Select, Loading, PageHead, PeriodBadge, SlipBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDate, monthLabel, ymKey } from '@/lib/format';
+import { fmtDate, ymKey, periodLabel } from '@/lib/format';
 import { fetchAll, supabase } from '@/lib/supabase';
 import type { Employee, PayrollPeriod, SalarySlip } from '@/lib/types';
 
@@ -29,14 +29,14 @@ export default function SlipTracking() {
 
   return (
     <>
-      <PageHead eyebrow="Payroll" title="Salary Slips" sub="Print → employee signs → scan and upload the signed copy. A payroll month completes once every signed slip is uploaded." />
+      <PageHead eyebrow="Payroll" title="Salary Slips" sub="Print → employee signs → scan and upload the signed copy. A payroll run completes once every signed slip is uploaded." />
       {error && <ErrorBox error={error} />}
       <div className="panel flush">
         <div className="panel-head">
           <div className="toolbar">
             <Select className="select" value={period} onChange={(e) => setPeriod(e.target.value)}>
               <option value="">All months</option>
-              {months.map((p) => <option key={p.id} value={p.id}>{monthLabel(p.year, p.month)}</option>)}
+              {months.map((p) => <option key={p.id} value={p.id}>{periodLabel(p)}</option>)}
             </Select>
             <Select className="select" value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="pending">Awaiting signed copy</option><option value="signed">Signed copy uploaded</option><option value="all">All</option>
@@ -46,12 +46,12 @@ export default function SlipTracking() {
         </div>
         {loading ? <Loading /> : (
           <div className="table-wrap"><table className="table">
-            <thead><tr><th>Employee</th><th>Month</th><th className="r">Net Salary</th><th>Printed</th><th>Signed</th><th>Status</th><th /></tr></thead>
+            <thead><tr><th>Employee</th><th>Pay Period</th><th className="r">Net Pay</th><th>Printed</th><th>Signed</th><th>Status</th><th /></tr></thead>
             <tbody>
               {rows.map((s) => (
                 <tr key={s.id}>
                   <td><span className="strong">{s.employees.name}</span><div className="muted" style={{ fontSize: 10 }}>{s.employees.emp_code}</div></td>
-                  <td>{monthLabel(s.payroll_periods.year, s.payroll_periods.month)} <PeriodBadge s={s.payroll_periods.status} /></td>
+                  <td>{periodLabel(s.payroll_periods)} <PeriodBadge s={s.payroll_periods.status} /></td>
                   <td className="r">{<Money v={s.net_snapshot} />}</td>
                   <td>{s.printed_at ? `✓ ${fmtDate(s.printed_at)}` : '—'}</td>
                   <td>{s.signed_path ? `✓ ${fmtDate(s.signed_uploaded_at)}` : '—'}</td>
@@ -63,12 +63,12 @@ export default function SlipTracking() {
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={7}><div className="empty">{(data ?? []).length ? 'Nothing matches this filter.' : 'No salary slips yet. Approve a payroll month to generate them.'}</div></td></tr>}
+              {rows.length === 0 && <tr><td colSpan={7}><div className="empty">{(data ?? []).length ? 'Nothing matches this filter.' : 'No salary slips yet. Approve a payroll run to generate them.'}</div></td></tr>}
             </tbody>
           </table></div>
         )}
       </div>
-      {months.length > 0 && <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Tip: open a payroll month and use “Print all slips” to print every slip in one go. Latest month: <Link href={`/adminconsole/payroll/${ymKey(months[0].year, months[0].month)}`} className="strong">{monthLabel(months[0].year, months[0].month)}</Link>.</div>}
+      {months.length > 0 && <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Tip: open a payroll run and use “Print all slips” to print every slip in one go. Latest run: <Link href={`/adminconsole/payroll/${ymKey(months[0].year, months[0].month)}`} className="strong">{periodLabel(months[0])}</Link>.</div>}
     </>
   );
 }

@@ -5,7 +5,7 @@ import { SalarySlipDoc, type SlipFull } from '@/components/Docs';
 import { useApp } from '@/components/Providers';
 import { ErrorBox, Loading, PageHead } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { monthLabel, parseYm } from '@/lib/format';
+import { parseYm, periodLabel } from '@/lib/format';
 import { can } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
 
@@ -36,7 +36,7 @@ export default function PrintAllSlips() {
 
   return (
     <>
-      <PageHead eyebrow="Payroll" title={`Salary slips — ${monthLabel(parsed.year, parsed.month)}`} sub={`${data?.length ?? 0} slips, one A4 page each`}>
+      <PageHead eyebrow="Payroll" title={`Salary slips${data?.[0] ? ` — ${periodLabel(data[0].payroll_periods)}` : ''}`} sub={`${data?.length ?? 0} slips, one A4 page each`}>
         <Link className="btn" href={`/adminconsole/payroll/${ym}`}>← Payroll</Link>
         <button className="btn primary" disabled={!data?.length} onClick={print}>Print all</button>
         <button className="btn" disabled={!data?.length} onClick={print} title="Choose “Save as PDF” as the destination in the print dialog">Download PDF</button>

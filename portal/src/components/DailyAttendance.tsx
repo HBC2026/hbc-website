@@ -8,6 +8,8 @@ import { can } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, AttendanceStatus, Employee } from '@/lib/types';
 
+const OT_STATUSES: AttendanceStatus[] = ['present', 'holiday', 'weekly_off'];
+
 interface Row { status: AttendanceStatus | ''; regular: string; ot: boolean; amount: string; paid: boolean; remarks: string }
 type Rows = Record<string, Row>;
 
@@ -84,8 +86,10 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   const patch = (id: string, p: Partial<Row>) => setRows((r) => ({ ...r, [id]: { ...r[id], ...p } }));
 
   function setStatus(id: string, status: AttendanceStatus | '') {
-    if (status === 'present') patch(id, { status, regular: rows[id].regular && rows[id].regular !== '0' ? rows[id].regular : std });
-    else patch(id, { status, regular: status ? '0' : '', ot: false, amount: '', paid: false });
+    const keepOt = OT_STATUSES.includes(status as AttendanceStatus);
+    const ot = keepOt ? { ot: rows[id].ot, amount: rows[id].amount, paid: rows[id].paid } : { ot: false, amount: '', paid: false };
+    if (status === 'present') patch(id, { status, regular: rows[id].regular && rows[id].regular !== '0' ? rows[id].regular : std, ...ot });
+    else patch(id, { status, regular: status ? '0' : '', ...ot });
   }
 
   async function markAll() {
@@ -116,7 +120,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
       const r = rows[e.id], o = initial[e.id];
       if (!r.status || JSON.stringify(r) === JSON.stringify(o)) continue;
       const regular = r.status === 'present' ? Number(r.regular || std) : 0, amount = r.ot ? Number(r.amount || 0) : 0;
-      if (r.ot && r.status !== 'present') return toast(`${e.name}: overtime can only be entered for Present`, true);
+      if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekly Off`, true);
       if (r.ot && !(amount > 0)) return toast(`${e.name}: enter the OT amount`, true);
       if (amount > 99999) return toast(`${e.name}: OT amount out of range`, true);
       // OT fields are only sent when used, so saving keeps working until migration 0012 is applied
@@ -146,10 +150,10 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
           <div className="panel-title">{emps.length} active employees</div>
         </div>
         <div className="table-wrap"><table className="table">
-          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Amount</th><th className="c">Paid</th><th>Remarks</th></tr></thead>
+          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Amount</th><th>Paid</th><th>Remarks</th></tr></thead>
           <tbody>
             {emps.map((e) => {
-              const r = rows[e.id]; const present = r.status === 'present'; 
+              const r = rows[e.id]; const present = r.status === 'present'; const otOk = OT_STATUSES.includes(r.status as AttendanceStatus); 
               return (
                 <tr key={e.id}>
                   <td><span className="strong">{e.name}</span><div className="muted" style={{ fontSize: 10 }}>{e.emp_code} · {e.job_title}</div></td>
@@ -160,13 +164,18 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
                     </Select>
                   </td>
                   <td>
-                    <Select className="select" style={{ width: 150 }} disabled={!editable || !present} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, amount: '', paid: false })}>
+                    {otOk && <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, amount: '', paid: false })}>
                       <option value="">No Overtime</option>
                       <option value="ot">Overtime Work</option>
-                    </Select>
+                    </Select>}
                   </td>
-                  <td className="r">{r.ot && <input className="input num" type="number" min="0" step="0.01" placeholder="Amount" disabled={!editable} value={r.amount} onChange={(ev) => patch(e.id, { amount: ev.target.value })} />}</td>
-                  <td className="c">{r.ot && <label className="ot-paid"><input type="checkbox" className="check" disabled={!editable} checked={r.paid} onChange={(ev) => patch(e.id, { paid: ev.target.checked })} /><span>{r.paid ? 'Paid' : 'Unpaid'}</span></label>}</td>
+                  <td className="r">{r.ot && <input className="input num" type="text" inputMode="decimal" placeholder="Amount" disabled={!editable} value={r.amount} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]*[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { amount: v }); }} />}</td>
+                  <td>
+                    {r.ot && <Select className="select" style={{ width: 130 }} disabled={!editable} value={r.paid ? 'paid' : 'unpaid'} onChange={(ev) => patch(e.id, { paid: ev.target.value === 'paid' })}>
+                      <option value="unpaid">Not Paid</option>
+                      <option value="paid">Paid</option>
+                    </Select>}
+                  </td>
                   <td><input className="input" disabled={!editable} value={r.remarks} onChange={(ev) => patch(e.id, { remarks: ev.target.value })} placeholder="Optional" /></td>
                 </tr>
               );

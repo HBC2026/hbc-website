@@ -72,7 +72,7 @@ export default function Dashboard() {
             {showAtt && <StatCard label="Attendance Today" icon="◧" href="/adminconsole/attendance"
               value={data.marked ? `${data.present} / ${data.employees}` : 'Not marked'}
               note={data.marked ? `Present · ${data.absent} absent · ${Math.max(0, data.employees - data.marked)} unmarked` : 'No attendance saved for today'} />}
-            {showPayroll && <StatCard label="Monthly Payroll" icon={<Riyal />} href={data.payroll === null ? '/adminconsole/payroll' : `/adminconsole/payroll/${ym}`} value={data.payroll === null ? '—' : fmtNum(data.payroll)}
+            {showPayroll && <StatCard label="Payroll" icon={<Riyal />} href={data.payroll === null ? '/adminconsole/payroll' : `/adminconsole/payroll/${ym}`} value={data.payroll === null ? '—' : fmtNum(data.payroll)}
               note={<><Riyal /> · {monthLabel(year, month)}{data.payroll === null && " not calculated"}</>} />}
             {showQuotes && <StatCard label="Open Quotations" icon="▤" href="/adminconsole/quotations" value={data.openQuotes} note="Draft, submitted or revised" />}
             {showPayroll && <StatCard label="Slips Awaiting Signature" icon="✎" href="/adminconsole/slips" value={data.slips} note="Signed copy not yet uploaded" />}

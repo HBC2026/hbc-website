@@ -7,7 +7,7 @@ import { useApp } from '@/components/Providers';
 import { usePaperZoom } from '@/components/usePaperZoom';
 import { ErrorBox, Loading, PageHead, PeriodBadge } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDate, fmtNum, hrs, monthLabel, parseYm } from '@/lib/format';
+import { fmtDate, fmtNum, hrs, parseYm, periodLabel } from '@/lib/format';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { Employee, PayrollEntry, PayrollPeriod } from '@/lib/types';
 
@@ -23,20 +23,20 @@ export default function PayrollReport() {
   const { data, error, loading } = useQuery(async () => {
     if (!parsed) throw new Error('Invalid month');
     const period = unwrap(await sb.from('payroll_periods').select('*').eq('year', parsed.year).eq('month', parsed.month).maybeSingle()) as PayrollPeriod | null;
-    if (!period) throw new Error('Payroll has not been calculated for this month.');
+    if (!period) throw new Error('Payroll has not been calculated for this pay period.');
     const entries = (await fetchAll<Entry>((f, t) => sb.from('payroll_entries').select('*, employees(*)').eq('period_id', period.id).order('id').range(f, t)))
       .sort((a, b) => a.employees.emp_code.localeCompare(b.employees.emp_code));
     return { period, entries };
   }, [ym]);
 
   if (!parsed) return <ErrorBox error="Invalid month" />;
-  const label = monthLabel(parsed.year, parsed.month);
+  const label = data ? periodLabel(data.period) : '';
   const es = data?.entries ?? [];
   const sum = (k: keyof PayrollEntry) => es.reduce((s, e) => s + Number(e[k]), 0);
 
   return (
     <>
-      <style>{'@media print { @page { size: A4 landscape; margin: 0; } }'}</style>
+      <style>{'@media print { @page { size: A4 landscape; margin: 0; } html, body, .main { height: auto !important; min-height: 0 !important; } .paper { min-height: 0 !important; height: 208mm; overflow: hidden; break-after: auto !important; page-break-after: auto !important; margin-bottom: 0 !important; } }'}</style>
       <PageHead eyebrow="Payroll" title={`Payroll report — ${label}`}>
         <Link className="btn" href={`/adminconsole/payroll/${ym}`}>← Payroll</Link>
         <button className="btn primary" onClick={() => window.print()}>Print</button>
@@ -45,11 +45,11 @@ export default function PayrollReport() {
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : (
         <div className="paper landscape" ref={fit.ref} style={{ padding: '10mm 12mm', ...fit.style }}>
-          <DocHead co={settings.company} right={<><div className="doc-title" style={{ fontSize: 17 }}>MONTHLY PAYROLL REPORT</div><b>{label}</b><br />Status: {data.period.status}{data.period.approved_at ? ` · Approved ${fmtDate(data.period.approved_at)}` : ' · not yet approved'}</>} />
+          <DocHead co={settings.company} right={<><div className="doc-title" style={{ fontSize: 17 }}>PAYROLL REPORT</div><b>{label}</b><br />Status: {data.period.status}{data.period.approved_at ? ` · Approved ${fmtDate(data.period.approved_at)}` : ' · not yet approved'}</>} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 14 }}>
-            {([['Payroll Month', label], ['Employees', String(es.length)], ['Basic Salaries', <Money v={sum('basic')} />], ['Allowances', <Money v={sum('allowances')} />],
-              ['OT Paid', <Money v={es.reduce((a, e) => a + Number(e.ot_paid_amount ?? 0), 0)} />], ['OT Unpaid', <Money v={sum('ot_amount')} />], ['Deductions', <Money v={sum('deductions')} />]] as [string, React.ReactNode][]).map(([l, v]) => (
+            {([['Pay Period', label], ['Employees', String(es.length)], ['Basic Salaries', <Money v={sum('basic')} />], ['Allowances', <Money v={sum('allowances')} />],
+              ['Overtime Paid Earlier', <Money v={es.reduce((a, e) => a + Number(e.ot_paid_amount ?? 0), 0)} />], ['Overtime Due', <Money v={sum('ot_amount')} />], ['Deductions', <Money v={sum('deductions')} />]] as [string, React.ReactNode][]).map(([l, v]) => (
               <div className="doc-box" key={l}><div className="l">{l}</div><b>{v}</b></div>
             ))}
           </div>
@@ -58,7 +58,7 @@ export default function PayrollReport() {
           </div>
 
           <table className="doc-table">
-            <thead><tr><th>ID</th><th>Employee</th><th>Job Title</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Paid</th><th className="r">OT Unpaid</th><th className="r">Other Earn.</th><th className="r">Deductions</th><th className="r">Net Salary</th></tr></thead>
+            <thead><tr><th>Emp. ID</th><th>Employee</th><th>Job Title</th><th className="r">Basic Salary</th><th className="r">Allowances</th><th className="r">Overtime Paid Earlier</th><th className="r">Overtime Due</th><th className="r">Other Earnings</th><th className="r">Deductions</th><th className="r">Net Pay</th></tr></thead>
             <tbody>
               {es.map((e) => (
                 <tr key={e.id}><td>{e.employees.emp_code}</td><td>{e.employees.name}</td><td>{e.employees.job_title}</td>

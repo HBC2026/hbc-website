@@ -26,6 +26,9 @@ export function fmtLongDate(d: Date): string {
 }
 
 export const monthLabel = (y: number, m: number) => `${MONTHS_LONG[m - 1]} ${y}`;
+/** Name of a payroll run: its pay period dates, or the calendar month when none were set. */
+export const periodLabel = (p: { year: number; month: number; start_date?: string | null; end_date?: string | null }) =>
+  p.start_date && p.end_date ? `${fmtDate(p.start_date)} – ${fmtDate(p.end_date)}` : monthLabel(p.year, p.month);
 export const monthShort = (y: number, m: number) => `${MONTHS[m - 1]} ${y}`;
 
 export function fmtNum(n: number | string | null | undefined, dp = 2): string {
