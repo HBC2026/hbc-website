@@ -49,7 +49,7 @@ export default function PayrollReport() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 14 }}>
             {([['Payroll Month', label], ['Employees', String(es.length)], ['Basic Salaries', <Money v={sum('basic')} />], ['Allowances', <Money v={sum('allowances')} />],
-              ['OT Hours', `${hrs(sum('ot_hours'))} h`], ['OT Amount', <Money v={sum('ot_amount')} />], ['Deductions', <Money v={sum('deductions')} />]] as [string, React.ReactNode][]).map(([l, v]) => (
+              ['OT Paid', <Money v={es.reduce((a, e) => a + Number(e.ot_paid_amount ?? 0), 0)} />], ['OT Unpaid', <Money v={sum('ot_amount')} />], ['Deductions', <Money v={sum('deductions')} />]] as [string, React.ReactNode][]).map(([l, v]) => (
               <div className="doc-box" key={l}><div className="l">{l}</div><b>{v}</b></div>
             ))}
           </div>
@@ -58,15 +58,15 @@ export default function PayrollReport() {
           </div>
 
           <table className="doc-table">
-            <thead><tr><th>ID</th><th>Employee</th><th>Job Title</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Hrs</th><th className="r">OT Amount</th><th className="r">Other Earn.</th><th className="r">Deductions</th><th className="r">Net Salary</th></tr></thead>
+            <thead><tr><th>ID</th><th>Employee</th><th>Job Title</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Paid</th><th className="r">OT Unpaid</th><th className="r">Other Earn.</th><th className="r">Deductions</th><th className="r">Net Salary</th></tr></thead>
             <tbody>
               {es.map((e) => (
                 <tr key={e.id}><td>{e.employees.emp_code}</td><td>{e.employees.name}</td><td>{e.employees.job_title}</td>
-                  <td className="r">{fmtNum(e.basic)}</td><td className="r">{fmtNum(e.allowances)}</td><td className="r">{hrs(e.ot_hours)}</td><td className="r">{fmtNum(e.ot_amount)}</td>
+                  <td className="r">{fmtNum(e.basic)}</td><td className="r">{fmtNum(e.allowances)}</td><td className="r">{fmtNum(e.ot_paid_amount ?? 0)}</td><td className="r">{fmtNum(e.ot_amount)}</td>
                   <td className="r">{fmtNum(e.other_earnings)}</td><td className="r">{fmtNum(e.deductions)}</td><td className="r"><b>{fmtNum(e.net_salary)}</b></td></tr>
               ))}
             </tbody>
-            <tfoot><tr><td colSpan={3}>Total</td><td className="r">{fmtNum(sum('basic'))}</td><td className="r">{fmtNum(sum('allowances'))}</td><td className="r">{hrs(sum('ot_hours'))}</td><td className="r">{fmtNum(sum('ot_amount'))}</td><td className="r">{fmtNum(sum('other_earnings'))}</td><td className="r">{fmtNum(sum('deductions'))}</td><td className="r">{fmtNum(sum('net_salary'))}</td></tr></tfoot>
+            <tfoot><tr><td colSpan={3}>Total</td><td className="r">{fmtNum(sum('basic'))}</td><td className="r">{fmtNum(sum('allowances'))}</td><td className="r">{fmtNum(es.reduce((a, e) => a + Number(e.ot_paid_amount ?? 0), 0))}</td><td className="r">{fmtNum(sum('ot_amount'))}</td><td className="r">{fmtNum(sum('other_earnings'))}</td><td className="r">{fmtNum(sum('deductions'))}</td><td className="r">{fmtNum(sum('net_salary'))}</td></tr></tfoot>
           </table>
           <div className="doc-foot" style={{ marginTop: 'auto' }}>{settings.company.name} · Amounts in <Riyal /> · Generated {fmtDate(new Date())} <span className="no-print"><PeriodBadge s={data.period.status} /></span></div>
         </div>

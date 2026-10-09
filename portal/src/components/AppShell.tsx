@@ -17,8 +17,7 @@ const NAV: NavGroup[] = [
   {
     label: 'Payroll', icon: '◫', items: [
       { href: '/adminconsole/employees', label: 'Employees', icon: '♙', roles: ATTENDANCE_SIDE },
-      { href: '/adminconsole/attendance', label: 'Daily Attendance', icon: '◧', roles: ATTENDANCE_SIDE },
-      { href: '/adminconsole/attendance/monthly', label: 'Monthly Attendance', icon: '▦', roles: ATTENDANCE_SIDE },
+      { href: '/adminconsole/attendance', label: 'Attendance', icon: '◧', roles: ATTENDANCE_SIDE },
       { href: '/adminconsole/payroll', label: 'Payroll', icon: '◫', roles: PAYROLL_SIDE },
       { href: '/adminconsole/slips', label: 'Salary Slips', icon: '✎', roles: PAYROLL_SIDE },
       { href: '/adminconsole/archive', label: 'Payroll Archive', icon: '▣', roles: PAYROLL_SIDE },

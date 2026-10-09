@@ -76,7 +76,7 @@ export default function PayrollPeriodPage() {
   };
 
   const tot = entries.reduce((a, e) => ({
-    basic: a.basic + Number(e.basic), allow: a.allow + Number(e.allowances), ot: a.ot + Number(e.ot_hours), otAmt: a.otAmt + Number(e.ot_amount),
+    basic: a.basic + Number(e.basic), allow: a.allow + Number(e.allowances), ot: a.ot + Number(e.ot_paid_amount ?? 0), otAmt: a.otAmt + Number(e.ot_amount),
     ded: a.ded + Number(e.deductions), net: a.net + Number(e.net_salary),
   }), { basic: 0, allow: 0, ot: 0, otAmt: 0, ded: 0, net: 0 });
 
@@ -112,13 +112,13 @@ export default function PayrollPeriodPage() {
 
           {tab === 'payroll' && (
             <div className="panel flush"><div className="table-wrap"><table className="table">
-              <thead><tr><th>Employee</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Hrs</th><th className="r">OT Amount</th><th className="r">Deductions</th><th className="r">Net Salary</th></tr></thead>
+              <thead><tr><th>Employee</th><th className="r">Basic</th><th className="r">Allowances</th><th className="r">OT Paid</th><th className="r">OT Unpaid</th><th className="r">Deductions</th><th className="r">Net Salary</th></tr></thead>
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="click" onClick={() => setOpen(e)}>
                     <td><span className="strong">{e.employees.name}</span><div className="muted" style={{ fontSize: 10 }}>{e.employees.emp_code}</div></td>
-                    <td className="r">{fmtNum(e.basic)}</td><td className="r">{fmtNum(e.allowances)}</td><td className="r">{hrs(e.ot_hours)}</td>
-                    <td className="r">{fmtNum(e.ot_amount)}</td><td className="r">{fmtNum(e.deductions)}</td><td className="r strong">{fmtNum(e.net_salary)}</td>
+                    <td className="r">{fmtNum(e.basic)}</td><td className="r">{fmtNum(e.allowances)}</td><td className="r">{fmtNum(e.ot_paid_amount ?? 0)}</td>
+                    <td className="r">{Number(e.ot_amount) > 0 ? <span className="badge gold">{fmtNum(e.ot_amount)}</span> : fmtNum(0)}</td><td className="r">{fmtNum(e.deductions)}</td><td className="r strong">{fmtNum(e.net_salary)}</td>
                   </tr>
                 ))}
                 {entries.length === 0 && <tr><td colSpan={7}><div className="empty">{canWrite ? 'Press “Calculate Payroll” to build this month from attendance.' : 'Not calculated yet.'}</div></td></tr>}
@@ -210,9 +210,9 @@ function Breakdown({ entry: e, editable, onClose, onSaved }: { entry: Entry; edi
       <div className="kv">
         <span className="k">Basic salary</span><span className="v">{<Money v={e.basic} />}</span>
         <span className="k">Allowances</span><span className="v">{<Money v={e.allowances} />}</span>
-        <span className="k">Overtime<span className="formula">{hrs(e.ot_hours)} h × {<Money v={e.ot_rate} />}
-          {b.ot_method === 'fixed' ? ' (fixed rate)' : ` (basic ÷ ${b.days_divisor} ÷ ${b.standard_hours} = ${fmtNum(b.hourly_rate, 4)} × ${b.ot_multiplier})`}</span></span>
+        <span className="k">Overtime (unpaid)<span className="formula">Unpaid OT entered in attendance — added to the salary</span></span>
         <span className="v">{<Money v={e.ot_amount} />}</span>
+        {Number(e.ot_paid_amount ?? 0) > 0 && <><span className="k">Overtime (already paid)<span className="formula">Paid separately — not added to the salary</span></span><span className="v muted">{<Money v={e.ot_paid_amount ?? 0} />}</span></>}
         <span className="k">Other earnings</span><span className="v">{editable ? <input className="input num" style={{ width: 120, display: 'inline-block' }} type="number" min="0" step="0.01" value={earn} onChange={(x) => setEarn(x.target.value)} /> : <Money v={e.other_earnings} />}</span>
         <div className="sep" />
         <span className="k strong">Gross earnings</span><span className="v">{<Money v={gross} />}</span>

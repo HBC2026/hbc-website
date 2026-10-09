@@ -1,14 +1,24 @@
 'use client';
+import { DailyAttendance } from '@/components/DailyAttendance';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ATT_CODE, ATT_LABEL, ErrorBox, MonthPicker, Select, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { daysInMonth, hrs, monthEnd, monthStart, ymKey } from '@/lib/format';
+import { daysInMonth, fmtNum, hrs, monthEnd, monthStart, ymKey } from '@/lib/format';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, Employee } from '@/lib/types';
 
 interface Totals { employee_id: string; present_days: number; absent_days: number; leave_days: number; weekly_off_days: number; holiday_days: number; regular_hours: number; ot_hours: number }
-type View = 'timesheet' | 'calendar';
+type View = 'daily' | 'timesheet' | 'calendar';
+
+function Stats({ p, a, l, w, h }: { p: number; a: number; l: number; w: number; h: number }) {
+  const items: [string, string, number][] = [['present', 'Pres', p], ['absent', 'Abs', a], ['leave', 'Leave', l], ['off', 'W/Off', w], ['holiday', 'Hol', h]];
+  return (
+    <span className="emp-stats">
+      {items.map(([k, label, n]) => <span key={k} className={`emp-stat ${k}${n ? '' : ' zero'}`}><b>{n}</b><i>{label}</i></span>)}
+    </span>
+  );
+}
 
 export default function MonthlyAttendancePage() {
   return <Suspense fallback={<Loading />}><MonthlyAttendance /></Suspense>;
@@ -17,14 +27,16 @@ export default function MonthlyAttendancePage() {
 function MonthlyAttendance() {
   const sb = supabase();
   const now = new Date();
-  const qp = useSearchParams().get('ym');
+  const sp = useSearchParams();
+  const qp = sp.get('ym');
   const [ym, setYm] = useState(qp && /^\d{4}-(0[1-9]|1[0-2])$/.test(qp) ? qp : ymKey(now.getFullYear(), now.getMonth() + 1));
-  const [view, setView] = useState<View>('timesheet');
+  const [view, setView] = useState<View>(sp.get('view') === 'daily' ? 'daily' : 'timesheet');
+  const [dailySeen, setDailySeen] = useState(sp.get('view') === 'daily');
   // the wide timesheet grid can't fit a phone, so phones get the calendar only
   const [phone, setPhone] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 800px)');
-    const sync = () => { setPhone(mq.matches); if (mq.matches) setView('calendar'); };
+    const sync = () => { setPhone(mq.matches); if (mq.matches) setView((v) => (v === 'timesheet' ? 'calendar' : v)); };
     sync(); mq.addEventListener('change', sync);
     return () => mq.removeEventListener('change', sync);
   }, []);
@@ -69,45 +81,45 @@ function MonthlyAttendance() {
 
   return (
     <>
-      <PageHead eyebrow="Payroll" title="Monthly Attendance" sub="Attendance is the source data for payroll — overtime is entered once, here." />
-      <div className="toolbar" style={{ marginBottom: 12 }}>
-        <MonthPicker value={ym} onChange={setYm} />
-        <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off</span>
-      </div>
-      {!phone && <Tabs tabs={[['timesheet', 'Timesheet View'], ['calendar', 'Calendar View']]} value={view} onChange={setView} />}
-      {error && <ErrorBox error={error} />}
-      {loading || !data ? <Loading /> : view === 'timesheet' ? (
+      <PageHead eyebrow="Payroll" title="Attendance" sub="Attendance is the source data for payroll — overtime is entered once, here." />
+      {view !== 'daily' && (
+        <div className="toolbar" style={{ marginBottom: 12 }}>
+          <MonthPicker value={ym} onChange={setYm} />
+          <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off</span>
+        </div>
+      )}
+      <Tabs
+        tabs={phone ? [['daily', 'Daily Attendance'], ['calendar', 'Calendar View']] : [['daily', 'Daily Attendance'], ['timesheet', 'Timesheet View'], ['calendar', 'Calendar View']]}
+        value={view} onChange={(v) => { if (v === 'daily') setDailySeen(true); setView(v); }} />
+      {dailySeen && <div style={{ display: view === 'daily' ? 'block' : 'none' }}><DailyAttendance /></div>}
+      {view !== 'daily' && error && <ErrorBox error={error} />}
+      {view === 'daily' ? null : loading || !data ? <Loading /> : view === 'timesheet' ? (
         <div className="panel flush"><div className="table-wrap"><table className="table sheet">
           <thead><tr>
             <th>Employee</th><th colSpan={HALF}>Days of the month</th>
-            <th>Pres</th><th>Abs</th><th>Leave</th><th>W/O</th><th>Hol</th><th>Reg Hrs</th><th>OT Hrs</th>
           </tr></thead>
           <tbody>
             {list.map((e) => {
               const tt = data.tmap.get(e.id); const cells = data.byEmp.get(e.id);
               return [halves[0], halves[1]].map((row, hi) => (
                 <tr key={`${e.id}-${hi}`} className={hi === 1 ? 'half2' : 'half1'}>
-                  {hi === 0 && <td rowSpan={2} className="emp"><span className="strong">{e.name}</span> <span className="muted">{e.emp_code}</span></td>}
+                  {hi === 0 && <td rowSpan={2} className="emp"><span className="strong emp-name">{e.name}</span><span className="muted emp-code">{e.emp_code}</span>
+                    <Stats p={tt?.present_days ?? 0} a={tt?.absent_days ?? 0} l={tt?.leave_days ?? 0} w={tt?.weekly_off_days ?? 0} h={tt?.holiday_days ?? 0} /></td>}
                   {Array.from({ length: HALF }, (_, i) => {
                     const d = row[i];
                     if (d === undefined) return <td key={`x${i}`} className="pad" />;
                     const r = cells?.get(d);
-                    return <td key={d} className={`dcell${dow(d) === 5 ? ' fri' : ''}`} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h + ${hrs(r.ot_hours)} OT` : 'Not marked'}>
+                    return <td key={d} className={`dcell${dow(d) === 5 ? ' fri' : ''}`} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h${Number(r.ot_amount) > 0 ? ` · OT ${fmtNum(r.ot_amount)} ${r.ot_paid ? 'paid' : 'unpaid'}` : ''}` : 'Not marked'}>
                       <span className="dh-i">{'SMTWTFS'[dow(d)]}</span><span className="dh-n">{d}</span>
-                      {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_hours) > 0 && <span className="ot">+{hrs(r.ot_hours)}</span>}</> : <span className="muted">·</span>}
+                      {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_amount) > 0 && <span className="ot" title={r.ot_paid ? 'OT paid' : 'OT unpaid'}>{r.ot_paid ? 'OT✓' : 'OT'}</span>}</> : <span className="muted">·</span>}
                     </td>;
                   })}
-                  {hi === 0 && <>
-                    <td rowSpan={2} className="strong">{tt?.present_days ?? 0}</td><td rowSpan={2}>{tt?.absent_days ?? 0}</td><td rowSpan={2}>{tt?.leave_days ?? 0}</td>
-                    <td rowSpan={2}>{tt?.weekly_off_days ?? 0}</td><td rowSpan={2}>{tt?.holiday_days ?? 0}</td><td rowSpan={2}>{hrs(tt?.regular_hours ?? 0)}</td><td rowSpan={2} className="strong">{hrs(tt?.ot_hours ?? 0)}</td>
-                  </>}
                 </tr>
               ));
             })}
           </tbody>
           <tfoot><tr>
-            <td>Total</td><td colSpan={HALF} />
-            <td>{grand.p}</td><td>{grand.a}</td><td>{grand.l}</td><td>{grand.w}</td><td>{grand.h}</td><td>{hrs(grand.r)}</td><td>{hrs(grand.o)}</td>
+            <td className="emp"><span className="strong emp-name">Total</span><Stats p={grand.p} a={grand.a} l={grand.l} w={grand.w} h={grand.h} /></td><td colSpan={HALF} />
           </tr></tfoot>
         </table></div></div>
       ) : (
@@ -116,7 +128,7 @@ function MonthlyAttendance() {
             <Select className="select" style={{ minWidth: 260 }} value={selected} onChange={(e) => setEmpId(e.target.value)}>
               {list.map((e) => <option key={e.id} value={e.id}>{e.emp_code} · {e.name}</option>)}
             </Select>
-            {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekly off {t.weekly_off_days} · Holidays {t.holiday_days} · Regular {hrs(t.regular_hours)} h · OT {hrs(t.ot_hours)} h</span>}
+            {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekly off {t.weekly_off_days} · Holidays {t.holiday_days}</span>}
           </div>
           <div className="cal">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <div className={`cal-h${d === 'Fri' ? ' fri' : ''}`} key={d}>{d}</div>)}
@@ -127,7 +139,7 @@ function MonthlyAttendance() {
                 <div className={`cal-d${dow(d) === 5 ? ' fri' : ''}`} key={d}>
                   <div className="dn">{d}</div>
                   {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>
-                    <div className="h">{r.status === 'present' ? `${hrs(r.regular_hours)}h` : ATT_LABEL[r.status]}{Number(r.ot_hours) > 0 && <b style={{ color: 'var(--gold)' }}> +{hrs(r.ot_hours)} OT</b>}</div></>
+                    <div className="h">{r.status === 'present' ? `${hrs(r.regular_hours)}h` : ATT_LABEL[r.status]}{Number(r.ot_amount) > 0 && <b style={{ color: 'var(--gold)' }}> OT {fmtNum(r.ot_amount)} {r.ot_paid ? 'paid' : 'unpaid'}</b>}</div></>
                     : <div className="muted">—</div>}
                 </div>
               );
