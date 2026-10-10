@@ -39,7 +39,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
   const e = slip.payroll_entries; const emp = slip.employees; const p = slip.payroll_periods;
   const otPaid = Number(e.ot_paid_amount ?? 0);
   const advance = Number(e.advance_paid ?? 0);
-  const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + otPaid + advance + Number(e.other_earnings);
+  const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + otPaid + Number(e.other_earnings);
   const fit = usePaperZoom();
 
   const [from, to] = slipRange(p);
@@ -110,7 +110,6 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
               {(Number(e.ot_amount) > 0 || otPaid > 0) && <tr>
                 <td>Overtime</td>
                 <td className="r">{fmtNum(Number(e.ot_amount) + otPaid)}</td></tr>}
-              {advance > 0 && <tr><td>Already Paid</td><td className="r">{fmtNum(advance)}</td></tr>}
               {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{fmtNum(e.other_earnings)}</td></tr>}
             </tbody>
             <tfoot><tr><td>Total Earnings</td><td className="r">{fmtNum(gross)}</td></tr></tfoot>
