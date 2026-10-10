@@ -725,3 +725,12 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .doc-table.slip-summary th, .doc-table.slip-summary td { text-align: center; }
 .paper.slip .sign-row { grid-template-columns: repeat(2, 1fr); }
 .tc .att-code { white-space: nowrap; letter-spacing: 0; }
+
+/* print: exactly one A4 sheet (210 x 297 mm) per salary slip, no spill-over or blank trailing page */
+@media print {
+  @page { size: 210mm 297mm; margin: 0; }
+  html, body { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  .main { min-height: 0 !important; }
+  .paper.slip { width: 210mm; height: 295mm; min-height: 0; overflow: hidden; page-break-after: auto; break-after: auto; break-inside: avoid; }
+  .paper.slip + .paper.slip { page-break-before: always; break-before: page; }
+}
