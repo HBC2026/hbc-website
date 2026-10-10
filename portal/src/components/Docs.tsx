@@ -34,6 +34,8 @@ export function slipRange(p: PayrollPeriod): [string, string] {
 }
 
 /** One-page salary slip: pay breakdown, attendance summary, timecard with internal notes, signatures. */
+const dash = (v: number | string | null | undefined) => (Number(v ?? 0) === 0 ? '–' : fmtNum(v));
+
 export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Settings['company']; att?: AttendanceRow[] }) {
   const e = slip.payroll_entries; const emp = slip.employees; const p = slip.payroll_periods;
   const otPaid = Number(e.ot_paid_amount ?? 0);
@@ -78,7 +80,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
                   <tr key={d} className={dow === 5 ? 'fri' : ''}>
                     <td>{d.slice(8)} {DOW[dow]}{r?.remarks?.trim() ? <sup> *</sup> : null}</td>
                     <td>{r ? <span className={`att-code ${r.status}`}>{ATT_LABEL[r.status]}</span> : '—'}</td>
-                    <td className="r">{Number(r?.ot_amount ?? 0) > 0 ? fmtNum(r!.ot_amount) : ''}</td>
+                    <td className="r">{Number(r?.ot_amount ?? 0) > 0 ? dash(r!.ot_amount) : ''}</td>
                   </tr>
                 );
               })}
@@ -104,26 +106,26 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
           <table className="doc-table">
             <thead><tr><th>Earnings</th><th className="r">Amount (<Riyal />)</th></tr></thead>
             <tbody>
-              <tr><td>Basic Salary</td><td className="r">{fmtNum(e.basic)}</td></tr>
-              <tr><td>Allowances</td><td className="r">{fmtNum(e.allowances)}</td></tr>
+              <tr><td>Basic Salary</td><td className="r">{dash(e.basic)}</td></tr>
+              <tr><td>Allowances</td><td className="r">{dash(e.allowances)}</td></tr>
               {(Number(e.ot_amount) > 0 || otPaid > 0) && <tr>
                 <td>Overtime</td>
-                <td className="r">{fmtNum(Number(e.ot_amount) + otPaid)}</td></tr>}
-              {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{fmtNum(e.other_earnings)}</td></tr>}
+                <td className="r">{dash(Number(e.ot_amount) + otPaid)}</td></tr>}
+              {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{dash(e.other_earnings)}</td></tr>}
             </tbody>
-            <tfoot><tr><td>Total Earnings</td><td className="r">{fmtNum(gross)}</td></tr></tfoot>
+            <tfoot><tr><td>Total Earnings</td><td className="r">{dash(gross)}</td></tr></tfoot>
           </table>
         </div>
         <div>
           <table className="doc-table">
             <thead><tr><th>Deductions</th><th className="r">Amount (<Riyal />)</th></tr></thead>
             <tbody>
-              <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{fmtNum(e.absence_deduction)}</td></tr>
-              {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{fmtNum(e.other_deductions)}</td></tr>}
-              {otPaid > 0 && <tr><td>Overtime Paid Earlier</td><td className="r">{fmtNum(otPaid)}</td></tr>}
-              {advance > 0 && <tr><td>Already Paid (before this slip)</td><td className="r">{fmtNum(advance)}</td></tr>}
+              <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{dash(e.absence_deduction)}</td></tr>
+              {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{dash(e.other_deductions)}</td></tr>}
+              {otPaid > 0 && <tr><td>Overtime Paid Earlier</td><td className="r">{dash(otPaid)}</td></tr>}
+              {advance > 0 && <tr><td>Already Paid (before this slip)</td><td className="r">{dash(advance)}</td></tr>}
             </tbody>
-            <tfoot><tr><td>Total Deductions{advance > 0 || otPaid > 0 ? ' & Amount Paid' : ''}</td><td className="r">{fmtNum(Number(e.deductions) + advance + otPaid)}</td></tr></tfoot>
+            <tfoot><tr><td>Total Deductions{advance > 0 || otPaid > 0 ? ' & Amount Paid' : ''}</td><td className="r">{dash(Number(e.deductions) + advance + otPaid)}</td></tr></tfoot>
           </table>
         </div>
       </div>
