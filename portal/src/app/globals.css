@@ -724,3 +724,4 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .doc-table.slip-summary { margin-top: 8px; }
 .doc-table.slip-summary th, .doc-table.slip-summary td { text-align: center; }
 .paper.slip .sign-row { grid-template-columns: repeat(2, 1fr); }
+.tc .att-code { white-space: nowrap; letter-spacing: 0; }

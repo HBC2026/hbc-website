@@ -2,6 +2,7 @@
 import { usePaperZoom } from '@/components/usePaperZoom';
 import { asset } from '@/lib/supabase';
 import { Money, Riyal } from '@/components/Money';
+import { ATT_LABEL } from '@/components/ui';
 import { fmtDate, fmtNum, addDays, monthEnd, monthStart, periodLabel } from '@/lib/format';
 import type { AttendanceRow, Employee, PayrollEntry, PayrollPeriod, QuotationItem, QuotationRevision, SalarySlip, Settings } from '@/lib/types';
 
@@ -26,8 +27,6 @@ export function DocHead({ co, right }: { co: Settings['company']; right?: React.
 }
 
 export type SlipFull = SalarySlip & { employees: Employee; payroll_periods: PayrollPeriod; payroll_entries: PayrollEntry };
-
-const CODE: Record<string, string> = { present: 'P', absent: 'A', annual_leave: 'AL', sick_leave: 'SL', unpaid_leave: 'UL', holiday: 'H', weekly_off: 'W' };
 
 /** First and last date of the pay period (falls back to the calendar month). */
 export function slipRange(p: PayrollPeriod): [string, string] {
@@ -78,7 +77,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
                 return (
                   <tr key={d} className={dow === 5 ? 'fri' : ''}>
                     <td>{d.slice(8)} {DOW[dow]}{r?.remarks?.trim() ? <sup> *</sup> : null}</td>
-                    <td>{r ? <span className={`att-code ${r.status}`}>{CODE[r.status]}</span> : '—'}</td>
+                    <td>{r ? <span className={`att-code ${r.status}`}>{ATT_LABEL[r.status]}</span> : '—'}</td>
                     <td className="r">{Number(r?.ot_amount ?? 0) > 0 ? fmtNum(r!.ot_amount) : ''}</td>
                   </tr>
                 );
@@ -87,7 +86,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
           </table>
         ))}
       </div>
-      <div className="slip-small">P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off · OT = overtime amount · * see remarks</div>
+      <div className="slip-small">OT = overtime amount · * see remarks</div>
       <table className="doc-table slip-summary">
         <thead><tr><th>Days in the pay period</th><th>Days Present</th><th>Holidays / Weekends</th><th>Leave</th><th>Absent</th></tr></thead>
         <tbody><tr><td>{days.length}</td><td>{n('present')}</td><td>{n('holiday') + n('weekly_off')}</td><td>{leave}</td><td>{n('absent')}</td></tr></tbody>
