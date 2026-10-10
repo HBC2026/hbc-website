@@ -134,7 +134,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
         <div><div className="line" /><div className="cap">Employee Signature</div></div>
         <div><div className="line" /><div className="cap">Date</div></div>
       </div>
-      <div className="doc-foot">{co.name} · This is a computer-generated salary slip and is valid only when signed.</div>
+      <div className="doc-foot">{co.name}</div>
     </div>
   );
 }
