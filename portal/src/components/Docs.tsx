@@ -70,7 +70,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
       <div className="tc-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
         {chunks.map((chunk, i) => (
           <table key={i} className="tc">
-            <thead><tr><th>Date</th><th>Status</th><th className="r">OT</th></tr></thead>
+            <thead><tr><th>Date</th><th>Status</th><th className="r">Overtime</th></tr></thead>
             <tbody>
               {chunk.map((d) => {
                 const r = byDate.get(d); const dow = new Date(`${d}T00:00:00`).getDay();
@@ -86,7 +86,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
           </table>
         ))}
       </div>
-      <div className="slip-small">OT = overtime amount · * see remarks</div>
+      <div className="slip-small">* see remarks</div>
       <table className="doc-table slip-summary">
         <thead><tr><th>Days in the pay period</th><th>Days Present</th><th>Holidays / Weekends</th><th>Leave</th><th>Absent</th></tr></thead>
         <tbody><tr><td>{days.length}</td><td>{n('present')}</td><td>{n('holiday') + n('weekly_off')}</td><td>{leave}</td><td>{n('absent')}</td></tr></tbody>
