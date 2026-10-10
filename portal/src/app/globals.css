@@ -734,3 +734,10 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
   .paper.slip { width: 210mm; height: 295mm; min-height: 0; overflow: hidden; page-break-after: auto; break-after: auto; break-inside: avoid; }
   .paper.slip + .paper.slip { page-break-before: always; break-before: page; }
 }
+
+/* a single printed slip is clamped to one A4 sheet: nothing after it can start a second page */
+@media print {
+  html:has(.one-page), body:has(.one-page) { height: 297mm !important; max-height: 297mm !important; overflow: hidden !important; }
+  .one-page { height: 296mm; overflow: hidden; break-after: avoid; page-break-after: avoid; }
+  .one-page .paper.slip { height: 290mm; margin: 0; }
+}

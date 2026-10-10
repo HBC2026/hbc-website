@@ -49,7 +49,7 @@ export default function SlipPage() {
         <SlipBadge s={s.status} />
         <span className="muted">Printed: {s.printed_at ? fmtDateTime(s.printed_at) : 'not yet'} · Signed copy: {s.signed_path ? fmtDateTime(s.signed_uploaded_at) : 'not uploaded'}</span>
       </div>
-      <SalarySlipDoc slip={s} co={settings.company} att={data!.att} />
+      <div className="one-page"><SalarySlipDoc slip={s} co={settings.company} att={data!.att} /></div>
     </>
   );
 }
