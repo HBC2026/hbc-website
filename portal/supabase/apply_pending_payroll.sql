@@ -166,7 +166,7 @@ begin
     from attendance a where a.employee_id = e.id and a.work_date between v_first and v_last;
     if v_bad_ot > 0 then
       return query select e.id, e.emp_code, e.name, 'error',
-        format('Invalid OT: %s day(s) have overtime on a status other than Present, Holiday or Weekly Off.', v_bad_ot);
+        format('Invalid OT: %s day(s) have overtime on a status other than Present, Holiday or Weekend.', v_bad_ot);
     end if;
 
     select * into en from payroll_entries pe where pe.period_id = p_period and pe.employee_id = e.id;
@@ -368,7 +368,7 @@ begin
     from attendance a where a.employee_id = e.id and a.work_date between v_first and v_last;
     if v_bad_ot > 0 then
       return query select e.id, e.emp_code, e.name, 'error',
-        format('Invalid OT: %s day(s) have overtime on a status other than Present, Holiday or Weekly Off.', v_bad_ot);
+        format('Invalid OT: %s day(s) have overtime on a status other than Present, Holiday or Weekend.', v_bad_ot);
     end if;
 
     select * into en from payroll_entries pe where pe.period_id = p_period and pe.employee_id = e.id;

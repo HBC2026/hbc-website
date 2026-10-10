@@ -12,7 +12,7 @@ interface Totals { employee_id: string; present_days: number; absent_days: numbe
 type View = 'daily' | 'timesheet' | 'calendar';
 
 function Stats({ p, a, l, w, h }: { p: number; a: number; l: number; w: number; h: number }) {
-  const items: [string, string, number][] = [['present', 'Pres', p], ['absent', 'Abs', a], ['leave', 'Leave', l], ['off', 'W/Off', w], ['holiday', 'Hol', h]];
+  const items: [string, string, number][] = [['present', 'Pres', p], ['absent', 'Abs', a], ['leave', 'Leave', l], ['off', 'Weekend', w], ['holiday', 'Hol', h]];
   return (
     <span className="emp-stats">
       {items.map(([k, label, n]) => <span key={k} className={`emp-stat ${k}${n ? '' : ' zero'}`}><b>{n}</b><i>{label}</i></span>)}
@@ -85,7 +85,7 @@ function MonthlyAttendance() {
       {view !== 'daily' && (
         <div className="toolbar" style={{ marginBottom: 12 }}>
           <MonthPicker value={ym} onChange={setYm} />
-          <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off</span>
+          <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekend</span>
         </div>
       )}
       <Tabs
@@ -132,7 +132,7 @@ function MonthlyAttendance() {
             <Select className="select" style={{ minWidth: 260 }} value={selected} onChange={(e) => setEmpId(e.target.value)}>
               {list.map((e) => <option key={e.id} value={e.id}>{e.emp_code} · {e.name}</option>)}
             </Select>
-            {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekly off {t.weekly_off_days} · Holidays {t.holiday_days}</span>}
+            {emp && t && <span className="muted">Present {t.present_days} · Absent {t.absent_days} · Leave {t.leave_days} · Weekend {t.weekly_off_days} · Holidays {t.holiday_days}</span>}
           </div>
           <div className="cal">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <div className={`cal-h${d === 'Fri' ? ' fri' : ''}`} key={d}>{d}</div>)}

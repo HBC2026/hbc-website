@@ -100,7 +100,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
 
   async function markAllOff() {
     const hasMarks = Object.values(rows).some((r) => r.status && r.status !== 'weekly_off');
-    if (hasMarks && !(await confirmDialog({ title: 'Mark everyone weekly off?', message: 'This will overwrite existing attendance, overtime and leave for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
+    if (hasMarks && !(await confirmDialog({ title: 'Mark everyone weekend?', message: 'This will overwrite existing attendance, overtime and leave for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
     setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'weekly_off' as const, regular: '0', ot: false, amount: '', paid: false, remarks: rows[e.id].remarks }])));
   }
 
@@ -120,7 +120,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
       const r = rows[e.id], o = initial[e.id];
       if (!r.status || JSON.stringify(r) === JSON.stringify(o)) continue;
       const regular = r.status === 'present' ? Number(r.regular || std) : 0, amount = r.ot ? Number(r.amount || 0) : 0;
-      if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekly Off`, true);
+      if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekend`, true);
       if (r.ot && !(amount > 0)) return toast(`${e.name}: enter the OT amount`, true);
       if (amount > 99999) return toast(`${e.name}: OT amount out of range`, true);
       // OT fields are only sent when used, so saving keeps working until migration 0012 is applied
@@ -141,7 +141,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
       <div className="stats compact">
         <div className="stat-card"><div className="stat-label">Present</div><div className="stat-number">{totals.c.present ?? 0} <span className="muted" style={{ fontSize: 13 }}>/ {emps.length}</span></div></div>
         <div className="stat-card"><div className="stat-label">Absent / Leave</div><div className="stat-number">{(totals.c.absent ?? 0)} <span className="muted" style={{ fontSize: 13 }}>abs · {(totals.c.annual_leave ?? 0) + (totals.c.sick_leave ?? 0) + (totals.c.unpaid_leave ?? 0)} leave</span></div></div>
-        <div className="stat-card"><div className="stat-label">Holiday / Weekly Off</div><div className="stat-number">{(totals.c.holiday ?? 0) + (totals.c.weekly_off ?? 0)}</div></div>
+        <div className="stat-card"><div className="stat-label">Holiday / Weekend</div><div className="stat-number">{(totals.c.holiday ?? 0) + (totals.c.weekly_off ?? 0)}</div></div>
         <div className="stat-card"><div className="stat-label">Overtime</div><div className="stat-number">{fmtNum(totals.otUnpaid)} <span className="muted" style={{ fontSize: 13 }}>unpaid</span></div><div className="stat-note">{fmtNum(totals.otPaid)} paid{totals.unmarked ? ` · ${totals.unmarked} not marked` : ''}</div></div>
       </div>
 
@@ -185,7 +185,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
         </table></div>
         <div className="toolbar action-bar no-print" style={{ position: 'sticky', bottom: 0, zIndex: 5, padding: '14px 22px', background: 'var(--surface-soft)', borderTop: '2px solid var(--border)', boxShadow: '0 -6px 14px rgba(15,23,42,.08)', justifyContent: 'flex-end', borderRadius: '0 0 16px 16px' }}>
           <button className="btn green" disabled={!editable} onClick={markAll}>✓ Mark All Present</button>
-          {new Date(`${date}T00:00:00`).getDay() === 5 && <button className="btn" disabled={!editable} onClick={markAllOff}>Mark All Weekly Off</button>}
+          {new Date(`${date}T00:00:00`).getDay() === 5 && <button className="btn" disabled={!editable} onClick={markAllOff}>Mark All Weekend</button>}
           <button className="btn primary" disabled={!editable || saving} onClick={save}>{saving ? 'Saving…' : 'Save Attendance'}</button>
         </div>
       </div>

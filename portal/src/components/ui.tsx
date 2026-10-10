@@ -6,7 +6,7 @@ import type { AttendanceStatus, PeriodStatus, QuotationStatus, SlipStatus } from
 /* ------------------------------------------------ status vocab */
 export const ATT_LABEL: Record<AttendanceStatus, string> = {
   present: 'Present', absent: 'Absent', annual_leave: 'Annual Leave', sick_leave: 'Sick Leave',
-  unpaid_leave: 'Unpaid Leave', holiday: 'Holiday', weekly_off: 'Weekly Off',
+  unpaid_leave: 'Unpaid Leave', holiday: 'Holiday', weekly_off: 'Weekend',
 };
 export const ATT_CODE: Record<AttendanceStatus, string> = {
   present: 'P', absent: 'A', annual_leave: 'AL', sick_leave: 'SL', unpaid_leave: 'UL', holiday: 'H', weekly_off: 'W',
