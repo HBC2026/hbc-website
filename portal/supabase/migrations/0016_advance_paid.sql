@@ -167,8 +167,6 @@ begin
     select * into en from payroll_entries pe where pe.period_id = p_period and pe.employee_id = e.id;
     if not found then
       return query select e.id, e.emp_code, e.name, 'error', 'No payroll entry. Recalculate payroll.';
-    elsif en.net_salary < 0 then
-      return query select e.id, e.emp_code, e.name, 'error', 'Net salary is negative: the deductions and the amount already paid are more than the earnings.';
     end if;
   end loop;
 end $$;
