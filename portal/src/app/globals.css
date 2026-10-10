@@ -741,3 +741,6 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
   .one-page { height: 296mm; overflow: hidden; break-after: avoid; page-break-after: avoid; }
   .one-page .paper.slip { height: 290mm; margin: 0; }
 }
+
+/* print the navy table headers, status pills and shading exactly as on screen */
+@media print { .paper, .paper * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
