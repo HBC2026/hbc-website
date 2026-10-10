@@ -52,9 +52,11 @@ export function ScanDocument({ title = 'Scan document', originalOnly = false, on
     if (!navigator.mediaDevices?.getUserMedia) { setCamError('The camera is not available in this browser.'); return; }
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false,
       });
       stream.current = s;
+      // keep the page sharp: continuous autofocus / exposure where the camera supports it
+      try { await s.getVideoTracks()[0].applyConstraints({ advanced: [{ focusMode: 'continuous', exposureMode: 'continuous' } as MediaTrackConstraintSet] }); } catch { /* not supported */ }
       if (video.current) { video.current.srcObject = s; await video.current.play().catch(() => {}); }
     } catch {
       setCamError('Could not open the camera. Allow camera access, or choose a photo instead.');
@@ -82,9 +84,21 @@ export function ScanDocument({ title = 'Scan document', originalOnly = false, on
     }
   }
 
-  function snap() {
+  async function snap() {
     const v = video.current;
     if (!v || !v.videoWidth) return;
+    // a still from the camera is sharper and higher resolution than a video frame, where supported
+    const track = stream.current?.getVideoTracks()[0];
+    const IC = (window as unknown as { ImageCapture?: new (t: MediaStreamTrack) => { takePhoto: () => Promise<Blob> } }).ImageCapture;
+    if (IC && track) {
+      try {
+        const bmp = await createImageBitmap(await new IC(track).takePhoto(), { imageOrientation: 'from-image' });
+        const c = toCanvas(bmp, bmp.width, bmp.height);
+        bmp.close();
+        enterAdjust(c);
+        return;
+      } catch { /* fall back to the video frame */ }
+    }
     enterAdjust(toCanvas(v, v.videoWidth, v.videoHeight));
   }
 
@@ -121,7 +135,7 @@ export function ScanDocument({ title = 'Scan document', originalOnly = false, on
     try {
       const warped = await warpPage(source, corners);
       if (originalOnly) {
-        const blob = await canvasToJpeg(await applyFilter(warped, 'original'), 0.88);
+        const blob = await canvasToJpeg(await applyFilter(warped, 'original'), 0.92);
         onScan(new File([blob], `scan-${Date.now()}.jpg`, { type: 'image/jpeg' }));
         return;
       }
@@ -150,7 +164,7 @@ export function ScanDocument({ title = 'Scan document', originalOnly = false, on
     if (!page) return;
     setBusy(true); setError('');
     try {
-      const blob = await canvasToJpeg(await applyFilter(page, filter), 0.88);
+      const blob = await canvasToJpeg(await applyFilter(page, filter), 0.92);
       onScan(new File([blob], `scan-${Date.now()}.jpg`, { type: 'image/jpeg' }));
     } catch { setError('Could not save the scan.'); setBusy(false); }
   }

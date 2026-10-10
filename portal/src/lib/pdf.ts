@@ -33,9 +33,9 @@ export function buildImagePdf(jpeg: Uint8Array, width: number, height: number): 
   return out;
 }
 
-const MAX_SIDE = 2200;
+const MAX_SIDE = 3200;
 
-/** Converts a photo/image file into a single-page PDF File (JPEG, longest side capped at 2200 px, EXIF rotation applied). */
+/** Converts a photo/image file into a single-page PDF File (JPEG, longest side capped at 3200 px, EXIF rotation applied). */
 export async function imageToPdf(file: File): Promise<File> {
   let bmp: ImageBitmap;
   try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
@@ -50,10 +50,11 @@ export async function imageToPdf(file: File): Promise<File> {
   if (!ctx) throw new Error('Could not process the image in this browser.');
   ctx.fillStyle = '#fff';
   ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(bmp, 0, 0, w, h);
   bmp.close();
 
-  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.85));
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
   if (!blob) throw new Error('Could not process the image in this browser.');
   const pdf = buildImagePdf(new Uint8Array(await blob.arrayBuffer()), w, h);
   const base = file.name.replace(/\.[^.]+$/, '') || 'signed-slip';

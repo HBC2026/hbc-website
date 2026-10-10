@@ -2,8 +2,8 @@
 import { usePaperZoom } from '@/components/usePaperZoom';
 import { asset } from '@/lib/supabase';
 import { Money, Riyal } from '@/components/Money';
-import { fmtDate, fmtNum, hrs, addDays, periodLabel } from '@/lib/format';
-import type { Employee, PayrollEntry, PayrollPeriod, QuotationItem, QuotationRevision, SalarySlip, Settings } from '@/lib/types';
+import { fmtDate, fmtNum, addDays, monthEnd, monthStart, periodLabel } from '@/lib/format';
+import type { AttendanceRow, Employee, PayrollEntry, PayrollPeriod, QuotationItem, QuotationRevision, SalarySlip, Settings } from '@/lib/types';
 
 export function DocHead({ co, right }: { co: Settings['company']; right?: React.ReactNode }) {
   return (
@@ -27,55 +27,114 @@ export function DocHead({ co, right }: { co: Settings['company']; right?: React.
 
 export type SlipFull = SalarySlip & { employees: Employee; payroll_periods: PayrollPeriod; payroll_entries: PayrollEntry };
 
-export function SalarySlipDoc({ slip, co }: { slip: SlipFull; co: Settings['company'] }) {
+const CODE: Record<string, string> = { present: 'P', absent: 'A', annual_leave: 'AL', sick_leave: 'SL', unpaid_leave: 'UL', holiday: 'H', weekly_off: 'W' };
+
+/** First and last date of the pay period (falls back to the calendar month). */
+export function slipRange(p: PayrollPeriod): [string, string] {
+  return [p.start_date ?? monthStart(p.year, p.month), p.end_date ?? monthEnd(p.year, p.month)];
+}
+
+/** One-page salary slip: pay breakdown, attendance summary, timecard with internal notes, signatures. */
+export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Settings['company']; att?: AttendanceRow[] }) {
   const e = slip.payroll_entries; const emp = slip.employees; const p = slip.payroll_periods;
-  const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + Number(e.other_earnings);
+  const otPaid = Number(e.ot_paid_amount ?? 0);
+  const advance = Number(e.advance_paid ?? 0);
+  const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + otPaid + advance + Number(e.other_earnings);
   const fit = usePaperZoom();
+
+  const [from, to] = slipRange(p);
+  const days: string[] = [];
+  for (let d = from; d <= to && days.length < 93; d = addDays(d, 1)) days.push(d);
+  const byDate = new Map(att.map((r) => [r.work_date, r]));
+  const c = (e.breakdown?.counts ?? {}) as Record<string, number>;
+  const n = (k: string) => Number(c[k] ?? 0);
+  const leave = n('annual_leave') + n('sick_leave') + n('unpaid_leave');
+  const cols = Math.min(4, Math.max(2, Math.ceil(days.length / 17)));
+  const per = Math.ceil(days.length / cols);
+  const chunks = Array.from({ length: cols }, (_, i) => days.slice(i * per, (i + 1) * per));
+  const notes = days.filter((d) => byDate.get(d)?.remarks?.trim());
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
-    <div className="paper" ref={fit.ref} style={fit.style}>
+    <div className="paper slip" ref={fit.ref} style={fit.style}>
       <DocHead co={co} />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
-        <div><div className="doc-title">SALARY SLIP</div><div style={{ fontSize: 13, fontWeight: 600 }}>{periodLabel(p)}</div></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+        <div><div className="doc-title">SALARY SLIP</div><div style={{ fontSize: 12, fontWeight: 600 }}>{periodLabel(p)}</div></div>
         <div style={{ textAlign: 'right', fontSize: 10, color: '#555' }}>Slip No. {slip.slip_no}</div>
       </div>
 
-      <div className="doc-meta">
-        <div className="doc-box"><div className="l">Employee</div><b style={{ fontSize: 13 }}>{emp.name}</b><br />Employee ID: {emp.emp_code}<br />Job Title: {emp.job_title}</div>
-        <div className="doc-box"><div className="l">Details</div>Department: {emp.department}<br />Joining Date: {fmtDate(emp.joining_date)}<br />Pay Period: {periodLabel(p)}</div>
+      <div className="doc-meta" style={{ gridTemplateColumns: '1fr' }}>
+        <div className="doc-box"><div className="l">Employee</div><b style={{ fontSize: 12 }}>{emp.name}</b><br />Employee ID: {emp.emp_code}<br />Job Title: {emp.job_title}</div>
       </div>
 
-      <table className="doc-table">
-        <thead><tr><th>Earnings</th><th className="r">Amount (<Riyal />)</th></tr></thead>
-        <tbody>
-          <tr><td>Basic Salary</td><td className="r">{fmtNum(e.basic)}</td></tr>
-          <tr><td>Allowances</td><td className="r">{fmtNum(e.allowances)}</td></tr>
-          {Number(e.ot_amount) > 0 && <tr><td>Overtime</td><td className="r">{fmtNum(e.ot_amount)}</td></tr>}
-          {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{fmtNum(e.other_earnings)}</td></tr>}
-        </tbody>
-        <tfoot><tr><td>Total Earnings</td><td className="r">{fmtNum(gross)}</td></tr></tfoot>
-      </table>
-
-      <table className="doc-table">
-        <thead><tr><th>Deductions</th><th className="r">Amount (<Riyal />)</th></tr></thead>
-        <tbody>
-          <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{fmtNum(e.absence_deduction)}</td></tr>
-          {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{fmtNum(e.other_deductions)}</td></tr>}
-        </tbody>
-        <tfoot><tr><td>Total Deductions</td><td className="r">{fmtNum(e.deductions)}</td></tr></tfoot>
-      </table>
-
-      <div className="doc-totals"><div className="grand"><span>NET PAY</span><span>{<Money v={e.net_salary} />}</span></div></div>
-
-      <div style={{ marginTop: 14, fontSize: 10, color: '#555' }}>
-        Attendance: {e.present_days} day(s) present · {e.unpaid_days} unpaid day(s)
-        {Number(e.ot_paid_amount ?? 0) > 0 && <><br />Overtime of <Money v={e.ot_paid_amount ?? 0} /> was already paid separately and is not included above.</>}
+      <div className="tc-title">Timecard</div>
+      <div className="tc-grid" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+        {chunks.map((chunk, i) => (
+          <table key={i} className="tc">
+            <thead><tr><th>Date</th><th>Status</th><th className="r">OT</th></tr></thead>
+            <tbody>
+              {chunk.map((d) => {
+                const r = byDate.get(d); const dow = new Date(`${d}T00:00:00`).getDay();
+                return (
+                  <tr key={d} className={dow === 5 ? 'fri' : ''}>
+                    <td>{d.slice(8)} {DOW[dow]}{r?.remarks?.trim() ? <sup> *</sup> : null}</td>
+                    <td>{r ? <span className={`att-code ${r.status}`}>{CODE[r.status]}</span> : '—'}</td>
+                    <td className="r">{Number(r?.ot_amount ?? 0) > 0 ? fmtNum(r!.ot_amount) : ''}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ))}
       </div>
+      <div className="slip-small">P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekly Off · OT = overtime amount · * see remarks</div>
+      <table className="doc-table slip-summary">
+        <thead><tr><th>Days in the pay period</th><th>Days Present</th><th>Holidays / Weekends</th><th>Leave</th><th>Absent</th></tr></thead>
+        <tbody><tr><td>{days.length}</td><td>{n('present')}</td><td>{n('holiday') + n('weekly_off')}</td><td>{leave}</td><td>{n('absent')}</td></tr></tbody>
+      </table>
+      {notes.length > 0 && (
+        <div className="tc-notes">
+          <b>Remarks</b>
+          {notes.map((d) => <div key={d}><span>{fmtDate(d)}</span> {byDate.get(d)!.remarks.trim()}</div>)}
+        </div>
+      )}
 
-      <div style={{ marginTop: 26, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>
+      <div style={{ marginTop: 22 }} />
+      <div className="slip-cols">
+        <div>
+          <table className="doc-table">
+            <thead><tr><th>Earnings</th><th className="r">Amount (<Riyal />)</th></tr></thead>
+            <tbody>
+              <tr><td>Basic Salary</td><td className="r">{fmtNum(e.basic)}</td></tr>
+              <tr><td>Allowances</td><td className="r">{fmtNum(e.allowances)}</td></tr>
+              {(Number(e.ot_amount) > 0 || otPaid > 0) && <tr>
+                <td>Overtime</td>
+                <td className="r">{fmtNum(Number(e.ot_amount) + otPaid)}</td></tr>}
+              {advance > 0 && <tr><td>Already Paid</td><td className="r">{fmtNum(advance)}</td></tr>}
+              {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{fmtNum(e.other_earnings)}</td></tr>}
+            </tbody>
+            <tfoot><tr><td>Total Earnings</td><td className="r">{fmtNum(gross)}</td></tr></tfoot>
+          </table>
+        </div>
+        <div>
+          <table className="doc-table">
+            <thead><tr><th>Deductions</th><th className="r">Amount (<Riyal />)</th></tr></thead>
+            <tbody>
+              <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{fmtNum(e.absence_deduction)}</td></tr>
+              {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{fmtNum(e.other_deductions)}</td></tr>}
+              {otPaid > 0 && <tr><td>Overtime Paid Earlier</td><td className="r">{fmtNum(otPaid)}</td></tr>}
+              {advance > 0 && <tr><td>Already Paid (before this slip)</td><td className="r">{fmtNum(advance)}</td></tr>}
+            </tbody>
+            <tfoot><tr><td>Total Deductions{advance > 0 || otPaid > 0 ? ' & Amount Paid' : ''}</td><td className="r">{fmtNum(Number(e.deductions) + advance + otPaid)}</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div className="doc-totals" style={{ width: '100%' }}><div className="grand"><span>NET PAY</span><span><Money v={e.net_salary} /></span></div></div>
+
+      <div style={{ marginTop: 'auto', paddingTop: 10, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>
       <div className="sign-row">
         <div><div className="line" /><div className="cap">Employee Signature</div></div>
         <div><div className="line" /><div className="cap">Date</div></div>
-        <div><div className="line" /><div className="cap">Authorized Signature</div></div>
       </div>
       <div className="doc-foot">{co.name} · This is a computer-generated salary slip and is valid only when signed.</div>
     </div>

@@ -28,7 +28,7 @@ export interface PayrollPeriod {
 export interface PayrollEntry {
   id: string; period_id: string; employee_id: string; basic: number; allowances: number;
   present_days: number; unpaid_days: number; regular_hours: number; ot_hours: number; ot_rate: number;
-  ot_amount: number; ot_paid_amount?: number; other_earnings: number; absence_deduction: number; other_deductions: number;
+  ot_amount: number; ot_paid_amount?: number; advance_paid?: number; other_earnings: number; absence_deduction: number; other_deductions: number;
   deductions: number; net_salary: number; adjustment_note: string;
   breakdown: {
     ot_paid_amount?: number; hourly_rate: number; daily_rate: number; ot_method: string; ot_multiplier: number;

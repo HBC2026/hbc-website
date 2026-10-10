@@ -7,7 +7,7 @@ import { useApp } from '@/components/Providers';
 import { ATT_LABEL, Badge, StatCard, ErrorBox, Field, Loading, Modal, PageHead, PeriodBadge, SlipBadge, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
 import { BatchModal } from '@/components/PayrollBatchModal';
-import { fmtDate, fmtDateTime, fmtNum, hrs, monthLabel, parseYm, periodLabel, timeAgo, ymd } from '@/lib/format';
+import { fmtDate, fmtDateTime, fmtNum, monthLabel, parseYm, periodLabel, timeAgo, ymd } from '@/lib/format';
 import { can } from '@/lib/roles';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceStatus, AuditLog, Employee, PayrollEntry, PayrollPeriod, SalarySlip } from '@/lib/types';
@@ -87,8 +87,8 @@ export default function PayrollPeriodPage() {
   const tot = entries.reduce((a, e) => ({
     basic: a.basic + Number(e.basic), allow: a.allow + Number(e.allowances), ot: a.ot + Number(e.ot_paid_amount ?? 0), otAmt: a.otAmt + Number(e.ot_amount),
     other: a.other + Number(e.other_earnings), days: a.days + Number(e.present_days), unpaid: a.unpaid + Number(e.unpaid_days),
-    ded: a.ded + Number(e.deductions), net: a.net + Number(e.net_salary),
-  }), { basic: 0, allow: 0, ot: 0, otAmt: 0, other: 0, days: 0, unpaid: 0, ded: 0, net: 0 });
+    ded: a.ded + Number(e.deductions), adv: a.adv + Number(e.advance_paid ?? 0), net: a.net + Number(e.net_salary),
+  }), { basic: 0, allow: 0, ot: 0, otAmt: 0, other: 0, days: 0, unpaid: 0, ded: 0, adv: 0, net: 0 });
   const gross = tot.basic + tot.allow + tot.otAmt + tot.other;
 
   const tabs: [Tab, string][] = [['payroll', 'Summary'], ['validation', `Checks${period?.status === 'calculated' && errors.length ? ` (${errors.length} to fix)` : ''}`], ['slips', `Slips (${signed}/${slips.length})`], ['audit', 'Activity Log']];
@@ -129,7 +129,7 @@ export default function PayrollPeriodPage() {
               <StatCard label="Employees paid" icon="#" value={entries.length} note={period?.start_date && period?.end_date ? `${fmtDate(period.start_date)} – ${fmtDate(period.end_date)}` : undefined} />
               <StatCard label="Gross pay" icon="+" value={<Money v={gross} />} note="Basic + allowances + overtime + other earnings" />
               <StatCard label="Total deductions" icon="−" value={<Money v={tot.ded} />} note={`${tot.unpaid} unpaid day(s) across the team`} />
-              <StatCard label="Net pay" icon="=" value={<Money v={tot.net} />} note={tot.ot > 0 ? `Overtime already paid separately: ${fmtNum(tot.ot)}` : 'Amount payable to employees'} />
+              <StatCard label="Net pay" icon="=" value={<Money v={tot.net} />} note={tot.adv > 0 ? `After ${fmtNum(tot.adv)} already paid` : tot.ot > 0 ? `Overtime already paid separately: ${fmtNum(tot.ot)}` : 'Amount payable to employees'} />
             </div>
           )}
 
@@ -150,6 +150,7 @@ export default function PayrollPeriodPage() {
                     <div><span>Allowances</span>{fmtNum(e.allowances)}</div>
                     <div><span>Overtime due</span>{fmtNum(e.ot_amount)}</div>
                     <div><span>Deductions</span>{fmtNum(e.deductions)}</div>
+                    <div><span>Already paid</span>{fmtNum(e.advance_paid ?? 0)}</div>
                   </div>
                 </button>
               ))}
@@ -158,7 +159,7 @@ export default function PayrollPeriodPage() {
           )}
           {tab === 'payroll' && (
             <div className="panel flush d-only"><div className="table-wrap"><table className="table">
-              <thead><tr><th>Employee</th><th className="r">Days Worked</th><th className="r">Unpaid Days</th><th className="r">Basic Salary</th><th className="r">Allowances</th><th className="r">Overtime Due</th><th className="r">Overtime Paid Earlier</th><th className="r">Deductions</th><th className="r">Net Pay</th></tr></thead>
+              <thead><tr><th>Employee</th><th className="r">Days Worked</th><th className="r">Unpaid Days</th><th className="r">Basic Salary</th><th className="r">Allowances</th><th className="r">Overtime Due</th><th className="r">Overtime Paid Earlier</th><th className="r">Deductions</th><th className="r">Already Paid</th><th className="r">Net Pay</th></tr></thead>
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id} className="click" onClick={() => setOpen(e)}>
@@ -167,12 +168,12 @@ export default function PayrollPeriodPage() {
                     <td className="r">{fmtNum(e.basic)}</td><td className="r">{fmtNum(e.allowances)}</td>
                     <td className="r">{Number(e.ot_amount) > 0 ? <span className="badge gold">{fmtNum(e.ot_amount)}</span> : fmtNum(0)}</td>
                     <td className="r muted">{fmtNum(e.ot_paid_amount ?? 0)}</td>
-                    <td className="r">{fmtNum(e.deductions)}</td><td className="r strong">{fmtNum(e.net_salary)}</td>
+                    <td className="r">{fmtNum(e.deductions)}</td><td className="r" onClick={(ev) => ev.stopPropagation()}>{canWrite && !locked ? <AdvanceCell entry={e} onSaved={reload} /> : fmtNum(e.advance_paid ?? 0)}</td><td className="r strong">{fmtNum(e.net_salary)}</td>
                   </tr>
                 ))}
-                {entries.length === 0 && <tr><td colSpan={9}><div className="empty">{canWrite ? 'Press “Set Up & Calculate” to choose the pay period and employees, then build this run from attendance.' : 'Not calculated yet.'}</div></td></tr>}
+                {entries.length === 0 && <tr><td colSpan={10}><div className="empty">{canWrite ? 'Press “Set Up & Calculate” to choose the pay period and employees, then build this run from attendance.' : 'Not calculated yet.'}</div></td></tr>}
               </tbody>
-              {entries.length > 0 && <tfoot><tr><td>Total · {entries.length} employees</td><td className="r">{tot.days}</td><td className="r">{tot.unpaid}</td><td className="r">{fmtNum(tot.basic)}</td><td className="r">{fmtNum(tot.allow)}</td><td className="r">{fmtNum(tot.otAmt)}</td><td className="r">{fmtNum(tot.ot)}</td><td className="r">{fmtNum(tot.ded)}</td><td className="r">{<Money v={tot.net} />}</td></tr></tfoot>}
+              {entries.length > 0 && <tfoot><tr><td>Total · {entries.length} employees</td><td className="r">{tot.days}</td><td className="r">{tot.unpaid}</td><td className="r">{fmtNum(tot.basic)}</td><td className="r">{fmtNum(tot.allow)}</td><td className="r">{fmtNum(tot.otAmt)}</td><td className="r">{fmtNum(tot.ot)}</td><td className="r">{fmtNum(tot.ded)}</td><td className="r">{fmtNum(tot.adv)}</td><td className="r">{<Money v={tot.net} />}</td></tr></tfoot>}
             </table></div></div>
           )}
 
@@ -233,10 +234,29 @@ export default function PayrollPeriodPage() {
   );
 }
 
+/** Already-paid amount edited straight in the payroll table; saved when the field loses focus. */
+function AdvanceCell({ entry: e, onSaved }: { entry: Entry; onSaved: () => void }) {
+  const { toast } = useApp();
+  const start = String(Number(e.advance_paid ?? 0));
+  const [v, setV] = useState(start);
+  async function save() {
+    if (Number(v || 0) === Number(start)) return;
+    const { error } = await supabase().rpc('update_entry_adjustment', {
+      p_entry: e.id, p_other_earnings: Number(e.other_earnings), p_other_deductions: Number(e.other_deductions), p_note: e.adjustment_note, p_advance: Number(v || 0),
+    });
+    if (error) { setV(start); return toast(error.message, true); }
+    toast('Already paid saved'); onSaved();
+  }
+  return <input className="input num" style={{ width: 100, textAlign: 'right' }} type="text" inputMode="decimal" value={v}
+    onChange={(x) => /^[0-9]*[.]?[0-9]{0,2}$/.test(x.target.value) && setV(x.target.value)}
+    onBlur={save} onKeyDown={(x) => x.key === 'Enter' && (x.target as HTMLInputElement).blur()} />;
+}
+
 function Breakdown({ entry: e, editable, onClose, onSaved }: { entry: Entry; editable: boolean; onClose: () => void; onSaved: () => void }) {
   const { toast } = useApp();
   const [earn, setEarn] = useState(String(Number(e.other_earnings)));
   const [ded, setDed] = useState(String(Number(e.other_deductions)));
+  const [adv, setAdv] = useState(String(Number(e.advance_paid ?? 0)));
   const [note, setNote] = useState(e.adjustment_note);
   const [saving, setSaving] = useState(false);
   const b = e.breakdown;
@@ -245,7 +265,7 @@ function Breakdown({ entry: e, editable, onClose, onSaved }: { entry: Entry; edi
 
   async function save() {
     setSaving(true);
-    const { error } = await supabase().rpc('update_entry_adjustment', { p_entry: e.id, p_other_earnings: Number(earn || 0), p_other_deductions: Number(ded || 0), p_note: note });
+    const { error } = await supabase().rpc('update_entry_adjustment', { p_entry: e.id, p_other_earnings: Number(earn || 0), p_other_deductions: Number(ded || 0), p_note: note, p_advance: Number(adv || 0) });
     setSaving(false);
     if (error) return toast(error.message, true);
     toast('Adjustments saved'); onSaved();
@@ -255,7 +275,7 @@ function Breakdown({ entry: e, editable, onClose, onSaved }: { entry: Entry; edi
     <Modal title={`${e.employees.name} · ${e.employees.emp_code}`} wide onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Close</button>{editable && <button className="btn primary" disabled={saving} onClick={save}>Save adjustments</button>}</>}>
       <div className="muted" style={{ marginBottom: 14 }}>
-        {e.employees.job_title} · Attendance: {(Object.keys(counts) as AttendanceStatus[]).filter((k) => counts[k] > 0).map((k) => `${ATT_LABEL[k]} ${counts[k]}`).join(' · ') || 'none'} · Regular {hrs(e.regular_hours)} h
+        {e.employees.job_title} · Attendance: {(Object.keys(counts) as AttendanceStatus[]).filter((k) => counts[k] > 0).map((k) => `${ATT_LABEL[k]} ${counts[k]}`).join(' · ') || 'none'}
       </div>
       <div className="kv">
         <span className="k">Basic salary</span><span className="v">{<Money v={e.basic} />}</span>
@@ -268,8 +288,10 @@ function Breakdown({ entry: e, editable, onClose, onSaved }: { entry: Entry; edi
         <span className="k strong">Gross earnings</span><span className="v">{<Money v={gross} />}</span>
         <span className="k">Absence deduction<span className="formula">{e.unpaid_days} unpaid day(s) × (basic ÷ {b.days_divisor} = {<Money v={b.daily_rate} />})</span></span><span className="v">− {<Money v={e.absence_deduction} />}</span>
         <span className="k">Other deductions</span><span className="v">{editable ? <input className="input num" style={{ width: 120, display: 'inline-block' }} type="number" min="0" step="0.01" value={ded} onChange={(x) => setDed(x.target.value)} /> : <>− <Money v={e.other_deductions} /></>}</span>
+        <span className="k">Already paid<span className="formula">Paid to the employee before this slip — taken off the net pay</span></span>
+        <span className="v">{editable ? <input className="input num" style={{ width: 120, display: 'inline-block' }} type="number" min="0" step="0.01" value={adv} onChange={(x) => setAdv(x.target.value)} /> : <>− <Money v={e.advance_paid ?? 0} /></>}</span>
         <div className="sep" />
-        <span className="k tot">Net pay</span><span className="v tot">{<Money v={e.net_salary} />}</span>
+        <span className="k tot">Net pay{editable && <span className="formula">Updates after saving</span>}</span><span className="v tot">{<Money v={e.net_salary} />}</span>
       </div>
       {(editable || e.adjustment_note) && <div style={{ marginTop: 16 }}><Field label="Adjustment note">{editable ? <input className="input" value={note} onChange={(x) => setNote(x.target.value)} /> : <div>{e.adjustment_note}</div>}</Field></div>}
       {editable && <div className="muted" style={{ marginTop: 10, fontSize: 11 }}>Saving updates the net salary immediately. Recalculating from attendance keeps these adjustments.</div>}

@@ -53,11 +53,9 @@ export default function SettingsPage() {
           <div className="panel-title">Payroll &amp; overtime rules</div>
           <div className="form-grid">
             <Field label="Default OT multiplier"><input className="input num" type="number" step="0.05" min="0" disabled={!canWrite} value={s.ot_multiplier} onChange={(e) => num('ot_multiplier', e.target.value)} /></Field>
-            <Field label="Standard hours per day"><input className="input num" type="number" step="0.5" min="1" disabled={!canWrite} value={s.standard_hours} onChange={(e) => num('standard_hours', e.target.value)} /></Field>
-            <Field label="Days per month (for daily / hourly rate)"><input className="input num" type="number" min="1" disabled={!canWrite} value={s.days_divisor} onChange={(e) => num('days_divisor', e.target.value)} /></Field>
-            <Field label="Warn when OT per day exceeds (hours)"><input className="input num" type="number" step="0.5" min="0" disabled={!canWrite} value={s.max_ot_per_day} onChange={(e) => num('max_ot_per_day', e.target.value)} /></Field>
+            <Field label="Days per month (for the daily rate)"><input className="input num" type="number" min="1" disabled={!canWrite} value={s.days_divisor} onChange={(e) => num('days_divisor', e.target.value)} /></Field>
           </div>
-          <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Hourly rate = basic ÷ days per month ÷ standard hours. OT amount = OT hours × hourly rate × multiplier (or a fixed hourly rate set on the employee). Unpaid days (Absent, Unpaid Leave) deduct basic ÷ days per month each. Changes apply the next time payroll is calculated; approved months are never altered.</div>
+          <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Overtime is entered as an amount in daily attendance. Unpaid days (Absent, Unpaid Leave) deduct basic ÷ days per month each. Changes apply the next time payroll is calculated; approved months are never altered.</div>
         </div>
 
         <div className="panel">

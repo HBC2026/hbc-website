@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ATT_CODE, ATT_LABEL, ErrorBox, MonthPicker, Select, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { daysInMonth, fmtNum, hrs, monthEnd, monthStart, ymKey } from '@/lib/format';
+import { daysInMonth, fmtNum, monthEnd, monthStart, ymKey } from '@/lib/format';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, Employee } from '@/lib/types';
 
@@ -101,21 +101,25 @@ function MonthlyAttendance() {
           <tbody>
             {list.map((e) => {
               const tt = data.tmap.get(e.id); const cells = data.byEmp.get(e.id);
-              return [halves[0], halves[1]].map((row, hi) => (
+              const noted = [...(cells?.entries() ?? [])].filter(([, r]) => r.remarks?.trim()).sort((a, b) => a[0] - b[0]);
+              const rowEls = [halves[0], halves[1]].map((row, hi) => (
                 <tr key={`${e.id}-${hi}`} className={hi === 1 ? 'half2' : 'half1'}>
-                  {hi === 0 && <td rowSpan={2} className="emp"><span className="strong emp-name">{e.name}</span><span className="muted emp-code">{e.emp_code}</span>
+                  {hi === 0 && <td rowSpan={noted.length ? 3 : 2} className="emp"><span className="strong emp-name">{e.name}</span><span className="muted emp-code">{e.emp_code}</span>
                     <Stats p={tt?.present_days ?? 0} a={tt?.absent_days ?? 0} l={tt?.leave_days ?? 0} w={tt?.weekly_off_days ?? 0} h={tt?.holiday_days ?? 0} /></td>}
                   {Array.from({ length: HALF }, (_, i) => {
                     const d = row[i];
                     if (d === undefined) return <td key={`x${i}`} className="pad" />;
                     const r = cells?.get(d);
-                    return <td key={d} className={`dcell${dow(d) === 5 ? ' fri' : ''}`} title={r ? `${ATT_LABEL[r.status]} · ${hrs(r.regular_hours)}h${Number(r.ot_amount) > 0 ? ` · OT ${fmtNum(r.ot_amount)} ${r.ot_paid ? 'paid' : 'unpaid'}` : ''}` : 'Not marked'}>
+                    return <td key={d} className={`dcell${dow(d) === 5 ? ' fri' : ''}`} title={r ? `${ATT_LABEL[r.status]}${Number(r.ot_amount) > 0 ? ` · OT ${fmtNum(r.ot_amount)} ${r.ot_paid ? 'paid' : 'unpaid'}` : ''}${r.remarks?.trim() ? ` · Note: ${r.remarks.trim()}` : ''}` : 'Not marked'}>
                       <span className="dh-i">{'SMTWTFS'[dow(d)]}</span><span className="dh-n">{d}</span>
-                      {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_amount) > 0 && <span className="ot" title={r.ot_paid ? 'OT paid' : 'OT unpaid'}>{r.ot_paid ? 'OT✓' : 'OT'}</span>}</> : <span className="muted">·</span>}
+                      {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>{Number(r.ot_amount) > 0 && <span className="ot" title={r.ot_paid ? 'OT paid' : 'OT unpaid'}>{r.ot_paid ? 'OT✓' : 'OT'}</span>}{r.remarks?.trim() && <span className="note-dot">✎</span>}</> : <span className="muted">·</span>}
                     </td>;
                   })}
                 </tr>
               ));
+              return [...rowEls, noted.length ? (
+                <tr key={`${e.id}-n`} className="notes"><td colSpan={HALF}><b>Notes:</b> {noted.map(([d, r]) => <span key={d} className="note-item"><b>{d}</b> {r.remarks.trim()}</span>)}</td></tr>
+              ) : null];
             })}
           </tbody>
           <tfoot><tr>
@@ -139,7 +143,7 @@ function MonthlyAttendance() {
                 <div className={`cal-d${dow(d) === 5 ? ' fri' : ''}`} key={d}>
                   <div className="dn">{d}</div>
                   {r ? <><span className={`att-code ${r.status}`}>{ATT_CODE[r.status]}</span>
-                    <div className="h">{r.status === 'present' ? `${hrs(r.regular_hours)}h` : ATT_LABEL[r.status]}{Number(r.ot_amount) > 0 && <b style={{ color: 'var(--gold)' }}> OT {fmtNum(r.ot_amount)} {r.ot_paid ? 'paid' : 'unpaid'}</b>}</div></>
+                    <div className="h">{ATT_LABEL[r.status]}{Number(r.ot_amount) > 0 && <b style={{ color: 'var(--gold)' }}> OT {fmtNum(r.ot_amount)} {r.ot_paid ? 'paid' : 'unpaid'}</b>}</div>{r.remarks?.trim() && <div className="cal-note" title={r.remarks.trim()}>✎ {r.remarks.trim()}</div>}</>
                     : <div className="muted">—</div>}
                 </div>
               );

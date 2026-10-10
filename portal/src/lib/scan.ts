@@ -5,7 +5,7 @@ export interface Pt { x: number; y: number }
 export type ScanFilter = 'document' | 'gray' | 'original';
 
 const DETECT_SIDE = 600;
-const MAX_SIDE = 2200;
+const MAX_SIDE = 3200;
 
 const dist = (a: Pt, b: Pt) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -96,7 +96,7 @@ export async function warpPage(source: HTMLCanvasElement, corners: Pt[]): Promis
   const to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, w, 0, w, h, 0, h]);
   const m = cv.getPerspectiveTransform(from, to);
   try {
-    cv.warpPerspective(src, dst, m, new cv.Size(w, h), cv.INTER_LINEAR, cv.BORDER_REPLICATE, new cv.Scalar());
+    cv.warpPerspective(src, dst, m, new cv.Size(w, h), cv.INTER_CUBIC, cv.BORDER_REPLICATE, new cv.Scalar());
     const out = document.createElement('canvas');
     out.width = w; out.height = h;
     cv.imshow(out, dst);
@@ -156,10 +156,12 @@ export function toCanvas(src: CanvasImageSource, w: number, h: number): HTMLCanv
   const k = Math.min(1, MAX_SIDE / Math.max(w, h));
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
-  c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height);
+  const ctx = c.getContext('2d')!;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, 0, 0, c.width, c.height);
   return c;
 }
 
-export function canvasToJpeg(c: HTMLCanvasElement, quality = 0.88): Promise<Blob> {
+export function canvasToJpeg(c: HTMLCanvasElement, quality = 0.92): Promise<Blob> {
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('Could not save the scan.'))), 'image/jpeg', quality));
 }

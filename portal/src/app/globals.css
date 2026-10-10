@@ -687,3 +687,40 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
   .payroll-screen .tabs::-webkit-scrollbar { display: none; }
   .payroll-screen .tab { flex: 1 0 auto; text-align: center; }
 }
+
+/* ---------------- salary slip: one A4 page with timecard ---------------- */
+.paper.slip { padding: 10mm 13mm; height: 296mm; overflow: hidden; }
+.paper.slip .doc-head { padding-bottom: 8px; margin-bottom: 10px; }
+.paper.slip .doc-head img { width: 190px; }
+.paper.slip .doc-meta { gap: 12px; margin-bottom: 10px; }
+.paper.slip .doc-box { padding: 7px 10px; }
+.paper.slip .doc-table { margin-bottom: 8px; }
+.paper.slip .doc-table th { padding: 5px 8px; }
+.paper.slip .doc-table td { padding: 4px 8px; }
+.paper.slip .sign-row { padding-top: 18px; margin-top: 0; }
+.paper.slip .sign-row .line { height: 22px; }
+.paper.slip .doc-foot { margin-top: 8px; padding-top: 6px; }
+.slip-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
+.slip-small { font-size: 8.5px; color: #666; margin-top: 4px; }
+.tc-title { font-size: 9px; text-transform: uppercase; letter-spacing: .6px; font-weight: 700; color: #555; margin: 6px 0 4px; }
+.tc-grid { display: grid; gap: 10px; align-items: start; }
+.tc { width: 100%; border-collapse: collapse; font-size: 8.5px; }
+.tc th { background: var(--navy); color: #fff; padding: 2px 5px; text-align: left; font-size: 8px; text-transform: uppercase; }
+.tc td { padding: 1.5px 5px; border-bottom: 1px solid #e3e5e0; line-height: 1.25; }
+.tc .r { text-align: right; }
+.tc tr.fri td { background: #faf5ea; }
+.tc .att-code { min-width: 0; padding: 0 4px; font-size: 8px; }
+.tc-notes { margin-top: 6px; font-size: 8.5px; line-height: 1.35; columns: 2; column-gap: 14px; }
+.tc-notes b { display: block; text-transform: uppercase; font-size: 8px; letter-spacing: .5px; color: #555; }
+.tc-notes div { break-inside: avoid; }
+.tc-notes span { font-weight: 700; }
+
+/* ---------------- attendance internal notes ---------------- */
+.note-dot { display: block; font-size: 9px; color: var(--gold, #b8872d); line-height: 1; margin-top: 2px; }
+.sheet tr.notes td { font-size: 10.5px; color: var(--muted); padding: 5px 10px 7px; background: var(--surface-soft); text-align: left; }
+.sheet .note-item { margin-right: 14px; display: inline-block; }
+.cal-note { margin-top: 3px; font-size: 9px; color: #8d6528; overflow-wrap: anywhere; line-height: 1.25; }
+.slip-divider { border: 0; border-top: 1.5px solid #111; margin: 10px 0 4px; }
+.doc-table.slip-summary { margin-top: 8px; }
+.doc-table.slip-summary th, .doc-table.slip-summary td { text-align: center; }
+.paper.slip .sign-row { grid-template-columns: repeat(2, 1fr); }

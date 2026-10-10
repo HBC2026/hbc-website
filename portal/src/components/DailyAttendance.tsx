@@ -150,7 +150,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
           <div className="panel-title">{emps.length} active employees</div>
         </div>
         <div className="table-wrap"><table className="table">
-          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Amount</th><th>Paid</th><th>Remarks</th></tr></thead>
+          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Amount</th><th>Paid</th><th>Internal Notes</th></tr></thead>
           <tbody>
             {emps.map((e) => {
               const r = rows[e.id]; const present = r.status === 'present'; const otOk = OT_STATUSES.includes(r.status as AttendanceStatus); 
@@ -176,7 +176,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
                       <option value="paid">Paid</option>
                     </Select>}
                   </td>
-                  <td><input className="input" disabled={!editable} value={r.remarks} onChange={(ev) => patch(e.id, { remarks: ev.target.value })} placeholder="Optional" /></td>
+                  <td><input className="input" disabled={!editable} value={r.remarks} onChange={(ev) => patch(e.id, { remarks: ev.target.value })} placeholder="Internal note (optional)" /></td>
                 </tr>
               );
             })}
