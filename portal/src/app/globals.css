@@ -726,6 +726,17 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .paper.slip .sign-row { grid-template-columns: repeat(2, 1fr); }
 .tc .att-code { white-space: nowrap; letter-spacing: 0; }
 
+/* monthly timesheet (reuses the one-A4-sheet slip print rules) */
+.paper.ts { display: flex; flex-direction: column; }
+.ts-layout { display: grid; grid-template-columns: 1.15fr 1fr; gap: 14px; align-items: start; }
+.ts-tc { table-layout: fixed; font-size: 10px; }
+.ts-tc th { font-size: 9px; padding: 5px 4px; }
+.ts-tc td { padding: 4.2px 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ts-tc th:nth-child(1) { width: 12%; } .ts-tc th:nth-child(2) { width: 14%; } .ts-tc th:nth-child(3) { width: 24%; } .ts-tc th:nth-child(4) { width: 17%; }
+.ts-tc .att-code { font-size: 9px; }
+.ts-sum td, .ts-sum th { padding: 6px 8px; font-size: 11px; }
+.ts-notes { columns: 1; margin-top: 12px; font-size: 9px; }
+
 /* print: exactly one A4 sheet (210 x 297 mm) per salary slip, no spill-over or blank trailing page */
 @media print {
   @page { size: 210mm 297mm; margin: 0; }

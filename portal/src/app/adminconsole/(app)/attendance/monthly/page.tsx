@@ -1,6 +1,7 @@
 'use client';
 import { DailyAttendance } from '@/components/DailyAttendance';
 import { Suspense, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ATT_CODE, ATT_LABEL, ErrorBox, MonthPicker, Select, Loading, PageHead, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
@@ -85,7 +86,11 @@ function MonthlyAttendance() {
       {view !== 'daily' && (
         <div className="toolbar" style={{ marginBottom: 12 }}>
           <MonthPicker value={ym} onChange={setYm} />
-          <span className="right muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekend</span>
+          <span className="muted" style={{ fontSize: 11 }}>P Present · A Absent · AL Annual · SL Sick · UL Unpaid · H Holiday · W Weekend</span>
+          <span className="right" style={{ display: 'flex', gap: 8 }}>
+            {view === 'calendar' && selected && <Link className="btn sm" href={`/adminconsole/attendance/monthly/print?ym=${ym}&emp=${selected}`}>Print timesheet</Link>}
+            <Link className="btn sm primary" href={`/adminconsole/attendance/monthly/print?ym=${ym}`}>Print all timesheets</Link>
+          </span>
         </div>
       )}
       <Tabs

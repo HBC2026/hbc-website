@@ -76,12 +76,17 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   onDirty: (d: boolean) => void; onSaved: () => void;
 }) {
   const { settings, toast, confirmDialog } = useApp();
-  const [rows, setRows] = useState<Rows>(initial);
-  const [saving, setSaving] = useState(false);
   const editable = canWrite && !locked;
   const std = String(settings.standard_hours);
+  // Fridays default to Weekend for anyone not yet marked (still needs Save; `initial` stays the stored state)
+  const start = useMemo(() => {
+    if (!editable || new Date(`${date}T00:00:00`).getDay() !== 5) return initial;
+    return Object.fromEntries(Object.entries(initial).map(([id, r]) => [id, r.status ? r : { ...r, status: 'weekly_off' as const, regular: '0' }])) as Rows;
+  }, [initial, editable, date]);
+  const [rows, setRows] = useState<Rows>(start);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => { onDirty(JSON.stringify(rows) !== JSON.stringify(initial)); }, [rows, initial, onDirty]);
+  useEffect(() => { onDirty(JSON.stringify(rows) !== JSON.stringify(start)); }, [rows, start, onDirty]);
 
   const patch = (id: string, p: Partial<Row>) => setRows((r) => ({ ...r, [id]: { ...r[id], ...p } }));
 

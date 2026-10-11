@@ -33,6 +33,67 @@ export function slipRange(p: PayrollPeriod): [string, string] {
   return [p.start_date ?? monthStart(p.year, p.month), p.end_date ?? monthEnd(p.year, p.month)];
 }
 
+/** One-page monthly timesheet for an employee: daily attendance, totals, remarks, employee signature. */
+export function TimesheetDoc({ emp, year, month, co, att = [] }: { emp: Employee; year: number; month: number; co: Settings['company']; att?: AttendanceRow[] }) {
+  const fit = usePaperZoom();
+  const from = monthStart(year, month); const to = monthEnd(year, month);
+  const days: string[] = [];
+  for (let d = from; d <= to && days.length < 93; d = addDays(d, 1)) days.push(d);
+  const byDate = new Map(att.map((r) => [r.work_date, r]));
+  const count = (...s: string[]) => att.filter((r) => s.includes(r.status)).length;
+  const sum = (k: 'regular_hours' | 'ot_hours') => att.reduce((a, r) => a + Number(r[k] ?? 0), 0);
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const stats: [string, string | number][] = [
+    ['Total days', days.length], ['Present', count('present')], ['Absent', count('absent')], ['Leave', count('annual_leave', 'sick_leave', 'unpaid_leave')],
+    ['Weekend', count('weekly_off')], ['Holidays', count('holiday')], ['Regular hrs', fmtNum(sum('regular_hours'), 1)], ['OT hrs', fmtNum(sum('ot_hours'), 1)],
+  ];
+
+  return (
+    <div className="paper slip ts" ref={fit.ref} style={fit.style}>
+      <DocHead co={co} />
+      <div style={{ marginBottom: 8 }}>
+        <div className="doc-title">MONTHLY TIMESHEET</div>
+        <div style={{ fontSize: 12, fontWeight: 600 }}>{periodLabel({ year, month })}</div>
+      </div>
+      <div className="doc-meta" style={{ gridTemplateColumns: '1fr' }}>
+        <div className="doc-box"><div className="l">Employee</div><b style={{ fontSize: 12 }}>{emp.name}</b></div>
+      </div>
+
+      <div className="ts-layout">
+        <table className="tc ts-tc">
+          <thead><tr><th>Date</th><th>Day</th><th>Status</th><th>OT</th><th>Remarks</th></tr></thead>
+          <tbody>
+            {days.map((d) => {
+              const r = byDate.get(d); const dow = new Date(`${d}T00:00:00`).getDay();
+              const ot = Number(r?.ot_amount ?? 0) > 0;
+              return (
+                <tr key={d} className={dow === 5 ? 'fri' : ''}>
+                  <td>{d.slice(8)}</td><td>{DOW[dow]}</td>
+                  <td>{r ? <span className={`att-code ${r.status}`}>{ATT_LABEL[r.status]}</span> : '—'}</td>
+                  <td>{ot ? (r!.ot_paid ? 'Paid' : 'Unpaid') : ''}</td>
+                  <td className="ts-rem">{r?.remarks?.trim() ?? ''}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <div>
+          <table className="doc-table ts-sum">
+            <thead><tr><th>Summary</th><th className="r">Total</th></tr></thead>
+            <tbody>{stats.map(([k, v]) => <tr key={k}><td>{k}</td><td className="r"><b>{v}</b></td></tr>)}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="sign-row" style={{ marginTop: 'auto' }}>
+        <div><div className="line" /><div className="cap">Employee Signature</div></div>
+        <div><div className="line" /><div className="cap">Date</div></div>
+      </div>
+      <div className="doc-foot">{co.name}</div>
+    </div>
+  );
+}
+
 /** One-page salary slip: pay breakdown, attendance summary, timecard with internal notes, signatures. */
 const dash = (v: number | string | null | undefined) => (Number(v ?? 0) === 0 ? '–' : fmtNum(v));
 
