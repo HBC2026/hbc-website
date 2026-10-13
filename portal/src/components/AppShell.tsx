@@ -6,7 +6,7 @@ import { useApp } from './Providers';
 import { Select } from './ui';
 import { isConfigured } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
-import { ATTENDANCE_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
+import { ATTENDANCE_SIDE, JSA_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
 import type { Role } from '@/lib/types';
 
 interface NavItem { href: string; label: string; icon: string; roles?: Role[] }
@@ -27,6 +27,14 @@ const NAV: NavGroup[] = [
     label: 'Quotations', icon: '▤', items: [
       { href: '/adminconsole/quotations', label: 'Quotations', icon: '▤', roles: QUOTE_SIDE },
       { href: '/adminconsole/clients', label: 'Clients', icon: '♖', roles: QUOTE_SIDE },
+    ],
+  },
+  {
+    label: 'JSA Management', icon: '⛑', items: [
+      { href: '/adminconsole/jsa', label: 'JSA Dashboard', icon: '⛑', roles: JSA_SIDE },
+      { href: '/adminconsole/jsa/knowledge-base', label: 'Safety Knowledge Base', icon: '▤', roles: JSA_SIDE },
+      { href: '/adminconsole/jsa/templates', label: 'JSA Templates', icon: '▣', roles: JSA_SIDE },
+      { href: '/adminconsole/jsa/settings', label: 'JSA Settings', icon: '⚙', roles: JSA_SIDE },
     ],
   },
   { label: 'Petty Cash', icon: '◉', items: [{ href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉', roles: PETTY_SIDE }] },

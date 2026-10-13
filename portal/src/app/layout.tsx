@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { DM_Sans, Manrope } from 'next/font/google';
 import { Providers } from '@/components/Providers';
 import './globals.css';
+import './jsa.css';
 
 const manrope = Manrope({ subsets: ['latin'], weight: ['500', '600', '700', '800'], variable: '--font-manrope' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-dm-sans' });

@@ -6,15 +6,22 @@
     "dev": "next dev -p 3100",
     "build": "next build",
     "start": "next start -p 3100",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:jsa": "node tests/jsa.test.mjs && node tests/jsa-ai.test.mjs && node tests/jsa-import.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
+    "docx": "^9.10.0",
     "exceljs": "^4.4.0",
+    "immer": "^11.1.21",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "mammoth": "^1.13.0",
     "next": "^16.3.7",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "unpdf": "^1.8.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

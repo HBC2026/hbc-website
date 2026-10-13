@@ -93,3 +93,21 @@ Printing: "Print" and "Download PDF" use the browser print dialog with A4 print 
 - The employee page works only through token-checked database functions (`pc_statement`, `pc_add_receipt`, `pc_delete_receipt`) and an insert-only upload folder in the private bucket `petty-cash-receipts`; it can never see another employee.
 - **Reject** a receipt (a reason is required) and it stops counting; the employee sees the reason and uploads it again. Approved receipts can't be removed by the employee.
 - Run `0008_petty_cash.sql` then `0010_petty_cash_given_by.sql` once. Each cash entry records who gave the money. Existing databases need nothing else.
+
+## JSA Management (AI-assisted Job Safety Analysis)
+
+Administrator-only module (sidebar → **JSA Management**): dashboard, JSA workspace (details, activities & hazards, AI generator, editor, export, finalize & history), Safety Knowledge Base, JSA Templates, JSA Settings. Everything is scoped to the current company like the rest of the portal.
+
+**Setup**
+1. Run `supabase/migrations/0017_jsa.sql` once (tables `jsas`, `jsa_activities`, `jsa_hazards`, `jsa_controls`, `jsa_revisions`, `jsa_templates`, `safety_knowledge_base`, `safety_kb_revisions`, `safety_rules`, `jsa_settings`, plus the `jsa_*` functions). Existing data is untouched.
+2. AI generation needs a **server-side** key. In Vercel → Settings → Environment Variables (and `.env.local` locally) set `JSA_AI_API_KEY`; optional `JSA_AI_PROVIDER` (`anthropic` default, or `openai` for any OpenAI-compatible endpoint), `JSA_AI_MODEL`, `JSA_AI_BASE_URL`. The key is only read by the `/api/jsa/*` route handlers; the browser never sees it, and the routes act with the caller's own Supabase session (no service-role key). Without a key everything except AI generation still works.
+3. Logo on exports: Settings → Company details → **Logo file** (e.g. `/md-logo.webp` after copying the image into `portal/public/`).
+4. Optional: JSA Templates → **Load starter templates** (10 activity/hazard skeletons; they contain no pre-approved controls).
+
+**How it behaves**
+- Two statuses only: **Draft** (editable, autosaved, exports watermarked DRAFT) and **Finalized** (read-only, snapshot stored in `jsa_revisions`, immutable by trigger). *New revision* returns the JSA to Draft; earlier finalized versions are kept.
+- AI output is requested as structured JSON, validated, cleaned and de-duplicated before it touches a JSA. Controls you write or edit are never replaced without confirmation. Only knowledge-base entries you confirm are used as approved references.
+- Uploaded Word/PDF files are read on the server (`.docx`, text PDFs, ≤ 4 MB) and treated as untrusted text that you review before saving.
+- Word (`.docx`) and PDF are built in the browser; **Print preview** uses the browser print dialog (A4, landscape/portrait per template).
+
+**Tests** (no Supabase needed): `npm run test:jsa` (parser, merge rules, validation, AI provider layer, Word/PDF import) and `npm i --no-save @electric-sql/pglite && node supabase/tests/jsa.mjs` (migration, RLS, finalization/immutability).
