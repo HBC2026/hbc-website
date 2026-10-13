@@ -326,7 +326,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 /* ---------------- login ---------------- */
 .login-wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
 .login-card { width: 100%; max-width: 400px; background: white; border: 1px solid var(--border); border-radius: 20px; padding: 32px; }
-.login-card img { width: 230px; max-width: 100%; display: block; margin: 0 auto 26px; }
+.login-card img { width: 320px; max-width: 100%; display: block; margin: 0 auto 26px; }
 .login-card h1 { font-size: 20px; text-align: center; margin-bottom: 4px; }
 .login-card .sub { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 22px; }
 .login-card form { display: grid; gap: 14px; }
