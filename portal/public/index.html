@@ -239,6 +239,60 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
   .lang-toggle{padding:10px 12px}
   .rail-head{flex-direction:column;align-items:flex-start}
 }
+
+/* ---------- Quote modal ---------- */
+.qm{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.qm.is-open{display:flex}
+.qm-backdrop{position:absolute;inset:0;background:rgba(15,18,32,.6);backdrop-filter:blur(6px);animation:qmFade .25s ease}
+.qm-dialog{position:relative;width:min(680px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:#fff;border-radius:20px;box-shadow:0 40px 100px -20px rgba(15,18,40,.55),0 0 0 1px rgba(15,18,40,.05);padding:0;animation:qmPop .3s cubic-bezier(.2,.8,.2,1)}
+.qm-head{position:relative;padding:clamp(24px,4vw,34px) clamp(22px,4vw,36px) 22px;background:linear-gradient(135deg,#2b388f 0%,#1f2a75 100%);color:#fff;border-radius:20px 20px 0 0}
+.qm-body{padding:clamp(20px,3.5vw,30px) clamp(22px,4vw,36px) clamp(24px,4vw,34px)}
+.qm-close{position:absolute;top:14px;inset-inline-end:14px;width:38px;height:38px;border:0;background:rgba(255,255,255,.14);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;transition:background-color .2s,transform .2s}
+.qm-close:hover{background:rgba(255,255,255,.28);transform:rotate(90deg)}
+.qm-close svg{width:20px;height:20px}
+.qm-eyebrow{font-family:var(--font-mono);font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#c9d1ff}
+.qm h2{font-family:var(--font-display);font-weight:800;font-size:clamp(24px,3.4vw,30px);line-height:1.15;letter-spacing:-.02em;margin:8px 0 8px;color:#fff;padding-inline-end:36px}
+.qm-sub{font-size:15px;color:#dfe4ff;line-height:1.5;max-width:46ch}
+.qm-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.qm-f{display:flex;flex-direction:column;gap:6px}
+.qm-f[hidden]{display:none}
+.qm-f.full{grid-column:1/-1}
+.qm-f label{font-size:13px;font-weight:600;color:var(--graphite-2)}
+.qm-f label.req::after{content:' *';color:#d33}
+.qm-f label i{font-style:normal;color:#d33}
+.qm-f input,.qm-f select,.qm-f textarea{font:inherit;font-size:16px;line-height:1.4;padding:12px 14px;border:1.5px solid #e1e5ec;border-radius:12px;background:#f7f8fb;color:var(--ink);width:100%;transition:border-color .2s,background-color .2s,box-shadow .2s}
+.qm-f select{appearance:none;-webkit-appearance:none;padding-inline-end:40px;cursor:pointer;background:#f7f8fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234d555a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/18px}
+html[dir="rtl"] .qm-f select{background-position:left 12px center}
+.qm-f textarea{resize:vertical;min-height:92px}
+.qm-f input::placeholder,.qm-f textarea::placeholder{color:#98a0aa}
+.qm-f input:hover,.qm-f select:hover,.qm-f textarea:hover{border-color:#c5ccd8}
+.qm-f input:focus,.qm-f select:focus,.qm-f textarea:focus{outline:none;border-color:var(--royal);background-color:#fff;box-shadow:0 0 0 4px rgba(43,56,143,.14)}
+.qm-f .err{display:none;font-size:12.5px;color:#d33}
+.qm-f.bad input,.qm-f.bad select{border-color:#d33;background-color:#fff6f6}
+.qm-f.bad .err{display:block}
+.qm-f select[hidden],.qm-alt[hidden]{display:none}
+.qm-alt{position:relative;display:block;animation:qmSlide .2s ease}
+.qm-alt input{padding-inline-end:42px;border-color:var(--royal);background-color:#fff}
+.qm-alt-x{position:absolute;top:50%;inset-inline-end:8px;transform:translateY(-50%);width:28px;height:28px;border:0;border-radius:50%;background:#e8ebf3;color:var(--graphite-2);display:flex;align-items:center;justify-content:center}
+.qm-alt-x:hover{background:#d5daea;color:var(--royal)}
+.qm-alt-x svg{width:14px;height:14px}
+.qm-acts{margin-top:22px}
+.qm-acts .btn{width:100%;justify-content:center;cursor:pointer;padding:15px 24px;font-size:16px;border-radius:12px;box-shadow:0 10px 24px -8px rgba(43,56,143,.6);transition:background-color .2s,transform .15s,box-shadow .2s}
+.qm-acts .btn:hover{transform:translateY(-1px);box-shadow:0 14px 28px -8px rgba(43,56,143,.7)}
+.qm-error{margin-top:14px;font-size:14px;font-weight:600;color:#d33;background:#fff0f0;border-radius:10px;padding:10px 14px}
+.qm-note{font-size:13px;color:var(--muted);margin-top:14px;text-align:center}
+.qm-done{text-align:center;padding:36px clamp(22px,4vw,36px) 40px}
+.qm-done svg{width:64px;height:64px;color:#1a9d5c;margin:0 auto 10px}
+.qm-done h2{color:var(--ink);padding:0}
+.qm-done .qm-sub{color:var(--muted);margin:0 auto 18px}
+.qm-done .btn{cursor:pointer;border-radius:12px}
+#qmSubmit[disabled]{opacity:.65;cursor:wait;transform:none}
+body.qm-lock{overflow:hidden}
+@keyframes qmFade{from{opacity:0}to{opacity:1}}
+@keyframes qmPop{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes qmSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(max-width:560px){.qm{padding:0;align-items:flex-end}.qm-dialog{border-radius:20px 20px 0 0;max-height:94dvh}.qm-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.qm-backdrop,.qm-dialog,.qm-alt{animation:none}}
 </style>
 </head>
 <body>
@@ -258,7 +312,7 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/></svg>
         <span class="lt-label">العربية</span>
       </button>
-      <a href="#contact" class="btn btn-blue" data-en="Start a project" data-ar="ابدأ مشروعك">Start a project</a>
+      <a href="#contact" data-quote class="btn btn-blue" data-en="Get a quote" data-ar="اطلب عرض سعر">Get a quote</a>
       <button type="button" class="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
       </button>
@@ -271,7 +325,7 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
   <a href="#capabilities" data-en="Capabilities" data-ar="قدراتنا">Capabilities</a>
   <a href="#hse" data-en="HSE &amp; Quality" data-ar="الصحة والسلامة والجودة">HSE &amp; Quality</a>
   <a href="#contact" data-en="Contact" data-ar="تواصل معنا">Contact</a>
-  <a href="#contact" class="btn btn-blue" data-en="Start a project" data-ar="ابدأ مشروعك">Start a project</a>
+  <a href="#contact" data-quote class="btn btn-blue" data-en="Get a quote" data-ar="اطلب عرض سعر">Get a quote</a>
 </div>
 
 <main id="top">
@@ -287,7 +341,7 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
           <li data-en="Slabs" data-ar="بلاطات">Slabs</li><li data-en="Walls" data-ar="جدران">Walls</li><li data-en="Beams" data-ar="كمرات">Beams</li><li data-en="Foundations" data-ar="أساسات">Foundations</li>
         </ul>
         <div class="hero-cta">
-          <a href="#contact" class="btn btn-light"><span data-en="Request a coring quote" data-ar="اطلب عرض سعر للحفر">Request a coring quote</span><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="#contact" data-quote class="btn btn-light"><span data-en="Request a coring quote" data-ar="اطلب عرض سعر للحفر">Request a coring quote</span><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a href="tel:+966595384591" class="hero-call"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5c0 8.3 6.7 15 15 15l3-3.6-5.4-2.4-1.8 2.1a12.5 12.5 0 0 1-6.9-6.9l2.1-1.8L7.6 2 4 5Z"/></svg></span><span><span class="lbl" data-en="Call us now" data-ar="اتصل بنا الآن">Call us now</span><span class="num">+966 59 538 4591</span></span></a>
         </div>
       </div>
@@ -539,6 +593,59 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
   </div>
 </footer>
 
+<!-- ===== QUOTE MODAL ===== -->
+<div class="qm" id="quoteModal" role="dialog" aria-modal="true" aria-labelledby="qmTitle" hidden>
+  <div class="qm-backdrop" data-qm-close></div>
+  <div class="qm-dialog">
+    <div class="qm-head">
+    <button type="button" class="qm-close" data-qm-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="qm-eyebrow" data-en="Concrete coring" data-ar="حفر الخرسانة">Concrete coring</div>
+    <h2 id="qmTitle" data-en="Request a coring quote" data-ar="اطلب عرض سعر للحفر">Request a coring quote</h2>
+    <p class="qm-sub" data-en="Tell us about the job and we'll come back with a quote, usually within one working day." data-ar="أخبرنا عن العمل وسنعود إليك بعرض سعر، عادةً خلال يوم عمل واحد.">Tell us about the job and we'll come back with a quote, usually within one working day.</p>
+    </div>
+    <form id="quoteForm" class="qm-body" novalidate>
+      <div class="qm-grid">
+        <div class="qm-f"><label for="qName"><span data-en="Name" data-ar="الاسم">Name</span> <i>*</i></label><input id="qName" name="name" dir="auto" autocomplete="name" required><span class="err" data-en="Please enter your name." data-ar="الرجاء إدخال اسمك.">Please enter your name.</span></div>
+        <div class="qm-f"><label for="qCompany" class="req" data-en="Company" data-ar="الشركة">Company</label><input id="qCompany" name="company" dir="auto" autocomplete="organization"></div>
+        <div class="qm-f"><label for="qPhone"><span data-en="Phone / WhatsApp" data-ar="الهاتف / واتساب">Phone / WhatsApp</span> <i>*</i></label><input id="qPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" required><span class="err" data-en="Please enter a valid phone number." data-ar="الرجاء إدخال رقم هاتف صحيح.">Please enter a valid phone number.</span></div>
+        <div class="qm-f"><label for="qEmail" class="req" data-en="Email" data-ar="البريد الإلكتروني">Email</label><input id="qEmail" name="email" type="email" autocomplete="email" dir="ltr"><span class="err" data-en="Please enter a valid email." data-ar="الرجاء إدخال بريد صحيح.">Please enter a valid email.</span></div>
+        <div class="qm-f"><label for="qMat" class="req" data-en="Material" data-ar="نوع المادة">Material</label>
+          <select id="qMat" name="material">
+            <option value="Reinforced concrete" data-en="Reinforced concrete" data-ar="خرسانة مسلحة">Reinforced concrete</option>
+            <option value="Plain concrete" data-en="Plain concrete" data-ar="خرسانة عادية">Plain concrete</option>
+            <option value="Block / masonry" data-en="Block / masonry" data-ar="بلوك / مباني">Block / masonry</option>
+            <option value="Other" data-en="Other" data-ar="أخرى">Other</option>
+          </select><span class="qm-alt" hidden><input id="qMatOther" name="materialOther" maxlength="120" dir="auto" placeholder="Describe the material" data-ph-en="Describe the material" data-ph-ar="صف المادة" aria-label="Describe the material"><button type="button" class="qm-alt-x" aria-label="Back to list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span><span class="err" data-en="Please add a short description." data-ar="الرجاء إضافة وصف قصير.">Please add a short description.</span></div>
+        <div class="qm-f"><label for="qEl" class="req" data-en="What are we coring?" data-ar="ما الذي سيتم حفره؟">What are we coring?</label>
+          <select id="qEl" name="element">
+            <option value="Slab" data-en="Slab" data-ar="بلاطة">Slab</option>
+            <option value="Wall" data-en="Wall" data-ar="جدار">Wall</option>
+            <option value="Beam" data-en="Beam" data-ar="كمرة">Beam</option>
+            <option value="Foundation" data-en="Foundation" data-ar="أساس">Foundation</option>
+            <option value="Other" data-en="Other" data-ar="أخرى">Other</option>
+          </select><span class="qm-alt" hidden><input id="qElOther" name="elementOther" maxlength="120" dir="auto" placeholder="Describe what we are coring" data-ph-en="Describe what we are coring" data-ph-ar="صف ما سيتم حفره" aria-label="Describe what we are coring"><button type="button" class="qm-alt-x" aria-label="Back to list"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></span><span class="err" data-en="Please add a short description." data-ar="الرجاء إضافة وصف قصير.">Please add a short description.</span></div>
+        <div class="qm-f"><label for="qDia" class="req" data-en="Core diameter (mm)" data-ar="قطر الحفر (مم)">Core diameter (mm)</label><input id="qDia" name="diameter" inputmode="numeric" placeholder="e.g. 50, 110, 200" data-ph-en="e.g. 50, 110, 200" data-ph-ar="مثال: 50، 110، 200" dir="ltr"></div>
+        <div class="qm-f"><label for="qQty" class="req" data-en="Number of cores" data-ar="عدد الفتحات">Number of cores</label><input id="qQty" name="qty" inputmode="numeric" placeholder="e.g. 20" data-ph-en="e.g. 20" data-ph-ar="مثال: 20" dir="ltr"></div>
+        <div class="qm-f"><label for="qDepth" class="req" data-en="Depth / thickness (mm)" data-ar="العمق / السماكة (مم)">Depth / thickness (mm)</label><input id="qDepth" name="depth" inputmode="numeric" placeholder="e.g. 300" data-ph-en="e.g. 300" data-ph-ar="مثال: 300" dir="ltr"></div>
+        <div class="qm-f"><label for="qLoc" class="req" data-en="Site location" data-ar="موقع العمل">Site location</label><input id="qLoc" name="location" dir="auto" placeholder="City / district" data-ph-en="City / district" data-ph-ar="المدينة / الحي"></div>
+        <div class="qm-f full"><label for="qNotes" class="req" data-en="Details" data-ar="تفاصيل إضافية">Details</label><textarea id="qNotes" name="notes" dir="auto" placeholder="Access, working hours, drawings available, urgency…" data-ph-en="Access, working hours, drawings available, urgency…" data-ph-ar="الوصول، ساعات العمل، توفر المخططات، الاستعجال…"></textarea></div>
+      </div>
+      <div class="qm-acts">
+        <button type="submit" class="btn btn-blue" id="qmSubmit"><span data-en="Request a quote" data-ar="اطلب عرض سعر">Request a quote</span></button>
+      </div>
+      <p class="qm-error" id="qmError" role="alert" hidden></p>
+      <p class="qm-note" data-en="Prefer to talk? Call +966 59 538 4591." data-ar="تفضل الاتصال؟ ‎+966 59 538 4591">Prefer to talk? Call +966 59 538 4591.</p>
+      <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0">
+    </form>
+    <div class="qm-done" id="qmDone" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
+      <h2 data-en="Request sent" data-ar="تم إرسال الطلب">Request sent</h2>
+      <p class="qm-sub" data-en="Thank you. We've received your coring request and will get back to you shortly." data-ar="شكرًا لك. استلمنا طلبك وسنعود إليك قريبًا.">Thank you. We've received your coring request and will get back to you shortly.</p>
+      <button type="button" class="btn btn-blue" data-qm-close><span data-en="Close" data-ar="إغلاق">Close</span></button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   var btn=document.querySelector('.menu-toggle'),nav=document.getElementById('mobileNav');
@@ -551,6 +658,69 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
     var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('is-visible');io.unobserve(e.target)}})},{threshold:.12});
     els.forEach(function(el){io.observe(el)});
   }else{els.forEach(function(el){el.classList.add('is-visible')})}
+
+  /* ---- Quote modal ---- */
+  var qm=document.getElementById('quoteModal'),qf=document.getElementById('quoteForm'),qLast=null;
+  function qOpen(e){if(e)e.preventDefault();qLast=document.activeElement;
+    qf.hidden=false;qAlt('qMat','qMatOther',false);qAlt('qEl','qElOther',false);document.getElementById('qmDone').hidden=true;document.getElementById('qmError').hidden=true;
+    qm.querySelectorAll('.qm-eyebrow,#qmTitle,.qm-dialog > .qm-sub').forEach(function(el){el.hidden=false});qm.hidden=false;qm.classList.add('is-open');document.body.classList.add('qm-lock');setTimeout(function(){document.getElementById('qName').focus()},30)}
+  function qClose(){qm.classList.remove('is-open');qm.hidden=true;document.body.classList.remove('qm-lock');if(qLast&&qLast.focus)qLast.focus()}
+  document.querySelectorAll('[data-quote]').forEach(function(a){a.addEventListener('click',qOpen)});
+  qm.querySelectorAll('[data-qm-close]').forEach(function(b){b.addEventListener('click',qClose)});
+  addEventListener('keydown',function(e){
+    if(!qm.classList.contains('is-open'))return;
+    if(e.key==='Escape')qClose();
+    if(e.key==='Tab'){
+      var f=qm.querySelectorAll('button,input,select,textarea'),a=f[0],z=f[f.length-1];
+      if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}
+      else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}
+    }
+  });
+  function qPh(){var l=document.documentElement.lang==='ar'?'ar':'en';qm.querySelectorAll('[data-ph-en]').forEach(function(el){el.placeholder=el.getAttribute('data-ph-'+l)})}
+  new MutationObserver(qPh).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});qPh();
+  var qDig=function(v){return v.replace(/[٠-٩]/g,function(c){return c.charCodeAt(0)-0x660}).replace(/[۰-۹]/g,function(c){return c.charCodeAt(0)-0x6F0})};
+  function qAlt(sid,iid,on,focus){
+    var sel=document.getElementById(sid),inp=document.getElementById(iid),alt=inp.parentNode;
+    sel.hidden=on;alt.hidden=!on;
+    if(on){if(focus)inp.focus()}else{inp.value='';sel.closest('.qm-f').classList.remove('bad');if(sel.value==='Other')sel.selectedIndex=0}
+  }
+  [['qMat','qMatOther'],['qEl','qElOther']].forEach(function(p){
+    var sel=document.getElementById(p[0]),alt=document.getElementById(p[1]).parentNode;
+    sel.addEventListener('change',function(){if(sel.value==='Other')qAlt(p[0],p[1],true,true)});
+    alt.querySelector('.qm-alt-x').addEventListener('click',function(){qAlt(p[0],p[1],false);sel.focus()});
+  });
+  qf.querySelectorAll('.qm-f').forEach(function(f){if(!f.querySelector('.err')){var s=document.createElement('span');s.className='err';s.setAttribute('data-en','This field is required.');s.setAttribute('data-ar','هذا الحقل مطلوب.');s.textContent='This field is required.';f.appendChild(s)}});
+  qf.addEventListener('input',function(e){var f=e.target.closest&&e.target.closest('.qm-f');if(f)f.classList.remove('bad')});
+  function qCheck(){
+    var ok=true,$=function(id){return document.getElementById(id)};
+    function mark(id,good){var f=$(id).closest('.qm-f');f.classList.toggle('bad',!good);if(!good)ok=false}
+    var txt=function(id){return $(id).value.trim().length>1};
+    mark('qName',txt('qName'));
+    mark('qCompany',txt('qCompany'));
+    mark('qPhone',/^[+\d][\d\s()-]{6,}$/.test(qDig($('qPhone').value.trim())));
+    mark('qEmail',/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('qEmail').value.trim()));
+    ['qMat','qEl'].forEach(function(id){if($(id).hidden)mark(id+'Other',txt(id+'Other'))});
+    ['qDia','qQty','qDepth'].forEach(function(id){mark(id,+qDig($(id).value.trim())>0)});
+    mark('qLoc',txt('qLoc'));
+    mark('qNotes',txt('qNotes'));
+    if(!ok){var f=qf.querySelector('.qm-f.bad input:not([hidden]),.qm-f.bad textarea');if(f)f.focus()}
+    return ok;
+  }
+  var qBtn=document.getElementById('qmSubmit'),qErr=document.getElementById('qmError'),qDone=document.getElementById('qmDone');
+  function qFail(en,ar){qErr.textContent=document.documentElement.lang==='ar'?ar:en;qErr.hidden=false}
+  qf.addEventListener('submit',function(e){
+    e.preventDefault();qErr.hidden=true;if(!qCheck())return;
+    var data={};new FormData(qf).forEach(function(v,k){data[k]=v});if(document.getElementById('qMat').hidden)data.material='Other';if(document.getElementById('qEl').hidden)data.element='Other';['phone','diameter','qty','depth'].forEach(function(k){data[k]=qDig(String(data[k]||''))});
+    qBtn.disabled=true;
+    fetch('/api/quote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+      .then(function(r){return r.json().catch(function(){return{}}).then(function(j){return{ok:r.ok,j:j}})})
+      .then(function(x){
+        if(x.ok){qf.hidden=true;document.querySelectorAll('#quoteModal .qm-eyebrow,#qmTitle,#quoteModal > .qm-dialog > .qm-sub').forEach(function(el){el.hidden=true});qDone.hidden=false;qf.reset()}
+        else qFail(x.j.error||'We could not send your request. Please call +966 59 538 4591.','تعذر إرسال طلبك. الرجاء الاتصال على ‎+966 59 538 4591.');
+      })
+      .catch(function(){qFail('Connection problem. Please try again or call +966 59 538 4591.','مشكلة في الاتصال. حاول مرة أخرى أو اتصل على ‎+966 59 538 4591.')})
+      .then(function(){qBtn.disabled=false});
+  });
 
   var toggle=document.querySelector('.lang-toggle');
   function apply(l){
