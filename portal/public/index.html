@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hassan and Bilal Company | General Construction, Eastern Province</title>
-<meta name="description" content="Hassan and Bilal Company delivers general construction projects across the Eastern Province of Saudi Arabia.">
+<title>Concrete Coring &amp; General Construction | Hassan and Bilal Company</title>
+<meta name="description" content="Concrete core drilling and general construction across the Eastern Province of Saudi Arabia, by Hassan and Bilal Company.">
 <link rel="icon" href="assets/site/hbc-symbol.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,20 +59,47 @@ html[dir="rtl"] .btn .arr{transform:scaleX(-1)}
 .mobile-nav{display:none}
 
 /* ---------- Hero ---------- */
-.hero{position:relative;color:#fff;background:var(--graphite);overflow:hidden;padding:clamp(72px,11vw,150px) 0 220px}
-.hero-media{position:absolute;inset:0}
-.hero-media img{width:100%;height:100%;object-fit:cover;object-position:68% 40%}
-.hero-media::after{content:"";position:absolute;inset:0;background:
-  linear-gradient(90deg,rgba(24,27,29,.93) 0%,rgba(24,27,29,.82) 34%,rgba(24,27,29,.25) 66%,rgba(24,27,29,0) 100%),
-  linear-gradient(0deg,rgba(24,27,29,.7) 0%,rgba(24,27,29,0) 40%)}
-html[dir="rtl"] .hero-media::after{background:
-  linear-gradient(270deg,rgba(24,27,29,.93) 0%,rgba(24,27,29,.82) 34%,rgba(24,27,29,.25) 66%,rgba(24,27,29,0) 100%),
-  linear-gradient(0deg,rgba(24,27,29,.7) 0%,rgba(24,27,29,0) 40%)}
+.hero{position:relative;color:#fff;overflow:hidden;padding:clamp(48px,7vw,96px) 0 230px;background:
+  radial-gradient(60% 70% at 78% 42%,rgba(43,56,143,.38),transparent 70%),
+  linear-gradient(180deg,#23272a 0%,#1a1d1f 100%)}
+.hero-grid{display:grid;grid-template-columns:1.02fr 1fr;gap:clamp(24px,4vw,64px);align-items:center}
+.core-art{margin:0}
+.core-art svg{width:100%;height:auto;max-height:560px;display:block;overflow:visible}
+.cuts{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.cuts li{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#d7dce0;border:1px solid rgba(255,255,255,.28);padding:6px 12px;border-radius:3px}
+html[lang="ar"] .cuts li{font-family:'IBM Plex Sans Arabic',sans-serif;letter-spacing:0;font-size:15px}
+/* core animation (section view): static end-state by default, looping only when motion is allowed */
+.a-core{transform:translate(-176px,-196px) rotate(-10deg);transform-box:fill-box;transform-origin:center}
+.a-hole{transform-box:fill-box;transform-origin:top}
+.a-feed{transform-origin:497px 146px}
+.a-slurry,.a-water,.a-drop{opacity:0}
+@media (prefers-reduced-motion:no-preference){
+  .a-bit{animation:abit 9s ease-in-out infinite}
+  .a-hole{animation:ahole 9s ease-in-out infinite}
+  .a-holetop{animation:aholetop 9s ease-in-out infinite}
+  .a-core{animation:acore 9s ease-in-out infinite}
+  .a-shade{animation:ashade 9s ease-in-out infinite}
+  .a-dim{animation:adim 9s ease-in-out infinite}
+  .a-slurry{animation:aslurry 9s ease-in-out infinite}
+  .a-water{animation:awater 9s ease-in-out infinite}
+  .a-feed{animation:afeed 9s ease-in-out infinite}
+  .a-drop{animation:adrop .8s ease-out infinite}
+}
+@keyframes abit{0%,8%{transform:translateY(0)}44%,54%{transform:translateY(152px)}68%,100%{transform:translateY(0)}}
+@keyframes ahole{0%,8%{transform:scaleY(0);opacity:1}44%,94%{transform:scaleY(1);opacity:1}100%{transform:scaleY(1);opacity:0}}
+@keyframes aholetop{0%,7%{opacity:0}9%,94%{opacity:1}100%{opacity:0}}
+@keyframes acore{0%,68%{transform:none;opacity:1}84%,92%{transform:translate(-176px,-196px) rotate(-10deg);opacity:1}98%,100%{transform:translate(-176px,-196px) rotate(-10deg);opacity:0}}
+@keyframes ashade{0%,66%{opacity:0}74%,100%{opacity:1}}
+@keyframes afeed{0%,8%{transform:rotate(0)}44%,54%{transform:rotate(-540deg)}68%,100%{transform:rotate(0)}}
+@keyframes adim{0%,82%{opacity:0}88%,93%{opacity:1}98%,100%{opacity:0}}
+@keyframes aslurry{0%,9%{opacity:0}16%,48%{opacity:1}58%,100%{opacity:0}}
+@keyframes awater{0%,8%{opacity:0}12%,50%{opacity:1}58%,100%{opacity:0}}
+@keyframes adrop{0%{opacity:.95;transform:translate(0,0)}60%{opacity:.8;transform:translate(var(--dx),var(--dy))}100%{opacity:0;transform:translate(calc(var(--dx)*1.6),12px)}}
 .hero .wrap{position:relative}
 .eyebrow{font-family:var(--font-mono);font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;display:flex;align-items:center;gap:12px;color:var(--gold)}
 .eyebrow::before{content:"";width:36px;height:2px;background:currentColor}
 html[lang="ar"] .eyebrow{letter-spacing:0;font-family:'IBM Plex Sans Arabic',sans-serif;font-size:15px}
-.hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(40px,5.6vw,76px);line-height:1.04;letter-spacing:-.03em;margin:22px 0 24px;max-width:13ch}
+.hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(42px,5.4vw,78px);line-height:1.02;letter-spacing:-.03em;margin:22px 0 24px;max-width:11ch}
 .hero h1 em{font-style:normal;color:var(--royal-bright)}
 html[lang="ar"] .hero h1{text-transform:none;font-size:clamp(44px,7vw,92px);letter-spacing:0;line-height:1.2;max-width:none}
 .hero p.lede{font-size:clamp(17px,1.6vw,20px);color:#eef1f5;max-width:520px}
@@ -196,6 +223,7 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
   .pcard.cta{grid-column:1/-1}
   .cap-grid{grid-template-columns:repeat(2,1fr)}
 }
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}.core-art{max-width:460px;margin-inline:auto}.hero{padding-bottom:210px}}
 @media(max-width:820px){
   .about-grid,.hse-grid,.vision-grid,.foot-grid{grid-template-columns:1fr}
   .hse-photo{order:-1}
@@ -249,17 +277,111 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
 <main id="top">
 
   <!-- ===== FRONT SECTION: hero + projects ===== -->
-  <section class="hero" aria-label="Introduction">
-    <div class="hero-media"><img src="assets/site/hero.jpg" alt="Site engineer reviewing drawings at sunrise on an industrial construction site in Saudi Arabia" width="2000" height="1126" fetchpriority="high"></div>
-    <div class="wrap">
-      <div class="eyebrow" data-en="General construction · Eastern Province" data-ar="البناء العام · المنطقة الشرقية">General construction · Eastern Province</div>
-      <h1><span data-en="Engineering" data-ar="هندسة">Engineering</span> <em data-en="What Lasts." data-ar="تدوم.">What Lasts.</em></h1>
-      <p class="lede" data-en="Hassan and Bilal Company delivers commercial, industrial and civil projects with technical discipline and a commitment to quality that stands the test of time." data-ar="تنفّذ شركة حسن وبلال مشاريع تجارية وصناعية ومدنية بانضباط فني والتزام بجودة تصمد أمام الزمن.">Hassan and Bilal Company delivers commercial, industrial and civil projects with technical discipline and a commitment to quality that stands the test of time.</p>
-      <div class="hero-cta">
-        <a href="#projects" class="btn btn-light"><span data-en="See our projects" data-ar="شاهد مشاريعنا">See our projects</span><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-        <a href="#contact" class="btn btn-ghost" data-en="Request a quote" data-ar="اطلب عرض سعر">Request a quote</a>
-        <a href="tel:+966XXXXXXXXX" class="hero-call"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5c0 8.3 6.7 15 15 15l3-3.6-5.4-2.4-1.8 2.1a12.5 12.5 0 0 1-6.9-6.9l2.1-1.8L7.6 2 4 5Z"/></svg></span><span><span class="lbl" data-en="Call us now" data-ar="اتصل بنا الآن">Call us now</span><span class="num">+966 XX XXX XXXX</span></span></a>
+  <section class="hero" aria-label="Concrete coring">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow" data-en="Concrete coring · Eastern Province" data-ar="حفر الخرسانة (كور) · المنطقة الشرقية">Concrete coring · Eastern Province</div>
+        <h1><span data-en="Concrete coring," data-ar="حفر الخرسانة،">Concrete coring,</span> <em data-en="cut exact." data-ar="بدقة تامة.">cut exact.</em></h1>
+        <p class="lede" data-en="Clean, round openings through slabs, walls, beams and foundations for MEP, HVAC and drainage, and core samples for testing." data-ar="فتحات دائرية نظيفة عبر البلاطات والجدران والكمرات والأساسات لأعمال الكهروميكانيك والتكييف والصرف، وعينات كور للفحص.">Clean, round openings through slabs, walls, beams and foundations for MEP, HVAC and drainage, and core samples for testing.</p>
+        <ul class="cuts" aria-label="What we core">
+          <li data-en="Slabs" data-ar="بلاطات">Slabs</li><li data-en="Walls" data-ar="جدران">Walls</li><li data-en="Beams" data-ar="كمرات">Beams</li><li data-en="Foundations" data-ar="أساسات">Foundations</li>
+        </ul>
+        <div class="hero-cta">
+          <a href="#contact" class="btn btn-light"><span data-en="Request a coring quote" data-ar="اطلب عرض سعر للحفر">Request a coring quote</span><svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a href="tel:+966595384591" class="hero-call"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5c0 8.3 6.7 15 15 15l3-3.6-5.4-2.4-1.8 2.1a12.5 12.5 0 0 1-6.9-6.9l2.1-1.8L7.6 2 4 5Z"/></svg></span><span><span class="lbl" data-en="Call us now" data-ar="اتصل بنا الآن">Call us now</span><span class="num">+966 59 538 4591</span></span></a>
+        </div>
       </div>
+      <figure class="core-art" aria-label="Animation: a stand-mounted diamond core drilling machine cuts through a reinforced concrete slab, then the core lifts out showing the rebar">
+        <svg viewBox="0 0 560 520" role="img" aria-hidden="true">
+          <defs>
+            <pattern id="agg" width="46" height="46" patternUnits="userSpaceOnUse">
+              <rect width="46" height="46" fill="#757a7e"/>
+              <circle cx="8" cy="10" r="2.2" fill="#90969a"/><circle cx="30" cy="6" r="1.4" fill="#5d6265"/><circle cx="38" cy="28" r="2.6" fill="#8b9195"/>
+              <circle cx="16" cy="34" r="1.6" fill="#5a5f62"/><circle cx="26" cy="22" r="1.2" fill="#a3a9ad"/><circle cx="4" cy="42" r="1.8" fill="#82888c"/>
+            </pattern>
+            <linearGradient id="gMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#596066"/><stop offset="0.25" stop-color="#f2f4f5"/><stop offset="0.55" stop-color="#aab1b6"/><stop offset="1" stop-color="#4a5156"/></linearGradient>
+            <linearGradient id="gDark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#15181a"/><stop offset="0.3" stop-color="#4b5258"/><stop offset="0.65" stop-color="#25292c"/><stop offset="1" stop-color="#0e1011"/></linearGradient>
+            <linearGradient id="gRed" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7d0a18"/><stop offset="0.25" stop-color="#f0384d"/><stop offset="0.55" stop-color="#c8102e"/><stop offset="1" stop-color="#650813"/></linearGradient>
+            <linearGradient id="gSeg" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a7a55"/><stop offset="0.4" stop-color="#ece0bd"/><stop offset="1" stop-color="#a69568"/></linearGradient>
+            <linearGradient id="gRebar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a5d1c"/><stop offset="0.4" stop-color="#e9cf84"/><stop offset="1" stop-color="#a37b25"/></linearGradient>
+            <linearGradient id="gCyl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="0.3" stop-color="#fff" stop-opacity="0.12"/><stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.5"/></linearGradient>
+            <linearGradient id="gFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.1"/><stop offset="1" stop-color="#000" stop-opacity="0.38"/></linearGradient>
+            <linearGradient id="gTop" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="1" stop-color="#fff" stop-opacity="0.1"/></linearGradient>
+            <radialGradient id="gHole" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#2a3034"/><stop offset="1" stop-color="#0c0f10"/></radialGradient>
+            <radialGradient id="gSlurry" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#9fb0bd" stop-opacity=".9"/><stop offset="1" stop-color="#9fb0bd" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect x="40" y="330" width="480" height="140" fill="url(#agg)"/>
+          <rect x="40" y="330" width="480" height="140" fill="url(#gFront)"/>
+          <polygon points="40,330 100,298 560,298 520,330" fill="url(#agg)"/>
+          <polygon points="40,330 100,298 560,298 520,330" fill="url(#gTop)"/>
+          <polygon points="520,330 560,298 560,438 520,470" fill="#000" fill-opacity=".38"/>
+          <g><circle cx="70" cy="365" r="7" fill="url(#gRebar)"/><circle cx="68" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="130" cy="365" r="7" fill="url(#gRebar)"/><circle cx="128" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="190" cy="365" r="7" fill="url(#gRebar)"/><circle cx="188" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="370" cy="365" r="7" fill="url(#gRebar)"/><circle cx="368" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="430" cy="365" r="7" fill="url(#gRebar)"/><circle cx="428" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="70" cy="440" r="7" fill="url(#gRebar)"/><circle cx="68" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="130" cy="440" r="7" fill="url(#gRebar)"/><circle cx="128" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="190" cy="440" r="7" fill="url(#gRebar)"/><circle cx="188" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="370" cy="440" r="7" fill="url(#gRebar)"/><circle cx="368" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="430" cy="440" r="7" fill="url(#gRebar)"/><circle cx="428" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="490" cy="440" r="7" fill="url(#gRebar)"/><circle cx="488" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/></g>
+          <rect class="a-hole" x="225" y="330" width="110" height="140" fill="url(#gHole)"/>
+          <ellipse class="a-holetop" cx="280" cy="314" rx="55" ry="13" fill="#0c0f10"/>
+          <g class="a-core">
+            <rect x="236" y="314" width="88" height="156" fill="url(#agg)"/>
+            <circle cx="280" cy="365" r="7" fill="url(#gRebar)"/><circle cx="278" cy="362.5" r="2" fill="#fff" fill-opacity=".45"/><circle cx="280" cy="440" r="7" fill="url(#gRebar)"/><circle cx="278" cy="437.5" r="2" fill="#fff" fill-opacity=".45"/>
+            <g class="a-shade">
+              <rect x="236" y="314" width="88" height="156" fill="url(#gCyl)"/>
+              <ellipse cx="280" cy="314" rx="44" ry="10" fill="#9aa1a6"/>
+              <ellipse cx="280" cy="314" rx="44" ry="10" fill="url(#gTop)"/>
+            </g>
+          </g>
+          <ellipse class="a-slurry" cx="280" cy="318" rx="104" ry="20" fill="url(#gSlurry)"/>
+          <!-- rig base: water-collection ring, bracket, foot plate, column -->
+          <ellipse cx="280" cy="316" rx="66" ry="15" fill="none" stroke="#1b1f21" stroke-width="7"/>
+          <ellipse cx="280" cy="314" rx="66" ry="15" fill="none" stroke="#5a6268" stroke-width="2"/>
+          <path d="M344 318h60" stroke="#2b3034" stroke-width="8" stroke-linecap="round"/>
+          <path d="M214 322C190 330 170 338 150 352" stroke="#15181a" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <rect x="398" y="318" width="124" height="14" rx="3" fill="url(#gDark)"/>
+          <rect x="398" y="318" width="124" height="3" fill="#fff" fill-opacity=".25"/>
+          <circle cx="410" cy="325" r="4" fill="url(#gMetal)"/><circle cx="510" cy="325" r="4" fill="url(#gMetal)"/>
+          <rect x="446" y="34" width="36" height="288" fill="url(#gMetal)"/>
+          <rect x="440" y="28" width="48" height="10" rx="3" fill="url(#gDark)"/>
+          <path d="M449 46h6M449 54h6M449 62h6M449 70h6M449 78h6M449 86h6M449 94h6M449 102h6M449 110h6M449 118h6M449 126h6M449 134h6M449 142h6M449 150h6M449 158h6M449 166h6M449 174h6M449 182h6M449 190h6M449 198h6M449 206h6M449 214h6M449 222h6M449 230h6M449 238h6M449 246h6M449 254h6M449 262h6M449 270h6M449 278h6M449 286h6M449 294h6M449 302h6M449 310h6" stroke="#1b1f21" stroke-opacity=".7" stroke-width="2"/>
+          <path d="M470 38V320" stroke="#1b1f21" stroke-opacity=".25" stroke-width="2"/>
+          <!-- coring machine on carriage (Hilti-style: red housing, black handle, silver bit) -->
+          <g class="a-bit">
+            <path d="M322 60C350 54 360 30 392 20" stroke="#15181a" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <rect x="326" y="118" width="80" height="44" rx="4" fill="url(#gDark)"/>
+            <rect x="326" y="118" width="80" height="4" fill="#fff" fill-opacity=".2"/>
+            <rect x="398" y="96" width="98" height="100" rx="6" fill="url(#gDark)"/>
+            <rect x="398" y="96" width="98" height="5" rx="3" fill="#fff" fill-opacity=".22"/>
+            <circle cx="410" cy="110" r="3.5" fill="url(#gMetal)"/><circle cx="484" cy="110" r="3.5" fill="url(#gMetal)"/><circle cx="410" cy="184" r="3.5" fill="url(#gMetal)"/><circle cx="484" cy="184" r="3.5" fill="url(#gMetal)"/>
+            <g class="a-feed">
+              <circle cx="497" cy="146" r="11" fill="url(#gMetal)"/>
+              <path d="M497 146L497 100M497 146L537 169M497 146L457 169" stroke="#15181a" stroke-width="6" stroke-linecap="round"/>
+              <circle cx="497" cy="98" r="7" fill="#15181a"/><circle cx="538" cy="170" r="7" fill="#15181a"/><circle cx="456" cy="170" r="7" fill="#15181a"/>
+              <circle cx="497" cy="146" r="4" fill="#c8102e"/>
+            </g>
+            <rect x="150" y="72" width="94" height="20" rx="10" fill="url(#gDark)"/>
+            <path d="M166 72v20M178 72v20M190 72v20M202 72v20M214 72v20" stroke="#000" stroke-opacity=".45" stroke-width="2"/>
+            <rect x="238" y="64" width="12" height="36" rx="3" fill="url(#gMetal)"/>
+            <rect x="268" y="8" width="24" height="18" rx="3" fill="url(#gMetal)"/>
+            <rect x="292" y="12" width="22" height="8" rx="3" fill="#e8b92d"/>
+            <rect x="242" y="24" width="76" height="16" rx="6" fill="url(#gDark)"/>
+            <rect x="236" y="38" width="88" height="94" rx="12" fill="url(#gRed)"/>
+            <rect x="236" y="38" width="88" height="94" rx="12" fill="url(#gCyl)" fill-opacity=".55"/>
+            <rect x="236" y="92" width="88" height="6" fill="#3a0209" fill-opacity=".55"/>
+            <g fill="#2a0309" fill-opacity=".7"><rect x="292" y="48" width="22" height="3" rx="1.5"/><rect x="292" y="56" width="22" height="3" rx="1.5"/><rect x="292" y="64" width="22" height="3" rx="1.5"/><rect x="292" y="72" width="22" height="3" rx="1.5"/></g>
+            <circle cx="262" cy="112" r="8" fill="url(#gDark)"/><circle cx="262" cy="112" r="3" fill="#c8102e"/>
+            <rect x="244" y="132" width="72" height="20" rx="4" fill="url(#gDark)"/>
+            <rect x="250" y="152" width="60" height="20" rx="3" fill="url(#gMetal)"/>
+            <path d="M250 158h60M250 164h60" stroke="#1b1f21" stroke-opacity=".5" stroke-width="2"/>
+            <rect x="225" y="172" width="110" height="142" fill="url(#gMetal)"/>
+            <rect x="225" y="172" width="110" height="142" fill="url(#gCyl)"/>
+            <path d="M225 188h110M225 300h110" stroke="#23282b" stroke-opacity=".5" stroke-width="2"/>
+            <rect x="233" y="290" width="4" height="22" fill="#12161a" fill-opacity=".75"/><rect x="255" y="290" width="4" height="22" fill="#12161a" fill-opacity=".75"/><rect x="277" y="290" width="4" height="22" fill="#12161a" fill-opacity=".75"/><rect x="299" y="290" width="4" height="22" fill="#12161a" fill-opacity=".75"/><rect x="321" y="290" width="4" height="22" fill="#12161a" fill-opacity=".75"/>
+            <rect x="225" y="312" width="110" height="14" fill="#1d2123"/>
+            <rect x="227" y="312" width="18" height="14" rx="1" fill="url(#gSeg)"/><rect x="249" y="312" width="18" height="14" rx="1" fill="url(#gSeg)"/><rect x="271" y="312" width="18" height="14" rx="1" fill="url(#gSeg)"/><rect x="293" y="312" width="18" height="14" rx="1" fill="url(#gSeg)"/><rect x="315" y="312" width="18" height="14" rx="1" fill="url(#gSeg)"/>
+          </g>
+          <g class="a-water"><circle class="a-drop" cx="214" cy="316" r="3.2" fill="#a9d4ff" style="--dx:-33px;--dy:-34px;animation-delay:0s"/><circle class="a-drop" cx="236" cy="316" r="3.2" fill="#a9d4ff" style="--dx:-22px;--dy:-50px;animation-delay:0.15s"/><circle class="a-drop" cx="260" cy="316" r="3.2" fill="#a9d4ff" style="--dx:-10px;--dy:-42px;animation-delay:0.3s"/><circle class="a-drop" cx="304" cy="316" r="3.2" fill="#a9d4ff" style="--dx:12px;--dy:-46px;animation-delay:0.1s"/><circle class="a-drop" cx="328" cy="316" r="3.2" fill="#a9d4ff" style="--dx:24px;--dy:-52px;animation-delay:0.25s"/><circle class="a-drop" cx="348" cy="316" r="3.2" fill="#a9d4ff" style="--dx:34px;--dy:-34px;animation-delay:0.4s"/></g>
+          <g class="a-dim" fill="none" stroke="#8d9cf5" stroke-width="2">
+            <path d="M58 96h92M58 88v16M150 88v16"/>
+            <text x="104" y="72" fill="#c9d1ff" stroke="#14181a" stroke-width="5" paint-order="stroke" font-family="IBM Plex Mono,monospace" font-size="20" font-weight="600" text-anchor="middle">Ø 150 mm</text>
+          </g>
+        </svg>
+      </figure>
     </div>
   </section>
 
@@ -380,8 +502,8 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
         <p data-en="Let's talk about how we can build it together." data-ar="لنتحدث عن كيفية بنائه معًا.">Let's talk about how we can build it together.</p>
       </div>
       <div class="contact-actions">
-        <a href="tel:+966XXXXXXXXX" class="btn btn-light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5c0 8.3 6.7 15 15 15l3-3.6-5.4-2.4-1.8 2.1a12.5 12.5 0 0 1-6.9-6.9l2.1-1.8L7.6 2 4 5Z"/></svg><span data-en="Call us" data-ar="اتصل بنا">Call us</span></a>
-        <a href="mailto:info@hassanbilal.com" class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m4 6 8 7 8-7"/></svg><span data-en="Email us" data-ar="راسلنا">Email us</span></a>
+        <a href="tel:+966595384591" class="btn btn-light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5c0 8.3 6.7 15 15 15l3-3.6-5.4-2.4-1.8 2.1a12.5 12.5 0 0 1-6.9-6.9l2.1-1.8L7.6 2 4 5Z"/></svg><span data-en="Call us" data-ar="اتصل بنا">Call us</span></a>
+        <a href="mailto:contact@hbcgcc.com" class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m4 6 8 7 8-7"/></svg><span data-en="Email us" data-ar="راسلنا">Email us</span></a>
       </div>
     </div>
   </section>
@@ -405,8 +527,8 @@ html[lang="ar"] .site-footer h4{font-family:'IBM Plex Sans Arabic',sans-serif;le
       <div>
         <h4 data-en="Contact" data-ar="تواصل معنا">Contact</h4>
         <ul>
-          <li>+966 XX XXX XXXX</li>
-          <li>info@hassanbilal.com</li>
+          <li>+966 59 538 4591</li>
+          <li>contact@hbcgcc.com</li>
           <li data-en="Eastern Province, Saudi Arabia" data-ar="المنطقة الشرقية، المملكة العربية السعودية">Eastern Province, Saudi Arabia</li>
         </ul>
       </div>
