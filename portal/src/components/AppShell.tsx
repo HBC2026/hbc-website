@@ -9,6 +9,10 @@ import { fmtLongDate } from '@/lib/format';
 import { ATTENDANCE_SIDE, JSA_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
 import type { Role } from '@/lib/types';
 
+function BackIcon() {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>;
+}
+
 interface NavItem { href: string; label: string; icon: string; roles?: Role[] }
 interface NavGroup { label: string; icon: string; items: NavItem[] }
 
@@ -116,12 +120,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const current = activeHref(pathname);
   const currentLabel = ALL.find((i) => i.href === current)?.label ?? 'Portal';
+  const atRoot = pathname === '/adminconsole' || pathname === '/adminconsole/overview';
+  function goBack() {
+    if (window.history.length > 1) router.back();
+    else router.push(pathname.split('/').slice(0, -1).join('/') || '/adminconsole');
+  }
   const initials = profile.full_name.split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || 'U';
 
   return (
     <>
       <div className="mobile-bar no-print">
         <button className="menu-btn" aria-label="Open menu" aria-expanded={navOpen} onClick={() => setNavOpen(true)}>☰</button>
+        {!atRoot && <button className="back-btn" aria-label="Go back" onClick={goBack}><BackIcon /></button>}
         <div className="mobile-title">{company.name}</div>
       </div>
       {navOpen && <div className="nav-backdrop no-print" onClick={() => setNavOpen(false)} />}
@@ -194,7 +204,10 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <main className="main">
         <header className="topbar no-print">
-          <div className="breadcrumb">{company.name} &nbsp;/&nbsp; <strong>{currentLabel}</strong></div>
+          <div className="crumb-row">
+            {!atRoot && <button className="back-btn" aria-label="Go back" onClick={goBack}><BackIcon /></button>}
+            <div className="breadcrumb">{company.name} &nbsp;/&nbsp; <strong>{currentLabel}</strong></div>
+          </div>
           <div className="date">{fmtLongDate(new Date())}</div>
         </header>
         <div className="content">{children}</div>

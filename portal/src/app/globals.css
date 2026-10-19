@@ -123,9 +123,9 @@ h1 { font-size: 27px; letter-spacing: -1px; font-weight: 700; }
 /* ---------------- dashboard header actions ---------------- */
 .hero-btn {
   display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 8px; border-radius: 11px; color: white;
-  font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 3px 10px rgba(17, 24, 39, .14); transition: transform .2s, box-shadow .2s, filter .2s;
+  font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: 0 1px 4px rgba(17, 24, 39, .08); transition: transform .2s, box-shadow .2s, filter .2s;
 }
-.hero-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(17, 24, 39, .2); filter: brightness(1.08); }
+.hero-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(17, 24, 39, .12); filter: brightness(1.08); }
 .hero-green { background: linear-gradient(135deg, #16705a, #0f4f3f); }
 .hero-navy { background: linear-gradient(135deg, #2c3b58, #1b2538); }
 .hero-icon { width: 26px; height: 26px; flex: none; border-radius: 7px; background: rgba(255, 255, 255, .18); display: grid; place-items: center; font-size: 13px; }
@@ -178,15 +178,15 @@ h1 { font-size: 27px; letter-spacing: -1px; font-weight: 700; }
 /* ---------------- buttons / forms ---------------- */
 .btn {
   border: 0; background: white; padding: 9px 14px; border-radius: 9px;
-  box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.16);
+  box-shadow: 0 1px 2px rgba(15,23,42,.08), 0 2px 6px rgba(15,23,42,.08);
   font-size: 12px; font-weight: 600; cursor: pointer; transition: .2s; display: inline-flex; align-items: center; gap: 6px;
   white-space: nowrap;
 }
-.btn:hover { background: var(--surface-soft); box-shadow: 0 2px 4px rgba(15,23,42,.14), 0 8px 18px rgba(15,23,42,.22); transform: translateY(-1px); }
+.btn:hover { background: var(--surface-soft); box-shadow: 0 1px 3px rgba(15,23,42,.10), 0 4px 10px rgba(15,23,42,.10); transform: translateY(-1px); }
 .btn:active { transform: translateY(1px); box-shadow: none; }
-.btn.primary { background: var(--navy); color: white; box-shadow: 0 2px 4px rgba(15,23,42,.25), 0 6px 14px rgba(15,23,42,.32); }
+.btn.primary { background: var(--navy); color: white; box-shadow: 0 1px 2px rgba(15,23,42,.14), 0 3px 8px rgba(15,23,42,.16); }
 .btn.primary:hover { background: #27344d; }
-.btn.green { background: var(--green); color: white; box-shadow: 0 2px 4px rgba(16,90,70,.25), 0 6px 14px rgba(16,90,70,.38); }
+.btn.green { background: var(--green); color: white; box-shadow: 0 1px 2px rgba(16,90,70,.14), 0 3px 8px rgba(16,90,70,.18); }
 .btn.green:hover { background: #135a47; }
 .btn.danger { color: var(--red); }
 .btn.danger:hover { background: var(--red-soft); }
@@ -759,6 +759,38 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 /* the phone layout rules also match at A4 print width: neutralise their spacing */
 @media print { .content { padding: 0 !important; margin: 0 !important; max-width: none !important; } .main { margin: 0 !important; padding: 0 !important; } }
 
-/* KPI cards inside a page header (petty cash employee page) */
-.head-stats { grid-template-columns: repeat(3, minmax(120px, 1fr)); margin-bottom: 0; flex: 1 1 auto; }
-@media (max-width: 800px) { .head-stats { grid-template-columns: 1fr 1fr 1fr; flex-basis: 100%; } }
+/* KPI cards inside a page header (petty cash employee page): button-sized pills */
+.stats.head-stats { display: flex; gap: 8px; margin: 0; flex-wrap: wrap; align-items: center; }
+.stats.head-stats .stat-card { display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 35px; border-radius: 9px; min-width: 0; }
+.stats.head-stats .stat-top { display: contents; }
+.stats.head-stats .stat-icon { order: 3; width: 20px; height: 20px; border-radius: 6px; font-size: 10px; }
+.stats.head-stats .stat-label { font-size: 10px; white-space: nowrap; }
+.stats.head-stats .stat-number { font-size: 14px; margin: 0; white-space: nowrap; }
+.stats.head-stats .stat-note { display: none; }
+.btn.slate { background: none; color: #7a5821; box-shadow: none; padding-left: 0; }
+.btn.slate:hover { background: none; box-shadow: none; color: var(--gold); }
+.page-head:has(.head-stats) { align-items: center; }
+.head-actions:has(.head-stats) { align-items: center; }
+.head-actions:has(.head-stats) > .btn { height: 35px; padding: 0 18px; border-radius: 9px; }
+.stats.head-stats .stat-card { padding: 0 18px; }
+.head-actions:has(.head-stats) > .btn, .stats.head-stats .stat-card { width: 170px; height: 40px; justify-content: center; box-sizing: border-box; }
+.stats.head-stats .stat-card { gap: 10px; }
+/* Balance pill reads as a sibling of the Give cash button: same type size, no icon, same shadow */
+.stats.head-stats .stat-card { border: 0; box-shadow: 0 1px 2px rgba(15,23,42,.12), 0 4px 12px rgba(15,23,42,.16); border-radius: 9px; }
+.stats.head-stats .stat-icon { display: none; }
+.stats.head-stats .stat-label { font-size: 12px; font-weight: 600; }
+.stats.head-stats .stat-number { font-size: 12px; font-weight: 700; font-family: inherit; }
+/* final: Balance pill and Give cash button share one box size */
+.page-head .head-stats .stat-card, .page-head .head-actions .btn.head-box { box-sizing: border-box; width: 150px; height: 38px; padding: 0 14px; justify-content: center; border-radius: 9px; }
+/* petty cash header spacing: tight back link, right-hand group lines up with the name row */
+.page-head:has(.head-stats) { align-items: flex-end; }
+.head-actions:has(.head-stats) { margin-bottom: 22px; }
+.btn.slate { padding-top: 0; padding-bottom: 0; }
+@media (max-width: 800px) { .head-actions:has(.head-stats) { margin-bottom: 0; } }
+
+/* site-wide back button: desktop breadcrumb bar + phone top bar */
+.crumb-row { display: flex; align-items: center; gap: 10px; }
+.back-btn { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 9px; background: white; color: var(--text); font-size: 16px; line-height: 1; cursor: pointer; transition: .15s; }
+.back-btn:hover { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+.mobile-bar .back-btn { background: rgba(255,255,255,.12); border: 0; color: white; width: 34px; height: 34px; font-size: 18px; flex: none; }
+.mobile-bar .back-btn:active { background: rgba(255,255,255,.24); }
