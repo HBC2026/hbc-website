@@ -128,8 +128,8 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
       if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekend`, true);
       if (r.ot && !(amount > 0)) return toast(`${e.name}: enter the OT amount`, true);
       if (amount > 99999) return toast(`${e.name}: OT amount out of range`, true);
-      // OT fields are only sent when used, so saving keeps working until migration 0012 is applied
-      changed.push({ employee_id: e.id, work_date: date, status: r.status, regular_hours: regular, ot_hours: 0, ...(r.ot || o.ot ? { ot_amount: amount, ot_paid: r.ot && r.paid } : {}), remarks: r.remarks.trim() });
+      // Always send the OT fields: a bulk upsert fills keys missing from some rows with NULL, which violates NOT NULL
+      changed.push({ employee_id: e.id, work_date: date, status: r.status, regular_hours: regular, ot_hours: 0, ot_amount: amount, ot_paid: r.ot && r.paid, remarks: r.remarks.trim() });
     }
     if (!changed.length) return toast('No changes to save');
     setSaving(true);
