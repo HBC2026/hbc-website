@@ -758,3 +758,7 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 
 /* the phone layout rules also match at A4 print width: neutralise their spacing */
 @media print { .content { padding: 0 !important; margin: 0 !important; max-width: none !important; } .main { margin: 0 !important; padding: 0 !important; } }
+
+/* KPI cards inside a page header (petty cash employee page) */
+.head-stats { grid-template-columns: repeat(3, minmax(120px, 1fr)); margin-bottom: 0; flex: 1 1 auto; }
+@media (max-width: 800px) { .head-stats { grid-template-columns: 1fr 1fr 1fr; flex-basis: 100%; } }

@@ -89,16 +89,15 @@ export default function PettyCashEmployeePage() {
   return (
     <>
       <PageHead eyebrow="Petty Cash" title={emp.name} sub={`${emp.emp_code}${emp.job_title ? ' · ' + emp.job_title : ''}`}>
+        <div className="stats compact head-stats">
+          <StatCard label="Cash given" icon="＋" value={<Money v={given} />} />
+          <StatCard label="Receipts" icon="▤" value={<Money v={spent} />} note="Pending and approved" />
+          <StatCard label="Balance" icon="◉" value={<span style={{ color: balance < 0 ? 'var(--red)' : undefined }}><Money v={balance} /></span>} note={balance < 0 ? 'Spent more than given' : 'Cash still held'} />
+        </div>
         <Link className="btn" href="/adminconsole/pettycash">← All employees</Link>
         {canWrite && <button className="btn" onClick={() => openLink()}>Employee link</button>}
         {canWrite && <button className="btn primary" onClick={() => setGive({ amount: '', date: today(), note: '', given_by: profile!.full_name })}>＋ Give cash</button>}
       </PageHead>
-
-      <div className="stats">
-        <StatCard label="Cash given" icon="＋" value={<Money v={given} />} />
-        <StatCard label="Receipts" icon="▤" value={<Money v={spent} />} note="Pending and approved" />
-        <StatCard label="Balance" icon="◉" value={<span style={{ color: balance < 0 ? 'var(--red)' : undefined }}><Money v={balance} /></span>} note={balance < 0 ? 'Spent more than given' : 'Cash still held'} />
-      </div>
 
       <div className="panel flush" style={{ marginBottom: 18 }}>
         <div className="panel-head"><div className="panel-title">Receipts</div><span className="muted">{data.receipts.length}</span></div>
