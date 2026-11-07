@@ -1,0 +1,67 @@
+/* Store inventory sheet */
+.store-sheet td { vertical-align: middle; }
+.store-sheet .input, .store-sheet .select { width: 100%; min-width: 0; }
+.store-sheet .qty-in { text-align: right; }
+.icon-btn { display: inline-grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 7px; background: transparent; color: var(--red); cursor: pointer; }
+.icon-btn:hover { background: var(--red-soft); }
+/* desktop: compact spreadsheet look, no gaps between cells, columns sized to their data (scrolls sideways if the screen is narrow) */
+@media (min-width: 801px) {
+  .store-sheet { table-layout: fixed; width: 100%; border-collapse: collapse; }
+  .store-wide .table-wrap { overflow-x: hidden; }   /* the table always fits the screen: no sideways scrolling */
+  .store-sheet th { padding: 8px 8px; border: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .store-sheet td { padding: 0; border: 1px solid var(--border); overflow: hidden; overflow-wrap: normal; height: 36px; }
+  .store-sheet tbody tr:nth-child(even) { background: transparent; }
+  .store-sheet td .input, .store-sheet td .select, .store-sheet td .dd-btn {
+    border: 0; border-radius: 0; background: transparent; box-shadow: none; height: 36px; padding: 0 8px; width: 100%; font-size: 12px;
+  }
+  .store-sheet td .input:focus, .store-sheet td .dd-btn:focus { outline: 2px solid var(--green); outline-offset: -2px; background: #fff; }
+  .store-sheet td:has(> *:focus-within) { background: #fff; }
+  .store-sheet .qty-in, .store-sheet td.r .input { text-align: right; }
+  .store-sheet td:nth-child(6) { padding: 0 8px; white-space: nowrap; }   /* calculated: actual life */
+  .store-sheet .store-att { flex-wrap: nowrap; gap: 6px; padding: 0 6px; }
+  .store-sheet .store-thumb { width: 28px; height: 28px; border-radius: 5px; }
+  .store-sheet .store-att .btn.sm { padding: 3px 8px; font-size: 11px; min-height: 0; white-space: nowrap; }
+  .store-sheet .del-cell { text-align: center; }
+}
+.store-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); cursor: pointer; display: block; }
+.store-att { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.store-att input[type=file] { display: none; }
+.store-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.store-dirty { color: #8d6528; font-size: 12px; font-weight: 600; }
+.sig-wrap { position: relative; border: 1px dashed var(--border); border-radius: 10px; background: #fff; }
+.sig-pad { display: block; width: 100%; height: 150px; touch-action: none; cursor: crosshair; }
+.sig-hint { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; font-size: 13px; }
+.sig-clear { position: absolute; right: 8px; top: 8px; }
+.store-sig-img { height: 36px; background: #fff; border: 1px solid var(--border); border-radius: 6px; }
+
+/* full-width page: table touches both screen edges; heading keeps its margins */
+.store-wide .content { max-width: none; padding-left: 0; padding-right: 0; }
+.store-wide .content > .page-head, .store-wide .content > .banner { margin-left: 42px; margin-right: 42px; }
+.store-wide .content > .panel { border-radius: 0; border-left: 0; border-right: 0; }
+.store-wide .content > .panel .panel-head { border-radius: 0; }
+@media (max-width: 800px) {
+  .store-wide .content > .page-head, .store-wide .content > .banner { margin-left: 14px; margin-right: 14px; }
+}
+
+.store-sheet th { position: relative; }
+.col-grip { position: absolute; top: 0; right: -4px; width: 9px; height: 100%; cursor: col-resize; z-index: 2; touch-action: none; }
+.col-grip::after { content: ''; position: absolute; left: 4px; top: 25%; height: 50%; width: 1px; background: transparent; }
+.col-grip:hover::after { background: var(--green); width: 2px; }
+@media (max-width: 800px) { .col-grip { display: none; } }
+
+/* column headings wrap onto several lines instead of being cut off */
+@media (min-width: 801px) {
+  .store-sheet th { white-space: normal; text-overflow: clip; overflow-wrap: break-word; line-height: 1.25; vertical-align: bottom; padding: 8px 10px 8px 8px; }
+}
+
+/* hard guarantee: nothing on this page may be wider than the screen */
+.store-wide .main, .store-wide .content { min-width: 0; max-width: 100%; overflow-x: hidden; }
+.store-wide .content > * { min-width: 0; max-width: 100%; }
+.store-wide .panel, .store-wide .table-wrap { width: 100%; max-width: 100%; min-width: 0; overflow-x: hidden; }
+.store-sheet { width: 100% !important; max-width: 100%; }
+.store-sheet td > *, .store-sheet td .store-att { max-width: 100%; min-width: 0; }
+.store-sheet td .dd-btn { min-width: 0; }
+@media (min-width: 801px) {
+  .store-sheet .store-att { flex-wrap: wrap; row-gap: 2px; padding: 3px 6px; }   /* buttons drop to a second line instead of being clipped */
+  .store-sheet td:nth-child(6) { white-space: normal; }
+}
