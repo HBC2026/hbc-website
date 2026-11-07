@@ -4,9 +4,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useApp } from './Providers';
 import { Select } from './ui';
-import { isConfigured } from '@/lib/supabase';
+import { isConfigured, supabase } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
-import { ATTENDANCE_SIDE, JSA_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL } from '@/lib/roles';
+import { ATTENDANCE_SIDE, JSA_SIDE, MAIL_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL, STORE_SIDE } from '@/lib/roles';
 import type { Role } from '@/lib/types';
 
 function BackIcon() {
@@ -41,7 +41,13 @@ const NAV: NavGroup[] = [
       { href: '/adminconsole/jsa/settings', label: 'JSA Settings', icon: '⚙', roles: JSA_SIDE },
     ],
   },
+  { label: 'Inbox', icon: '✉', items: [{ href: '/adminconsole/mail', label: 'Inbox', icon: '✉', roles: MAIL_SIDE }] },
   { label: 'Petty Cash', icon: '◉', items: [{ href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉', roles: PETTY_SIDE }] },
+  {
+    label: 'Store', icon: '▦', items: [
+      { href: '/adminconsole/store', label: 'Store Inventory', icon: '▦', roles: STORE_SIDE },
+    ],
+  },
   { label: 'System', icon: '⚙', items: [
     { href: '/adminconsole/audit', label: 'Audit Log', icon: '◈' },
     { href: '/adminconsole/settings', label: 'Settings', icon: '⚙', roles: ['administrator'] },
@@ -59,6 +65,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { loading, userId, profile, company, companies, switchCompany, signOut } = useApp();
   const router = useRouter();
   const pathname = usePathname();
+  // desktop: the whole navigation sidebar can be hidden to give pages more room (remembered per browser)
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => { try { setCollapsed(localStorage.getItem('hbc-sidebar-collapsed') === '1'); } catch { /* storage unavailable */ } }, []);
+  const toggleCollapsed = () => setCollapsed((c) => { try { localStorage.setItem('hbc-sidebar-collapsed', c ? '0' : '1'); } catch { /* ignore */ } return !c; });
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'b') return;
+      if ((e.target as HTMLElement | null)?.closest('input,textarea,select,[contenteditable="true"]')) return;   // Ctrl+B is "bold" while writing
+      e.preventDefault();
+      toggleCollapsed();
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  });
   const [navOpen, setNavOpen] = useState(false);   // phone-size slide-out menu
   useEffect(() => setNavOpen(false), [pathname]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});   // submenu overrides; unset = open only if it holds the current page
@@ -86,6 +106,21 @@ export function AppShell({ children }: { children: ReactNode }) {
     mo.observe(document.body, { childList: true, subtree: true });
     return () => mo.disconnect();
   }, []);
+
+  // unread count for the Inbox menu item (administrators only); refreshed on navigation and every minute
+  const [unread, setUnread] = useState(0);
+  const mailRole = profile?.role, mailCompany = company?.id;
+  useEffect(() => {
+    if (!isConfigured || !userId || !mailCompany || !mailRole || !MAIL_SIDE.includes(mailRole)) { setUnread(0); return; }
+    let live = true;
+    const load = () => {
+      supabase().from('mail_messages').select('id', { count: 'exact', head: true }).eq('folder', 'inbox').eq('is_read', false)
+        .then(({ count, error }) => { if (live) setUnread(error ? 0 : count ?? 0); });
+    };
+    load();
+    const t = setInterval(load, 60_000);
+    return () => { live = false; clearInterval(t); };
+  }, [userId, mailCompany, mailRole, pathname]);
 
   useEffect(() => { if (!loading && isConfigured && !userId) router.replace('/adminconsole/login'); }, [loading, userId, router]);
 
@@ -135,11 +170,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="mobile-title">{company.name}</div>
       </div>
       {navOpen && <div className="nav-backdrop no-print" onClick={() => setNavOpen(false)} />}
-      <aside className={`sidebar no-print${navOpen ? ' open' : ''}`}>
+      <aside className={`sidebar no-print${navOpen ? ' open' : ''}${collapsed ? ' collapsed' : ''}`}>
         <button className="nav-close" aria-label="Close menu" onClick={() => setNavOpen(false)}>×</button>
         <div className="brand">
           {companies.length > 1 && (
-            <Link href="/adminconsole/overview" className={`nav-item nav-top${pathname === '/adminconsole/overview' ? ' active' : ''}`}>
+            <Link href="/adminconsole/overview" title="All Companies" className={`nav-item nav-top${pathname === '/adminconsole/overview' ? ' active' : ''}`}>
               <span className="nav-icon">◈</span>All Companies
             </Link>
           )}
@@ -157,8 +192,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           if (items.length === 1) {
             const i = items[0];
             return (
-              <Link key={g.label} href={i.href} className={`nav-item nav-top${current === i.href ? ' active' : ''}`}>
+              <Link key={g.label} href={i.href} title={i.label} className={`nav-item nav-top${current === i.href ? ' active' : ''}`}>
                 <span className="nav-icon">{i.icon}</span>{i.label}
+                {i.href === '/adminconsole/mail' && unread > 0 && <span className="nav-badge" aria-label={`${unread} unread`}>{unread > 99 ? '99+' : unread}</span>}
               </Link>
             );
           }
@@ -166,8 +202,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           const open = g.label in openGroups ? openGroups[g.label] : hasActive;
           return (
             <div key={g.label}>
-              <button type="button" className={`nav-group${hasActive ? ' has-active' : ''}`} aria-expanded={open}
-                onClick={() => setOpenGroups((o) => ({ ...o, [g.label]: !open }))}>
+              <button type="button" className={`nav-group${hasActive ? ' has-active' : ''}`} aria-expanded={open} title={g.label}
+                onClick={() => { if (collapsed) { setCollapsed(false); try { localStorage.setItem('hbc-sidebar-collapsed', '0'); } catch { /* ignore */ } setOpenGroups((o) => ({ ...o, [g.label]: true })); } else setOpenGroups((o) => ({ ...o, [g.label]: !open })); }}>
                 <span className="nav-icon">{g.icon}</span>
                 <span className="nav-group-label">{g.label}</span>
                 <span className={`nav-chevron${open ? ' open' : ''}`}>›</span>
@@ -186,7 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         })}
 
         <div className="nav-label">Coming later</div>
-        <div className="nav-item disabled"><span className="nav-icon">▧</span>Invoices<span className="coming-soon">SOON</span></div>
+        <div className="nav-item disabled" title="Invoices (coming soon)"><span className="nav-icon">▧</span>Invoices<span className="coming-soon">SOON</span></div>
 
         <div className="sidebar-footer">
           <div className="user">
@@ -202,15 +238,19 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="main">
+      <main className={`main${collapsed ? ' wide' : ''}`}>
         <header className="topbar no-print">
           <div className="crumb-row">
+            <button className="sidebar-trigger" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={`${collapsed ? 'Expand' : 'Collapse'} sidebar (Ctrl+B)`} aria-expanded={!collapsed} onClick={toggleCollapsed}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+            </button>
+            <span className="crumb-divider" aria-hidden="true" />
             {!atRoot && <button className="back-btn" aria-label="Go back" onClick={goBack}><BackIcon /></button>}
             <div className="breadcrumb">{company.name} &nbsp;/&nbsp; <strong>{currentLabel}</strong></div>
           </div>
           <div className="date">{fmtLongDate(new Date())}</div>
         </header>
-        <div className="content">{children}</div>
+        <div className={`content${pathname.startsWith('/adminconsole/mail') ? ' flush' : ''}`}>{children}</div>
       </main>
     </>
   );

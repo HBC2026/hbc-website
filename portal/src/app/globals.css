@@ -794,3 +794,33 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .back-btn:hover { background: var(--green-soft); border-color: var(--green); color: var(--green); }
 .mobile-bar .back-btn { background: rgba(255,255,255,.12); border: 0; color: white; width: 34px; height: 34px; font-size: 18px; flex: none; }
 .mobile-bar .back-btn:active { background: rgba(255,255,255,.24); }
+
+.nav-badge { margin-left: auto; min-width: 20px; padding: 1px 7px; border-radius: 999px; background: var(--gold); color: white; font-size: 10px; font-weight: 700; text-align: center; }
+
+/* full-bleed pages such as the inbox */
+.content.flush { padding: 0; max-width: none; margin: 0; }
+
+/* ---------------- collapsible sidebar: icon rail on desktop, trigger in the top bar ---------------- */
+@media (min-width: 801px) { .sidebar { transition: width .2s ease; } }
+.main { transition: margin-left .2s ease; }
+.sidebar-trigger {
+  display: inline-grid; place-items: center; width: 32px; height: 32px; flex: none; border: 0; border-radius: 8px;
+  background: transparent; color: var(--muted); cursor: pointer; transition: background .15s, color .15s;
+}
+.sidebar-trigger:hover { background: rgba(17, 24, 39, .07); color: var(--text); }
+.sidebar-trigger:focus-visible { outline: 2px solid var(--green); outline-offset: 1px; }
+.crumb-divider { width: 1px; height: 18px; background: var(--border); margin: 0 4px; flex: none; }
+@media (max-width: 800px) { .sidebar-trigger, .crumb-divider { display: none; } }
+@media (min-width: 801px) {
+  .sidebar.collapsed { width: 72px; padding: 26px 12px; overflow-x: hidden; }
+  .main.wide { margin-left: 72px; }
+  .sidebar.collapsed .brand { padding: 0 0 12px; }
+  .sidebar.collapsed .brand-subtitle, .sidebar.collapsed .company-switch, .sidebar.collapsed .nav-label,
+  .sidebar.collapsed .nav-sub, .sidebar.collapsed .nav-group-label, .sidebar.collapsed .nav-chevron,
+  .sidebar.collapsed .coming-soon, .sidebar.collapsed .signout, .sidebar.collapsed .user-link > div:last-child { display: none; }
+  .sidebar.collapsed .nav-item, .sidebar.collapsed .nav-group { position: relative; justify-content: center; gap: 0; padding: 0; font-size: 0; }
+  .sidebar.collapsed .nav-icon { width: auto; font-size: 18px; }
+  .sidebar.collapsed .nav-badge { position: absolute; top: 3px; right: 5px; margin: 0; min-width: 16px; padding: 0 4px; font-size: 9px; line-height: 16px; }
+  .sidebar.collapsed .sidebar-footer { padding: 16px 0 0; }
+  .sidebar.collapsed .user { justify-content: center; }
+}

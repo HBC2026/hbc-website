@@ -3,7 +3,7 @@ import type { Role } from './types';
 /** UI-level permissions. The database (RLS + functions) is the real enforcement; this only hides controls. */
 export type Action =
   | 'employees:write' | 'attendance:write' | 'payroll:write' | 'payroll:reopen'
-  | 'quotations:write' | 'clients:write' | 'settings:write' | 'pettycash:write' | 'jsa:manage';
+  | 'quotations:write' | 'clients:write' | 'settings:write' | 'pettycash:write' | 'jsa:manage' | 'store:write';
 
 const RULES: Record<Action, Role[]> = {
   'employees:write': ['administrator', 'payroll'],
@@ -15,6 +15,7 @@ const RULES: Record<Action, Role[]> = {
   'settings:write': ['administrator'],
   'pettycash:write': ['administrator', 'payroll'],
   'jsa:manage': ['administrator'],
+  'store:write': ['administrator', 'payroll', 'attendance'],
 };
 
 export const can = (role: Role | undefined, action: Action) => !!role && RULES[action].includes(role);
@@ -31,3 +32,5 @@ export const ATTENDANCE_SIDE: Role[] = ['administrator', 'payroll', 'attendance'
 export const PETTY_SIDE: Role[] = ['administrator', 'payroll', 'viewer'];
 export const QUOTE_SIDE: Role[] = ['administrator', 'quotations', 'viewer'];
 export const JSA_SIDE: Role[] = ['administrator'];
+export const MAIL_SIDE: Role[] = ['administrator'];
+export const STORE_SIDE: Role[] = ['administrator', 'payroll', 'attendance', 'quotations', 'viewer'];
