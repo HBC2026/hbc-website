@@ -18,6 +18,7 @@ interface NavGroup { label: string; icon: string; items: NavItem[] }
 
 const NAV: NavGroup[] = [
   { label: 'Workspace', icon: '⌂', items: [{ href: '/adminconsole', label: 'Dashboard', icon: '⌂' }] },
+  { label: 'Inbox', icon: '✉', items: [{ href: '/adminconsole/mail', label: 'Inbox', icon: '✉', roles: MAIL_SIDE }] },
   {
     label: 'Payroll', icon: '◫', items: [
       { href: '/adminconsole/employees', label: 'Employees', icon: '♙', roles: ATTENDANCE_SIDE },
@@ -41,7 +42,6 @@ const NAV: NavGroup[] = [
       { href: '/adminconsole/jsa/settings', label: 'JSA Settings', icon: '⚙', roles: JSA_SIDE },
     ],
   },
-  { label: 'Inbox', icon: '✉', items: [{ href: '/adminconsole/mail', label: 'Inbox', icon: '✉', roles: MAIL_SIDE }] },
   { label: 'Petty Cash', icon: '◉', items: [{ href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉', roles: PETTY_SIDE }] },
   {
     label: 'Store', icon: '▦', items: [
