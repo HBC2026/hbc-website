@@ -6,7 +6,7 @@ import { useApp } from './Providers';
 import { Select } from './ui';
 import { isConfigured, supabase } from '@/lib/supabase';
 import { fmtLongDate } from '@/lib/format';
-import { ATTENDANCE_SIDE, JSA_SIDE, MAIL_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL, STORE_SIDE } from '@/lib/roles';
+import { ACC_SIDE, ATTENDANCE_SIDE, JSA_SIDE, MAIL_SIDE, PAYROLL_SIDE, PETTY_SIDE, QUOTE_SIDE, ROLE_LABEL, STORE_SIDE } from '@/lib/roles';
 import type { Role } from '@/lib/types';
 
 function BackIcon() {
@@ -46,6 +46,15 @@ const NAV: NavGroup[] = [
   {
     label: 'Store', icon: '▦', items: [
       { href: '/adminconsole/store', label: 'Store Inventory', icon: '▦', roles: STORE_SIDE },
+    ],
+  },
+  {
+    label: 'Accounting', icon: '∑', items: [
+      { href: '/adminconsole/accounting', label: 'Overview', icon: '∑', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/journal', label: 'Journal', icon: '✎', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/accounts', label: 'Chart of Accounts', icon: '▤', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/profit-loss', label: 'Profit & Loss', icon: '↗', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/balance-sheet', label: 'Balance Sheet', icon: '⚖', roles: ACC_SIDE },
     ],
   },
   { label: 'System', icon: '⚙', items: [
