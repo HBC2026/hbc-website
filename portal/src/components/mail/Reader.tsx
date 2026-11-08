@@ -51,15 +51,15 @@ function MessageCard({ m, atts, open, toggle }: { m: MailMessage; atts: MailAtta
       {open && (
         <div className="ol-msg-body">
           {m.cc_addrs.length > 0 && <div className="ol-dim ol-cc">Cc: {m.cc_addrs.map(addrText).join(', ')}</div>}
-          {hasRemote && !images && (
-            <div className="ol-notice">Images from the sender are blocked to protect your privacy. <button className="ol-link" onClick={() => setImages(true)}>Load images</button></div>
-          )}
-          <Body m={m} images={images} />
           {atts.length > 0 && (
             <div className="ol-chips">
               {atts.map((a) => <button key={a.id} className="ol-chip btn-like" onClick={() => download(a)}><Icon n="clip" size={13} /> {a.filename} <span className="ol-dim">({fmtBytes(a.size)})</span></button>)}
             </div>
           )}
+          {hasRemote && !images && (
+            <div className="ol-notice">Images from the sender are blocked to protect your privacy. <button className="ol-link" onClick={() => setImages(true)}>Load images</button></div>
+          )}
+          <Body m={m} images={images} />
         </div>
       )}
     </div>
