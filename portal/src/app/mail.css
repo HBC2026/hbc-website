@@ -100,6 +100,11 @@
 .ol-frame { width: 100%; min-height: 60px; border: 0; background: #fff; display: block; }
 .ol-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .ol-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid #d1d1d1; border-radius: 6px; background: #fafafa; font-size: 12px; color: var(--ol-text); }
+.ol-att { padding: 10px 12px; border-radius: 8px; background: var(--ol-blue-soft); border: 1px solid var(--ol-blue); display: grid; gap: 8px; }
+.ol-att-title { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ol-blue); }
+.ol-att .ol-chip { padding: 8px 14px; font-size: 13px; background: #fff; border-color: var(--ol-blue); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.ol-msg.current.open { background: #fbfdff; border-left: 4px solid var(--ol-blue); border-radius: 6px; box-shadow: 0 1px 6px rgba(0,0,0,.08); margin-top: 8px; margin-bottom: 4px; }
+.ol-msg.current.open .ol-msg-name { color: var(--ol-blue); }
 .ol-chip.btn-like { cursor: pointer; font-family: inherit; }
 .ol-chip.btn-like:hover { background: var(--ol-blue-soft); border-color: var(--ol-blue); }
 .ol-chip button { display: grid; place-items: center; border: 0; background: none; cursor: pointer; color: var(--ol-dim); padding: 0; }

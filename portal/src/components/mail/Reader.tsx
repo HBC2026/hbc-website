@@ -29,7 +29,7 @@ function Body({ m, images }: { m: MailMessage; images: boolean }) {
   return <iframe ref={ref} className="ol-frame" title="Message" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" srcDoc={doc} onLoad={fit} />;
 }
 
-function MessageCard({ m, atts, open, toggle }: { m: MailMessage; atts: MailAttachment[]; open: boolean; toggle: () => void }) {
+function MessageCard({ m, atts, open, current, toggle }: { m: MailMessage; atts: MailAttachment[]; open: boolean; current: boolean; toggle: () => void }) {
   const { toast } = useApp();
   const [images, setImages] = useState(false);
   const hasRemote = /<img[^>]+src=["']https?:/i.test(m.html_body);
@@ -39,7 +39,7 @@ function MessageCard({ m, atts, open, toggle }: { m: MailMessage; atts: MailAtta
   }
   const toLine = m.to_addrs.map((a) => a.name || a.address).join(', ') || '—';
   return (
-    <div className={`ol-msg${open ? ' open' : ''}`}>
+    <div className={`ol-msg${open ? ' open' : ''}${current ? ' current' : ''}`}>
       <button type="button" className="ol-msg-head" onClick={toggle} aria-expanded={open}>
         <Avatar name={m.from_name} addr={m.from_addr} />
         <span className="ol-msg-who">
@@ -52,8 +52,11 @@ function MessageCard({ m, atts, open, toggle }: { m: MailMessage; atts: MailAtta
         <div className="ol-msg-body">
           {m.cc_addrs.length > 0 && <div className="ol-dim ol-cc">Cc: {m.cc_addrs.map(addrText).join(', ')}</div>}
           {atts.length > 0 && (
-            <div className="ol-chips">
-              {atts.map((a) => <button key={a.id} className="ol-chip btn-like" onClick={() => download(a)}><Icon n="clip" size={13} /> {a.filename} <span className="ol-dim">({fmtBytes(a.size)})</span></button>)}
+            <div className="ol-att">
+              <div className="ol-att-title"><Icon n="clip" size={15} /> {atts.length} attachment{atts.length > 1 ? 's' : ''}</div>
+              <div className="ol-chips">
+                {atts.map((a) => <button key={a.id} className="ol-chip btn-like" onClick={() => download(a)}><Icon n="clip" size={14} /> <strong>{a.filename}</strong> <span className="ol-dim">({fmtBytes(a.size)})</span></button>)}
+              </div>
             </div>
           )}
           {hasRemote && !images && (
@@ -129,7 +132,7 @@ export function ThreadView({ threadKey, ownAddrs, signature, onCompose, onChange
         </div>
       </div>
       {msgs.map((m) => (
-        <MessageCard key={m.id} m={m} atts={atts.filter((a) => a.message_id === m.id)} open={isOpen(m)}
+        <MessageCard key={m.id} m={m} atts={atts.filter((a) => a.message_id === m.id)} open={isOpen(m)} current={m.id === last.id && msgs.length > 1}
           toggle={() => setOpenIds((o) => ({ ...o, [m.id]: !isOpen(m) }))} />
       ))}
       <div className="ol-thread-foot">
