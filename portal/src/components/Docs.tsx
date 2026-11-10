@@ -229,17 +229,21 @@ export function QuotationDoc({ number, rev, items, co }: { number: string; rev: 
             <tr key={i}><td>{i + 1}</td><td className="pre">{it.description}</td><td className="r">{fmtNum(it.qty, Number.isInteger(Number(it.qty)) ? 0 : 2)}</td><td>{it.unit}</td>
               <td className="r">{fmtNum(it.unit_price)}</td><td className="r">{fmtNum(Number(it.qty) * Number(it.unit_price))}</td></tr>
           ))}
+          {Array.from({ length: Math.max(0, 10 - items.length) }, (_, k) => (
+            <tr key={`f${k}`} aria-hidden="true"><td>&nbsp;</td><td /><td /><td /><td /><td /></tr>
+          ))}
         </tbody>
       </table>
 
       <div className="doc-totals">
         <div><span>Subtotal</span><span>{<Money v={rev.subtotal} />}</span></div>
         {Number(rev.discount) > 0 && <div><span>Discount</span><span>− {<Money v={rev.discount} />}</span></div>}
-        <div><span>VAT ({fmtNum(Number(rev.vat_rate) * 100, 0)}%)</span><span>{<Money v={rev.vat_amount} />}</span></div>
+        {Number(rev.vat_rate) > 0 && <div><span>VAT ({fmtNum(Number(rev.vat_rate) * 100, 0)}%)</span><span>{<Money v={rev.vat_amount} />}</span></div>}
         <div className="grand"><span>GRAND TOTAL</span><span>{<Money v={rev.grand_total} />}</span></div>
       </div>
 
-      <div style={{ marginTop: 18, display: 'grid', gap: 10 }}>
+      <div className="doc-box" style={{ marginTop: 22, display: 'grid', gap: 10, padding: '14px 16px', lineHeight: 1.6 }}>
+        <div className="l">Terms</div>
         {rev.payment_terms && <div><b>Payment Terms:</b> <span className="pre">{rev.payment_terms}</span></div>}
         {rev.delivery && <div><b>Delivery:</b> <span className="pre">{rev.delivery}</span></div>}
         {rev.notes && <div><b>Notes:</b> <span className="pre">{rev.notes}</span></div>}

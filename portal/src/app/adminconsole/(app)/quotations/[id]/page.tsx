@@ -53,7 +53,7 @@ export default function QuotationDetail() {
           <Select className="select" disabled={!canWrite} value={q.status} onChange={(e) => setStatus(e.target.value as QuotationStatus)}>
             {QUOTE_STATUSES.map((s) => <option key={s} value={s}>{QUOTE_LABEL[s]}</option>)}
           </Select>
-          <div className="muted" style={{ marginTop: 10, fontSize: 11 }}>Current amount {<Money v={q.amount} />} incl. VAT. Saving a revision marks the quotation “Revised”; set it back to Submitted once re-sent.</div>
+          <div className="muted" style={{ marginTop: 10, fontSize: 11 }}>Current amount {<Money v={q.amount} />}. Saving a revision marks the quotation “Revised”; set it back to Submitted once re-sent.</div>
         </div>
         <div className="panel flush">
           <div className="panel-head"><div className="panel-title">Revision history</div></div>

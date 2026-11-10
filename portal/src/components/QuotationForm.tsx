@@ -20,7 +20,7 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
   const [f, setF] = useState({
     client: base?.client ?? '', attention: base?.attention ?? '', project: base?.project ?? '', quote_date: base ? today() : today(),
     validity_days: String(base?.validity_days ?? 30), reference: base?.reference ?? '',
-    discount: String(Number(base?.discount ?? 0)), vat_pct: String(Number(base?.vat_rate ?? settings.vat_rate) * 100),
+    discount: String(Number(base?.discount ?? 0)), vat_pct: '0',
     payment_terms: base?.payment_terms ?? '', delivery: base?.delivery ?? '', notes: base?.notes ?? '', revision_note: '',
   });
   const [items, setItems] = useState<ItemDraft[]>(baseItems?.length
@@ -111,8 +111,6 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
           <div className="kv" style={{ width: 340 }}>
             <span className="k">Subtotal</span><span className="v">{<Money v={t.subtotal} />}</span>
             <span className="k">Discount (<Riyal />)</span><span className="v"><input className="input num" style={{ width: 120 }} type="number" min="0" step="0.01" value={f.discount} onChange={(e) => set('discount', e.target.value)} /></span>
-            <span className="k">VAT %</span><span className="v"><input className="input num" style={{ width: 120 }} type="number" min="0" step="0.01" value={f.vat_pct} onChange={(e) => set('vat_pct', e.target.value)} /></span>
-            <span className="k">VAT amount</span><span className="v">{<Money v={t.vat} />}</span>
             <div className="sep" />
             <span className="k tot">Grand Total</span><span className="v tot">{<Money v={t.grand} />}</span>
           </div>
