@@ -58,7 +58,7 @@ export function QuotationForm({ quotationId, base, items: baseItems }: { quotati
       client: f.client, attention: f.attention, project: f.project, quote_date: f.quote_date, validity_days: Number(f.validity_days) || 30,
       reference: f.reference, discount: t.discount, vat_rate: (Number(f.vat_pct) || 0) / 100, payment_terms: f.payment_terms, delivery: f.delivery,
       notes: f.notes, revision_note: f.revision_note,
-      items: clean.map((i) => ({ description: i.description, qty: Number(i.qty), unit: i.unit, unit_price: Number(i.unit_price) })),
+      items: clean.map((i) => ({ description: i.description, qty: Number(i.qty), unit: i.unit.trim() || '-', unit_price: Number(i.unit_price) })),
     };
     setSaving(true);
     const sb = supabase();
