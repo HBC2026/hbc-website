@@ -5,7 +5,7 @@ import { Money } from '@/components/Money';
 import { ScanDocument } from '@/components/ScanDocument';
 import { DatePicker } from '@/components/ui';
 import { fmtDate, today } from '@/lib/format';
-import { prepareReceipt } from '@/lib/receipt';
+import { hashFile, prepareReceipt } from '@/lib/receipt';
 import { isConfigured, PETTY_BUCKET, supabase } from '@/lib/supabase';
 import type { PcStatement, ReceiptStatus } from '@/lib/types';
 
@@ -128,6 +128,8 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
   const [busy, setBusy] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState('');
+  const [dupAsk, setDupAsk] = useState('');
+  const uploaded = useRef<{ file: File; path: string; hash: string | null } | null>(null);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -137,21 +139,31 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e: React.FormEvent | null, confirmDup = false) {
+    e?.preventDefault();
     if (busy) return;
+    if (!confirmDup) setDupAsk('');
     if (!file) return setError('Take or choose a photo of the receipt.');
     if (!(Number(amount) > 0)) return setError('Enter the amount on the receipt.');
     if (!desc.trim()) return setError('Say what you bought.');
     setBusy(true); setError('');
     try {
       const sb = supabase();
-      const { blob, type, ext } = await prepareReceipt(file);
-      const path = `${token}/${crypto.randomUUID()}.${ext}`;
-      const up = await sb.storage.from(PETTY_BUCKET).upload(path, blob, { contentType: type });
-      if (up.error) throw new Error('Upload failed: ' + up.error.message);
-      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: path, p_replaces: revising?.id ?? null });
-      if (err) throw new Error(err.message);
+      // reuse the already-uploaded file when the employee confirms a possible duplicate
+      let up = uploaded.current && uploaded.current.file === file ? uploaded.current : null;
+      if (!up) {
+        const hash = await hashFile(file);
+        const { blob, type, ext } = await prepareReceipt(file);
+        const path = `${token}/${crypto.randomUUID()}.${ext}`;
+        const res = await sb.storage.from(PETTY_BUCKET).upload(path, blob, { contentType: type });
+        if (res.error) throw new Error('Upload failed: ' + res.error.message);
+        up = uploaded.current = { file, path, hash };
+      }
+      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: up.path, p_replaces: revising?.id ?? null, p_file_hash: up.hash, p_confirm_dup: confirmDup });
+      if (err) {
+        if (err.message.startsWith('DUPLICATE_AMOUNT:')) { setDupAsk(err.message.replace('DUPLICATE_AMOUNT:', '').trim()); setBusy(false); return; }
+        throw new Error(err.message.replace('DUPLICATE_FILE:', '').trim());
+      }
       onSaved();
     } catch (ex) {
       setError(ex instanceof Error ? ex.message : String(ex));
@@ -174,12 +186,18 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
           {scanning && <ScanDocument title="Scan receipt" originalOnly onClose={() => setScanning(false)} onScan={(f) => { setScanning(false); setFile(f); }} />}
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', marginTop: 14 }}>
             <div className="field"><label>Amount on the receipt (SAR)</label>
-              <input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
-            <div className="field"><label>Date on the receipt</label><DatePicker value={date} onChange={setDate} /></div>
+              <input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={amount} onChange={(e) => { setAmount(e.target.value); setDupAsk(''); }} /></div>
+            <div className="field"><label>Date on the receipt</label><DatePicker value={date} onChange={(v) => { setDate(v); setDupAsk(''); }} /></div>
             <div className="field"><label>What was it for?</label>
               <input className="input" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Diesel for the pickup" /></div>
           </div>
           {error && <div className="banner error" style={{ marginTop: 14, marginBottom: 0 }}>{error}</div>}
+          {dupAsk && (
+            <div className="banner error" style={{ marginTop: 14, marginBottom: 0 }}>
+              {dupAsk}
+              <div style={{ marginTop: 10 }}><button type="button" className="btn sm" disabled={busy} onClick={() => submit(null, true)}>{busy ? 'Submitting…' : 'Yes, this is a different purchase'}</button></div>
+            </div>
+          )}
         </div>
         <div className="modal-foot">
           <button type="button" className="btn" onClick={onClose} disabled={busy}>Cancel</button>

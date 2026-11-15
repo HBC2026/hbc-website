@@ -84,7 +84,10 @@ export interface PcReceipt {
   status: ReceiptStatus; reject_reason: string; created_at: string;
   /** set when this receipt is the employee's revision of an earlier rejected one */
   replaces_id: string | null;
+  /** set when another live receipt has the same amount and date (employee confirmed it is a different purchase) */
+  dup_of: string | null;
 }
+export interface PcDupInfo { id: string; employee: string; amount: number; date: string; status: ReceiptStatus; description: string }
 /** What the employee's private page receives from pc_statement(token). */
 export interface PcStatement {
   name: string; emp_code: string; company: string; active: boolean;

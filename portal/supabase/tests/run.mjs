@@ -205,12 +205,13 @@ await db.exec('reset role');
 await db.exec(mig('0008_petty_cash.sql'));
 await db.exec(mig('0010_petty_cash_given_by.sql'));
 await db.exec(mig('0028_petty_receipt_revisions.sql'));
+await db.exec(mig('0029_petty_receipt_duplicates.sql'));
 await db.exec(`grant usage on schema public, storage to anon;
   grant all on all tables in schema public to authenticated;
   grant all on all tables in schema storage to authenticated;
   grant insert on storage.objects to anon;
   grant execute on all functions in schema public to authenticated;
-  grant execute on function pc_statement(text), pc_add_receipt(text, numeric, date, text, text, uuid),
+  grant execute on function pc_statement(text), pc_add_receipt(text, numeric, date, text, text, uuid, text, boolean),
     pc_token_valid(text) to anon;`);
 
 await as(U1, HBC);
@@ -252,14 +253,20 @@ ok(st.spent == 200 && st.balance == 550.5, 'rejected receipt no longer counts');
 ok(st.receipts.find((r) => r.id === R2).reject_reason === 'Photo is blurry', 'employee sees the rejection reason');
 await throws(`select pc_delete_receipt('${TOKEN}', '${R1}')`, 'employee can no longer delete receipts', /does not exist|permission denied/);
 await throws(`delete from pc_receipts`, 'employee cannot delete receipts directly', /permission denied/);
-await db.exec(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', '${TOKEN}/r3.jpg')`);
+const H1 = 'a'.repeat(64);
+await db.exec(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', '${TOKEN}/r3.jpg'), ('petty-cash-receipts', '${TOKEN}/r4.jpg')`);
 await throws(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Taxi again', '${TOKEN}/r3.jpg', '${R1}')`, 'only a rejected receipt can be revised', /Only a rejected/);
-const R3 = (await q(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Taxi again', '${TOKEN}/r3.jpg', '${R2}') id`))[0].id;
+const R3 = (await q(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Taxi again', '${TOKEN}/r3.jpg', '${R2}', '${H1}') id`))[0].id;
 st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
 ok(st.receipts.length === 3 && st.receipts.find((r) => r.id === R2).revised === true && st.receipts.find((r) => r.id === R3).replaces_id === R2, 'revision is linked and the rejected receipt stays on record');
 ok(st.spent == 290, 'revised receipt counts, rejected one still does not');
 await throws(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Again', '${TOKEN}/r3.jpg', '${R2}')`, 'a receipt can be revised only once', /already submitted/);
+await throws(`select pc_add_receipt('${TOKEN}', 15, '2026-09-05', 'Same file', '${TOKEN}/r4.jpg', null, '${H1}')`, 'the same file cannot be uploaded twice', /DUPLICATE_FILE/);
+await throws(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Same amount and date', '${TOKEN}/r4.jpg', null, '${'b'.repeat(64)}')`, 'same amount and date needs confirmation', /DUPLICATE_AMOUNT/);
+const R4 = (await q(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Different purchase', '${TOKEN}/r4.jpg', null, '${'b'.repeat(64)}', true) id`))[0].id;
 await as(U1, HBC);
+ok((await q(`select dup_of from pc_receipts where id = '${R4}'`))[0].dup_of === R3, 'confirmed duplicate is flagged against the original');
+ok((await q(`select pc_duplicate_info(array['${R4}']::uuid[]) i`))[0].i[R4].amount == 90, 'office can see what it may duplicate');
 await throws(`select pc_review_receipt('${R2}', 'approved', '')`, 'cannot approve a receipt that was revised', /revised receipt/i);
 await anon();
 
@@ -269,7 +276,7 @@ ok(await count('pc_receipts') === 0 && await count('pc_cash_given') === 0, 'othe
 await throws(`select pc_give_cash('${E1}', 5, '2026-09-01', '', 'X')`, 'viewer/other company cannot give cash', /Not permitted|No company|not found/i);
 await as(U2, HBC);
 ok(await count('pc_cash_given') === 2, 'payroll role reads petty cash');
-ok((await q(`select balance from pc_summary() where employee_id = '${E1}'`))[0].balance == 460.5, 'pc_summary matches the statement');
+ok((await q(`select balance from pc_summary() where employee_id = '${E1}'`))[0].balance == 370.5, 'pc_summary matches the statement');
 await as(U1, HBC);
 const NEW = (await q(`select pc_get_link('${E1}', true) t`))[0].t;
 ok(NEW !== TOKEN, 'regenerating issues a new link');

@@ -9,7 +9,7 @@ import { useQuery } from '@/lib/hooks';
 import { fmtDate, today } from '@/lib/format';
 import { can } from '@/lib/roles';
 import { PETTY_BUCKET, supabase, unwrap } from '@/lib/supabase';
-import type { Employee, PcCash, PcReceipt, ReceiptStatus } from '@/lib/types';
+import type { Employee, PcCash, PcDupInfo, PcReceipt, ReceiptStatus } from '@/lib/types';
 
 const TONE: Record<ReceiptStatus, string> = { pending: 'gold', approved: 'green', rejected: 'red' };
 const LABEL: Record<ReceiptStatus, string> = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
@@ -25,10 +25,14 @@ export default function PettyCashEmployeePage() {
       sb.from('pc_cash_given').select('*').eq('employee_id', id).order('given_on', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('pc_receipts').select('*').eq('employee_id', id).order('spent_on', { ascending: false }).order('created_at', { ascending: false }),
     ]);
+    const receipts = unwrap(rec) as PcReceipt[];
+    const flagged = receipts.filter((r) => r.dup_of).map((r) => r.id);
+    const dups = flagged.length ? unwrap(await sb.rpc('pc_duplicate_info', { p_ids: flagged })) as Record<string, PcDupInfo> : {};
     return {
       emp: unwrap(emp) as Pick<Employee, 'id' | 'emp_code' | 'name' | 'job_title' | 'status'> | null,
       cash: unwrap(cash) as PcCash[],
-      receipts: unwrap(rec) as PcReceipt[],
+      receipts,
+      dups,
     };
   }, [id, company?.id]);
 
@@ -64,6 +68,12 @@ export default function PettyCashEmployeePage() {
 
   async function review(rid: string, status: 'approved' | 'rejected', reason = '') {
     if (status === 'rejected' && !reason.trim()) return toast('Write why it is rejected so the employee can fix it', true);
+    const d = data?.dups[rid];
+    if (status === 'approved' && d && !(await confirmDialog({
+      title: 'Possible duplicate receipt',
+      message: `Same amount and date as ${d.employee}'s receipt of ${fmtDate(d.date)} (${Number(d.amount).toFixed(2)} SAR, ${d.status}). Approve this one only if it is a different purchase.`,
+      confirmLabel: 'Approve anyway', danger: true,
+    }))) return;
     if (await run(() => sb.rpc('pc_review_receipt', { p_id: rid, p_status: status, p_reason: reason }), status === 'approved' ? 'Receipt approved' : 'Receipt rejected')) setReject(null);
   }
 
@@ -113,7 +123,7 @@ export default function PettyCashEmployeePage() {
             {data.receipts.map((r) => (
               <tr key={r.id}>
                 <td>{fmtDate(r.spent_on)}</td>
-                <td>{r.description}{r.replaces_id && <div className="muted" style={{ fontSize: 11 }}>Revised receipt (replaces a rejected one)</div>}{data.receipts.some((n) => n.replaces_id === r.id) && <div className="muted" style={{ fontSize: 11 }}>Revised receipt submitted</div>}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
+                <td>{r.description}{r.dup_of && <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>⚠ Possible duplicate{data.dups[r.id] ? ` of ${data.dups[r.id].employee}'s receipt of ${fmtDate(data.dups[r.id].date)} (${Number(data.dups[r.id].amount).toFixed(2)} SAR, ${data.dups[r.id].status}): ${data.dups[r.id].description}` : ' (same amount and date as another receipt)'}</div>}{r.replaces_id && <div className="muted" style={{ fontSize: 11 }}>Revised receipt (replaces a rejected one)</div>}{data.receipts.some((n) => n.replaces_id === r.id) && <div className="muted" style={{ fontSize: 11 }}>Revised receipt submitted</div>}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
                 <td className="r" style={r.status === 'rejected' ? { textDecoration: 'line-through', opacity: .55 } : undefined}><Money v={r.amount} /></td>
                 <td><Badge tone={TONE[r.status]}>{LABEL[r.status]}</Badge></td>
                 <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>

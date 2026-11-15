@@ -1,6 +1,14 @@
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_SIDE = 1600;
 
+/** SHA-256 of the original file bytes (hex), used to refuse the same receipt file twice. Null if the browser cannot hash. */
+export async function hashFile(file: Blob): Promise<string | null> {
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());
+    return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  } catch { return null; }
+}
+
 export interface PreparedReceipt { blob: Blob; type: string; ext: string }
 
 /** Shrinks a phone photo (typically 3-8 MB) to ~300 KB JPEG so it uploads quickly on mobile data. PDFs pass through. */
