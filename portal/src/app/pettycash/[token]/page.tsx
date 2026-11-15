@@ -123,6 +123,7 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
   const [amount, setAmount] = useState(revising ? String(revising.amount) : '');
   const [date, setDate] = useState(revising ? revising.date : today());
   const [desc, setDesc] = useState(revising ? revising.description : '');
+  const [site, setSite] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
@@ -146,6 +147,7 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
     if (!file) return setError('Take or choose a photo of the receipt.');
     if (!(Number(amount) > 0)) return setError('Enter the amount on the receipt.');
     if (!desc.trim()) return setError('Say what you bought.');
+    if (!site.trim()) return setError('Enter the site name.');
     setBusy(true); setError('');
     try {
       const sb = supabase();
@@ -159,7 +161,7 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
         if (res.error) throw new Error('Upload failed: ' + res.error.message);
         up = uploaded.current = { file, path, hash };
       }
-      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: up.path, p_replaces: revising?.id ?? null, p_file_hash: up.hash, p_confirm_dup: confirmDup });
+      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: up.path, p_replaces: revising?.id ?? null, p_file_hash: up.hash, p_confirm_dup: confirmDup, p_site: site.trim() });
       if (err) {
         if (err.message.startsWith('DUPLICATE_AMOUNT:')) { setDupAsk(err.message.replace('DUPLICATE_AMOUNT:', '').trim()); setBusy(false); return; }
         throw new Error(err.message.replace('DUPLICATE_FILE:', '').trim());
@@ -190,6 +192,8 @@ function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revi
             <div className="field"><label>Date on the receipt</label><DatePicker value={date} onChange={(v) => { setDate(v); setDupAsk(''); }} /></div>
             <div className="field"><label>What was it for?</label>
               <input className="input" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="e.g. Diesel for the pickup" /></div>
+            <div className="field"><label>Site name</label>
+              <input className="input" value={site} onChange={(e) => setSite(e.target.value)} placeholder="Which site was this for?" /></div>
           </div>
           {error && <div className="banner error" style={{ marginTop: 14, marginBottom: 0 }}>{error}</div>}
           {dupAsk && (

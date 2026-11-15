@@ -84,6 +84,7 @@ export interface PcReceipt {
   status: ReceiptStatus; reject_reason: string; created_at: string;
   /** set when this receipt is the employee's revision of an earlier rejected one */
   replaces_id: string | null;
+  site: string;
   /** set when another live receipt has the same amount and date (employee confirmed it is a different purchase) */
   dup_of: string | null;
 }

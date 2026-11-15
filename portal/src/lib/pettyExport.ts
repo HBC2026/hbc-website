@@ -45,7 +45,7 @@ export async function exportPettyCash(emps: Emp[], cash: CashRow[], receipts: Re
     styleHeader(ws.addRow(['Date', 'Type', 'Description / note', 'Given by', 'Status', 'Cash given', 'Receipt amount', 'Balance']));
     const events = [
       ...c.map((x) => ({ date: x.given_on, at: x.created_at, type: 'Cash given', text: x.note, by: x.given_by, status: '', inn: Number(x.amount), out: 0 })),
-      ...r.map((x) => ({ date: x.spent_on, at: x.created_at, type: 'Receipt', text: x.description, by: '', status: x.status[0].toUpperCase() + x.status.slice(1), inn: 0, out: x.status === 'rejected' ? 0 : Number(x.amount), raw: Number(x.amount) })),
+      ...r.map((x) => ({ date: x.spent_on, at: x.created_at, type: 'Receipt', text: x.site ? `${x.description} (Site: ${x.site})` : x.description, by: '', status: x.status[0].toUpperCase() + x.status.slice(1), inn: 0, out: x.status === 'rejected' ? 0 : Number(x.amount), raw: Number(x.amount) })),
     ].sort((a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at));
     const start = ws.rowCount + 1;
     let run = 0;
