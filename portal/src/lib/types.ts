@@ -82,11 +82,13 @@ export interface PcCash { id: string; amount: number; given_on: string; note: st
 export interface PcReceipt {
   id: string; amount: number; spent_on: string; description: string; file_path: string;
   status: ReceiptStatus; reject_reason: string; created_at: string;
+  /** set when this receipt is the employee's revision of an earlier rejected one */
+  replaces_id: string | null;
 }
 /** What the employee's private page receives from pc_statement(token). */
 export interface PcStatement {
   name: string; emp_code: string; company: string; active: boolean;
   given: number; spent: number; balance: number;
   cash: { id: string; amount: number; date: string; note: string; given_by: string }[];
-  receipts: { id: string; amount: number; date: string; description: string; status: ReceiptStatus; reject_reason: string }[];
+  receipts: { id: string; amount: number; date: string; description: string; status: ReceiptStatus; reject_reason: string; replaces_id: string | null; revised: boolean }[];
 }

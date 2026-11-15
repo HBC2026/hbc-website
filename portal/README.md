@@ -94,7 +94,7 @@ Printing: "Print" and "Download PDF" use the browser print dialog with A4 print 
 **Petty Cash** in the sidebar (administrator / payroll write, viewer read). Give cash to an employee, and they upload receipts against it from a phone; the employee's balance is *cash given − receipts that are not rejected*.
 
 - Employees do not sign in. Open an employee in Petty Cash → **Copy link** and send them `https://hbcgcc.com/pettycash/<token>` (WhatsApp etc.). **New link** revokes the old one.
-- The employee page works only through token-checked database functions (`pc_statement`, `pc_add_receipt`, `pc_delete_receipt`) and an insert-only upload folder in the private bucket `petty-cash-receipts`; it can never see another employee.
+- The employee page works only through token-checked database functions (`pc_statement`, `pc_add_receipt`, with `0028_petty_receipt_revisions.sql`) and an insert-only upload folder in the private bucket `petty-cash-receipts`; it can never see another employee.
 - **Reject** a receipt (a reason is required) and it stops counting; the employee sees the reason and uploads it again. Approved receipts can't be removed by the employee.
 - Run `0008_petty_cash.sql` then `0010_petty_cash_given_by.sql` once. Each cash entry records who gave the money. Existing databases need nothing else.
 

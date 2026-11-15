@@ -10,11 +10,11 @@ import { isConfigured, PETTY_BUCKET, supabase } from '@/lib/supabase';
 import type { PcStatement, ReceiptStatus } from '@/lib/types';
 
 const TONE: Record<ReceiptStatus, string> = { pending: 'gold', approved: 'green', rejected: 'red' };
-const LABEL: Record<ReceiptStatus, string> = { pending: 'Waiting for approval', approved: 'Approved', rejected: 'Rejected – upload again' };
+const LABEL: Record<ReceiptStatus, string> = { pending: 'Waiting for approval', approved: 'Approved', rejected: 'Rejected' };
 
 type Entry =
   | { kind: 'cash'; id: string; date: string; amount: number; note: string; by: string }
-  | { kind: 'receipt'; id: string; date: string; amount: number; description: string; status: ReceiptStatus; reason: string };
+  | { kind: 'receipt'; id: string; date: string; amount: number; description: string; status: ReceiptStatus; reason: string; revised: boolean; isRevision: boolean };
 
 /** The employee's private petty cash page. The token in the URL is the only credential. */
 export default function EmployeePettyCash() {
@@ -22,6 +22,7 @@ export default function EmployeePettyCash() {
   const [st, setSt] = useState<PcStatement | null | undefined>(undefined);   // undefined = loading, null = invalid link
   const [fetchError, setFetchError] = useState('');
   const [adding, setAdding] = useState(false);
+  const [revising, setRevising] = useState<Revising | null>(null);   // the rejected receipt being replaced
 
   const load = useCallback(async () => {
     if (!isConfigured) return;
@@ -37,7 +38,7 @@ export default function EmployeePettyCash() {
     if (!st) return [];
     const list: Entry[] = [
       ...st.cash.map((c) => ({ kind: 'cash' as const, id: c.id, date: c.date, amount: Number(c.amount), note: c.note, by: c.given_by })),
-      ...st.receipts.map((r) => ({ kind: 'receipt' as const, id: r.id, date: r.date, amount: Number(r.amount), description: r.description, status: r.status, reason: r.reject_reason })),
+      ...st.receipts.map((r) => ({ kind: 'receipt' as const, id: r.id, date: r.date, amount: Number(r.amount), description: r.description, status: r.status, reason: r.reject_reason, revised: r.revised, isRevision: !!r.replaces_id })),
     ].sort((a, b) => a.date.localeCompare(b.date) || (a.kind === b.kind ? 0 : a.kind === 'cash' ? -1 : 1));
     let run = 0;
     return list.map((e) => {
@@ -45,14 +46,6 @@ export default function EmployeePettyCash() {
       return { e, run };
     }).reverse();
   }, [st]);
-
-  async function remove(id: string, ask = true): Promise<boolean> {
-    if (ask && !window.confirm('Remove this receipt?')) return false;
-    const { error } = await supabase().rpc('pc_delete_receipt', { p_token: token, p_id: id });
-    if (error) { setFetchError(error.message); return false; }
-    load();
-    return true;
-  }
 
   if (!isConfigured) return <div className="pc-wrap"><div className="pc-card">The portal is not configured.</div></div>;
   if (st === undefined && !fetchError) return <div className="pc-wrap"><div className="pc-card pc-center">Loading…</div></div>;
@@ -103,10 +96,11 @@ export default function EmployeePettyCash() {
                 {e.kind === 'receipt' && <span className={`badge ${TONE[e.status]}`}>{LABEL[e.status]}</span>}
               </div>
               {e.kind === 'receipt' && e.status === 'rejected' && e.reason && <div className="pc-reason">Reason: {e.reason}</div>}
-              {e.kind === 'receipt' && e.status !== 'approved' && (
+              {e.kind === 'receipt' && e.isRevision && <div className="pc-reason" style={{ color: 'inherit' }}>Revised receipt</div>}
+              {e.kind === 'receipt' && e.status === 'rejected' && e.revised && <div className="pc-reason" style={{ color: 'inherit' }}>You sent a revised receipt for this one.</div>}
+              {e.kind === 'receipt' && e.status === 'rejected' && !e.revised && st.active && (
                 <div className="pc-actions">
-                  {e.status === 'rejected' && <button className="btn sm primary" onClick={async () => { if (await remove(e.id, false)) setAdding(true); }}>Upload again</button>}
-                  <button className="btn sm danger" onClick={() => remove(e.id)}>Remove</button>
+                  <button className="btn sm primary" onClick={() => setRevising({ id: e.id, amount: e.amount, date: e.date, description: e.description })}>Submit revised receipt</button>
                 </div>
               )}
             </div>
@@ -118,15 +112,17 @@ export default function EmployeePettyCash() {
         ))}
       </section>
 
-      {adding && <AddReceipt token={token} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(); }} />}
+      {(adding || revising) && <AddReceipt token={token} revising={revising} onClose={() => { setAdding(false); setRevising(null); }} onSaved={() => { setAdding(false); setRevising(null); load(); }} />}
     </div>
   );
 }
 
-function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () => void; onSaved: () => void }) {
-  const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(today());
-  const [desc, setDesc] = useState('');
+type Revising = { id: string; amount: number; date: string; description: string };
+
+function AddReceipt({ token, revising, onClose, onSaved }: { token: string; revising: Revising | null; onClose: () => void; onSaved: () => void }) {
+  const [amount, setAmount] = useState(revising ? String(revising.amount) : '');
+  const [date, setDate] = useState(revising ? revising.date : today());
+  const [desc, setDesc] = useState(revising ? revising.description : '');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
@@ -154,7 +150,7 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
       const path = `${token}/${crypto.randomUUID()}.${ext}`;
       const up = await sb.storage.from(PETTY_BUCKET).upload(path, blob, { contentType: type });
       if (up.error) throw new Error('Upload failed: ' + up.error.message);
-      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: path });
+      const { error: err } = await sb.rpc('pc_add_receipt', { p_token: token, p_amount: Number(amount), p_date: date, p_description: desc.trim(), p_file_path: path, p_replaces: revising?.id ?? null });
       if (err) throw new Error(err.message);
       onSaved();
     } catch (ex) {
@@ -166,7 +162,7 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
   return (
     <div className="modal-back" onMouseDown={(e) => e.target === e.currentTarget && !busy && onClose()}>
       <form className="modal pc-modal" onSubmit={submit}>
-        <div className="modal-head"><h3>Add a receipt</h3><button type="button" className="modal-x" onClick={onClose} disabled={busy} aria-label="Close">×</button></div>
+        <div className="modal-head"><h3>{revising ? 'Submit revised receipt' : 'Add a receipt'}</h3><button type="button" className="modal-x" onClick={onClose} disabled={busy} aria-label="Close">×</button></div>
         <div className="modal-body">
           <input ref={input} type="file" accept="image/*,application/pdf" hidden onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
           <button type="button" className="pc-photo" onClick={() => setScanning(true)}>
@@ -187,7 +183,7 @@ function AddReceipt({ token, onClose, onSaved }: { token: string; onClose: () =>
         </div>
         <div className="modal-foot">
           <button type="button" className="btn" onClick={onClose} disabled={busy}>Cancel</button>
-          <button type="submit" className="btn primary" disabled={busy}>{busy ? 'Uploading…' : 'Submit receipt'}</button>
+          <button type="submit" className="btn primary" disabled={busy}>{busy ? 'Uploading…' : revising ? 'Submit revised receipt' : 'Submit receipt'}</button>
         </div>
       </form>
     </div>

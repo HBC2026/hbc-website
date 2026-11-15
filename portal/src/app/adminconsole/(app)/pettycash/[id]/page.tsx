@@ -113,12 +113,12 @@ export default function PettyCashEmployeePage() {
             {data.receipts.map((r) => (
               <tr key={r.id}>
                 <td>{fmtDate(r.spent_on)}</td>
-                <td>{r.description}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
+                <td>{r.description}{r.replaces_id && <div className="muted" style={{ fontSize: 11 }}>Revised receipt (replaces a rejected one)</div>}{data.receipts.some((n) => n.replaces_id === r.id) && <div className="muted" style={{ fontSize: 11 }}>Revised receipt submitted</div>}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
                 <td className="r" style={r.status === 'rejected' ? { textDecoration: 'line-through', opacity: .55 } : undefined}><Money v={r.amount} /></td>
                 <td><Badge tone={TONE[r.status]}>{LABEL[r.status]}</Badge></td>
                 <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                   <button className="btn sm" onClick={() => view(r.file_path)}>View receipt</button>{' '}
-                  {canWrite && r.status !== 'approved' && <button className="btn sm green" disabled={busy} onClick={() => review(r.id, 'approved')}>Approve</button>}{' '}
+                  {canWrite && r.status !== 'approved' && !data.receipts.some((n) => n.replaces_id === r.id) && <button className="btn sm green" disabled={busy} onClick={() => review(r.id, 'approved')}>Approve</button>}{' '}
                   {canWrite && r.status !== 'rejected' && <button className="btn sm danger" disabled={busy} onClick={() => setReject({ id: r.id, reason: '' })}>Reject</button>}
                 </td>
               </tr>

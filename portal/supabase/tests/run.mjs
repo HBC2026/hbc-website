@@ -204,13 +204,14 @@ ok((await q(`select name from employees`))[0].name === 'Edited', 'viewer edit is
 await db.exec('reset role');
 await db.exec(mig('0008_petty_cash.sql'));
 await db.exec(mig('0010_petty_cash_given_by.sql'));
+await db.exec(mig('0028_petty_receipt_revisions.sql'));
 await db.exec(`grant usage on schema public, storage to anon;
   grant all on all tables in schema public to authenticated;
   grant all on all tables in schema storage to authenticated;
   grant insert on storage.objects to anon;
   grant execute on all functions in schema public to authenticated;
-  grant execute on function pc_statement(text), pc_add_receipt(text, numeric, date, text, text),
-    pc_delete_receipt(text, uuid), pc_token_valid(text) to anon;`);
+  grant execute on function pc_statement(text), pc_add_receipt(text, numeric, date, text, text, uuid),
+    pc_token_valid(text) to anon;`);
 
 await as(U1, HBC);
 await db.exec(`update employees set status = 'active'`);
@@ -249,9 +250,18 @@ await anon();
 st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
 ok(st.spent == 200 && st.balance == 550.5, 'rejected receipt no longer counts');
 ok(st.receipts.find((r) => r.id === R2).reject_reason === 'Photo is blurry', 'employee sees the rejection reason');
-await throws(`select pc_delete_receipt('${TOKEN}', '${R1}')`, 'approved receipt cannot be removed by employee', /approved/);
-await db.exec(`select pc_delete_receipt('${TOKEN}', '${R2}')`);
-ok((await q(`select pc_statement('${TOKEN}') s`))[0].s.receipts.length === 1, 'employee removes the rejected receipt');
+await throws(`select pc_delete_receipt('${TOKEN}', '${R1}')`, 'employee can no longer delete receipts', /does not exist|permission denied/);
+await throws(`delete from pc_receipts`, 'employee cannot delete receipts directly', /permission denied/);
+await db.exec(`insert into storage.objects (bucket_id, name) values ('petty-cash-receipts', '${TOKEN}/r3.jpg')`);
+await throws(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Taxi again', '${TOKEN}/r3.jpg', '${R1}')`, 'only a rejected receipt can be revised', /Only a rejected/);
+const R3 = (await q(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Taxi again', '${TOKEN}/r3.jpg', '${R2}') id`))[0].id;
+st = (await q(`select pc_statement('${TOKEN}') s`))[0].s;
+ok(st.receipts.length === 3 && st.receipts.find((r) => r.id === R2).revised === true && st.receipts.find((r) => r.id === R3).replaces_id === R2, 'revision is linked and the rejected receipt stays on record');
+ok(st.spent == 290, 'revised receipt counts, rejected one still does not');
+await throws(`select pc_add_receipt('${TOKEN}', 90, '2026-09-04', 'Again', '${TOKEN}/r3.jpg', '${R2}')`, 'a receipt can be revised only once', /already submitted/);
+await as(U1, HBC);
+await throws(`select pc_review_receipt('${R2}', 'approved', '')`, 'cannot approve a receipt that was revised', /revised receipt/i);
+await anon();
 
 // permissions and isolation
 await as(U3, MD);
@@ -259,7 +269,7 @@ ok(await count('pc_receipts') === 0 && await count('pc_cash_given') === 0, 'othe
 await throws(`select pc_give_cash('${E1}', 5, '2026-09-01', '', 'X')`, 'viewer/other company cannot give cash', /Not permitted|No company|not found/i);
 await as(U2, HBC);
 ok(await count('pc_cash_given') === 2, 'payroll role reads petty cash');
-ok((await q(`select balance from pc_summary() where employee_id = '${E1}'`))[0].balance == 550.5, 'pc_summary matches the statement');
+ok((await q(`select balance from pc_summary() where employee_id = '${E1}'`))[0].balance == 460.5, 'pc_summary matches the statement');
 await as(U1, HBC);
 const NEW = (await q(`select pc_get_link('${E1}', true) t`))[0].t;
 ok(NEW !== TOKEN, 'regenerating issues a new link');
