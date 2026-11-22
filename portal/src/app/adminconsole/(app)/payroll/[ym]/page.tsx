@@ -9,6 +9,7 @@ import { useQuery } from '@/lib/hooks';
 import { BatchModal } from '@/components/PayrollBatchModal';
 import { fmtDate, fmtDateTime, fmtNum, monthLabel, parseYm, periodLabel, timeAgo, ymd } from '@/lib/format';
 import { can } from '@/lib/roles';
+import { downloadWps, wpsProblems, type WpsProblem } from '@/lib/wps';
 import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceStatus, AuditLog, Employee, PayrollEntry, PayrollPeriod, SalarySlip } from '@/lib/types';
 
@@ -30,6 +31,7 @@ export default function PayrollPeriodPage() {
   const [open, setOpen] = useState<Entry | null>(null);
   const [reopen, setReopen] = useState(false);
   const [setup, setSetup] = useState(false);
+  const [wpsIssues, setWpsIssues] = useState<WpsProblem[] | null>(null);
 
   const { data, error, loading, reload } = useQuery(async () => {
     if (!parsed) throw new Error('Invalid month');
@@ -84,6 +86,13 @@ export default function PayrollPeriodPage() {
     run(() => sb.rpc('approve_payroll', { p_period: period!.id }), 'Payroll approved — salary slips generated');
   };
 
+  async function exportWps() {
+    if (period?.status === 'calculated' && !(await confirmDialog({ title: 'Payroll not approved yet', message: 'This payroll is still being reviewed, so the figures may change. Create the WPS file anyway?', confirmLabel: 'Create file' }))) return;
+    const problems = wpsProblems(entries);
+    if (problems.length) return setWpsIssues(problems);
+    downloadWps(entries, params.ym);
+  }
+
   const tot = entries.reduce((a, e) => ({
     basic: a.basic + Number(e.basic), allow: a.allow + Number(e.allowances), ot: a.ot + Number(e.ot_paid_amount ?? 0), otAmt: a.otAmt + Number(e.ot_amount),
     other: a.other + Number(e.other_earnings), days: a.days + Number(e.present_days), unpaid: a.unpaid + Number(e.unpaid_days),
@@ -99,6 +108,7 @@ export default function PayrollPeriodPage() {
         <Link href="/adminconsole/payroll" className="btn">← All payroll runs</Link>
         <Link href={`/adminconsole/attendance/monthly?ym=${params.ym}`} className="btn">View Attendance</Link>
         {period && entries.length > 0 && <Link href={`/adminconsole/payroll/${params.ym}/report`} className="btn">Payroll Report</Link>}
+        {period && entries.length > 0 && <button className="btn" onClick={exportWps} title="Salary file for Mudad / WPS (.txt, comma separated)">WPS File (Mudad)</button>}
         {canWrite && !locked && <button className="btn" disabled={busy} onClick={() => setSetup(true)}>{period ? '↻ Recalculate' : 'Set Up & Calculate'}</button>}
         {canWrite && period?.status === 'calculated' && <button className="btn green" disabled={busy || errors.length > 0} title={errors.length ? 'Resolve the validation errors first' : ''} onClick={approve}>Approve Payroll</button>}
         {can(role, 'payroll:reopen') && locked && <button className="btn danger" onClick={() => setReopen(true)}>Reopen Payroll</button>}
@@ -229,6 +239,14 @@ export default function PayrollPeriodPage() {
 
       {open && <Breakdown entry={open} editable={canWrite && !locked} onClose={() => setOpen(null)} onSaved={() => { setOpen(null); reload(); }} />}
       {setup && <BatchModal year={year} month={month} period={period} busy={busy} onClose={() => setSetup(false)} onRun={calculate} />}
+      {wpsIssues && (
+        <Modal title="WPS file — details missing" wide onClose={() => setWpsIssues(null)}
+          footer={<><button className="btn" onClick={() => setWpsIssues(null)}>Close</button><button className="btn primary" onClick={() => { downloadWps(entries, params.ym); setWpsIssues(null); }}>Download anyway</button></>}>
+          <div className="muted" style={{ marginBottom: 10 }}>Mudad will reject these rows. Fix them on the employee profile, or download the file as it is.</div>
+          <table className="table"><thead><tr><th>ID</th><th>Name</th><th>Problem</th></tr></thead>
+            <tbody>{wpsIssues.map((p, i) => <tr key={i}><td className="mono">{p.emp_code}</td><td>{p.name}</td><td>{p.problem}</td></tr>)}</tbody></table>
+        </Modal>
+      )}
       {reopen && period && <ReopenModal periodId={period.id} label={label} onClose={() => setReopen(false)} onDone={() => { setReopen(false); reload(); }} />}
     </div>
   );

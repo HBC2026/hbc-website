@@ -42,7 +42,6 @@ const NAV: NavGroup[] = [
       { href: '/adminconsole/jsa/settings', label: 'JSA Settings', icon: '⚙', roles: JSA_SIDE },
     ],
   },
-  { label: 'Petty Cash', icon: '◉', items: [{ href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉', roles: PETTY_SIDE }] },
   {
     label: 'Store', icon: '▦', items: [
       { href: '/adminconsole/store', label: 'Store Inventory', icon: '▦', roles: STORE_SIDE },
@@ -51,6 +50,7 @@ const NAV: NavGroup[] = [
   {
     label: 'Accounting', icon: '∑', items: [
       { href: '/adminconsole/accounting', label: 'Overview', icon: '∑', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/register', label: 'Register', icon: '▦', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/journal', label: 'Journal', icon: '✎', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/accounts', label: 'Chart of Accounts', icon: '▤', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/profit-loss', label: 'Profit & Loss', icon: '↗', roles: ACC_SIDE },
@@ -63,7 +63,8 @@ const NAV: NavGroup[] = [
   ] },
 ];
 
-const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }];
+// Petty cash belongs to no company: it sits under "All Companies" instead of in a company's menu
+const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }, { href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉' }];
 
 function activeHref(pathname: string): string | undefined {
   return ALL.filter((i) => (i.href === '/adminconsole' ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')))
@@ -185,6 +186,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           {companies.length > 1 && (
             <Link href="/adminconsole/overview" title="All Companies" className={`nav-item nav-top${pathname === '/adminconsole/overview' ? ' active' : ''}`}>
               <span className="nav-icon">◈</span>All Companies
+            </Link>
+          )}
+          {PETTY_SIDE.includes(profile.role) && (
+            <Link href="/adminconsole/pettycash" title="Petty Cash (shared by all companies)" className={`nav-item nav-top${current === '/adminconsole/pettycash' ? ' active' : ''}`}>
+              <span className="nav-icon">◉</span>Petty Cash
             </Link>
           )}
           <div className="brand-subtitle">Administration Portal</div>

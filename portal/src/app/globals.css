@@ -842,3 +842,96 @@ table.rep td { padding: 6px 10px; }
 .je-lines td { vertical-align: middle; }
 .je-sub { font-size: 11px; color: var(--muted); }
 @media print { .rep-grand td { background: #eef2f8 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } table.rep { max-width: none; margin: 8px 24px; width: calc(100% - 48px); } }
+
+/* ---------------- QuickBooks-style theme (Accounting section only) ---------------- */
+.qb {
+  --qb-green: #2ca01c; --qb-green-dark: #108000; --qb-green-soft: #e8f5e6;
+  --qb-ink: #393a3d; --qb-muted: #6b6c72; --qb-line: #d4d7dc; --qb-bg: #f4f5f8; --qb-link: #0077c5;
+  color: var(--qb-ink);
+}
+.qb .eyebrow { color: var(--qb-green-dark); font-weight: 700; letter-spacing: .06em; }
+.qb .page-head h1 { font-size: 26px; font-weight: 700; color: var(--qb-ink); }
+.qb .page-head p, .qb .muted { color: var(--qb-muted); }
+
+/* pill buttons: green primary, outlined secondary */
+.qb .btn { border-radius: 999px; border: 1px solid #8d9096; background: #fff; color: var(--qb-ink); font-weight: 600; box-shadow: none; }
+.qb .btn:hover { background: var(--qb-bg); border-color: #6b6c72; }
+.qb .btn.primary { background: var(--qb-green); border-color: var(--qb-green); color: #fff; }
+.qb .btn.primary:hover { background: var(--qb-green-dark); border-color: var(--qb-green-dark); }
+.qb .btn.danger { color: #d52b1e; border-color: #d52b1e; background: #fff; }
+.qb .btn.danger:hover { background: #fdecea; }
+.qb .btn.sm { padding: 5px 12px; }
+.qb .input:focus, .qb .select:focus, .qb .dd-btn:focus { border-color: var(--qb-green); box-shadow: 0 0 0 3px rgba(44,160,28,.18); outline: none; }
+
+/* flat white cards with a coloured top edge, no icon tiles */
+.qb .stat-card { border: 1px solid var(--qb-line); border-top: 4px solid var(--qb-green); border-radius: 6px; box-shadow: none; background: #fff; }
+.qb .stat-card:nth-child(2) { border-top-color: #0077c5; }
+.qb .stat-card:nth-child(3) { border-top-color: #f5a623; }
+.qb .stat-card:nth-child(4) { border-top-color: #6b6c72; }
+.qb .stat-icon { display: none; }
+.qb .stat-label { color: var(--qb-muted); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+.qb .stat-number { color: var(--qb-ink); font-weight: 700; }
+.qb a.stat-link:hover { border-color: var(--qb-green); }
+
+.qb .panel { border: 1px solid var(--qb-line); border-radius: 6px; box-shadow: none; }
+.qb .panel-head { background: #fff; border-bottom: 1px solid var(--qb-line); }
+.qb .panel-title { color: var(--qb-ink); }
+
+/* tables: grey header band, subtle row hover, blue links */
+.qb table.table thead th { background: var(--qb-bg); color: var(--qb-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--qb-line); }
+.qb table.table tbody tr:hover td { background: #f9fafb; }
+.qb table.table td { border-bottom: 1px solid #ebecf0; }
+.qb a.strong, .qb td a { color: var(--qb-link); }
+.qb a.strong:hover, .qb td a:hover { text-decoration: underline; }
+.qb .badge { background: var(--qb-bg); color: var(--qb-muted); border-radius: 999px; }
+
+/* modal */
+.qb .modal-head { border-bottom: 1px solid var(--qb-line); }
+.qb .modal-head h3 { color: var(--qb-ink); }
+
+/* reports, QuickBooks style: bold title block, plain rows, ruled totals, double-underlined grand totals */
+.qb .rep-head { background: #fff; border-bottom: 1px solid var(--qb-line); padding: 26px 16px 16px; }
+.qb .rep-head .rep-co { color: var(--qb-muted); font-size: 12px; letter-spacing: .08em; }
+.qb .rep-head h2 { font-size: 22px; font-weight: 700; color: var(--qb-ink); margin: 6px 0 2px; }
+.qb table.rep { font-size: 13px; }
+.qb .rep-section td { color: var(--qb-ink); border-bottom: 1px solid var(--qb-line); padding-bottom: 5px; }
+.qb .rep-line td { border-bottom: 1px solid #f0f1f4; }
+.qb .rep-line .rep-label { padding-left: 24px; }
+.qb .rep-total td { border-top: 1px solid var(--qb-ink); background: transparent; }
+.qb .rep-grand td { background: var(--qb-green-soft); border-top: 1px solid var(--qb-ink); border-bottom: 3px double var(--qb-ink); color: var(--qb-ink); }
+.qb .acc-balanced { color: var(--qb-green-dark); }
+@media print {
+  .qb .rep-grand td { background: var(--qb-green-soft) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* register: inline entry row */
+.qb .reg-entry td { background: var(--qb-green-soft); border-bottom: 2px solid var(--qb-green); vertical-align: middle; }
+.qb .reg-entry .input, .qb .reg-entry .dd-btn { width: 100%; }
+.qb .reg-editing td { background: #fff8e1; }
+.qb table.register tfoot td { background: var(--qb-bg); border-top: 1px solid var(--qb-line); }
+
+/* employee profile: header KPI pills size to their content */
+.page-head .head-stats.auto .stat-card { width: auto; min-width: 0; padding: 0 14px; }
+
+/* employee profile: compact info strip */
+.info-strip { padding: 12px 18px; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px 20px; font-size: 12px; }
+.info-grid .iban { grid-column: span 2; }
+.info-grid .stat-label { font-size: 10px; margin-bottom: 2px; }
+@media (max-width: 700px) { .info-grid .iban { grid-column: span 1; } }
+
+/* iqama expiry highlight */
+.expiry-hl { padding: 2px 7px; border-radius: 6px; font-weight: 700; }
+.expiry-hl.gold { background: var(--gold-soft); color: #8d6528; }
+.expiry-hl.red { background: var(--red-soft); color: var(--red); }
+
+/* employee rows with an iqama expiring soon */
+.table tr.row-gold > td { background: var(--gold-soft); }
+.table tr.row-red > td { background: var(--red-soft); }
+
+/* grouped form sections (employee form) */
+.form-section + .form-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
+.form-section-title { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--green); margin-bottom: 12px; }
+.form-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 800px) { .form-grid.cols-4 { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .form-grid.cols-4 { grid-template-columns: 1fr; } }

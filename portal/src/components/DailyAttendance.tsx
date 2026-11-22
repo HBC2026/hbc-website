@@ -5,12 +5,14 @@ import { ATT_LABEL, ATT_STATUSES, DatePicker, ErrorBox, Select, Loading } from '
 import { useQuery } from '@/lib/hooks';
 import { addDays, fmtDate, fmtNum, monthLabel, today } from '@/lib/format';
 import { can } from '@/lib/roles';
+import { otHourlyRate } from '@/lib/ot';
 import { supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, AttendanceStatus, Employee } from '@/lib/types';
 
 const OT_STATUSES: AttendanceStatus[] = ['present', 'holiday', 'weekly_off'];
 
-interface Row { status: AttendanceStatus | ''; regular: string; ot: boolean; amount: string; paid: boolean; remarks: string }
+/** hours = OT hours (priced from salary); legacy = an old entry that only has an amount, kept editable as an amount */
+interface Row { status: AttendanceStatus | ''; regular: string; ot: boolean; hours: string; amount: string; legacy: boolean; paid: boolean; remarks: string }
 type Rows = Record<string, Row>;
 
 function buildRows(emps: Employee[], existing: AttendanceRow[]): Rows {
@@ -19,8 +21,10 @@ function buildRows(emps: Employee[], existing: AttendanceRow[]): Rows {
   for (const e of emps) {
     const r = by.get(e.id);
     out[e.id] = r
-      ? { status: r.status, regular: String(Number(r.regular_hours)), ot: Number(r.ot_amount ?? 0) > 0, amount: Number(r.ot_amount ?? 0) > 0 ? String(Number(r.ot_amount)) : '', paid: !!r.ot_paid, remarks: r.remarks }
-      : { status: '', regular: '', ot: false, amount: '', paid: false, remarks: '' };
+      ? { status: r.status, regular: String(Number(r.regular_hours)), ot: Number(r.ot_hours) > 0 || Number(r.ot_amount ?? 0) > 0,
+          hours: Number(r.ot_hours) > 0 ? String(Number(r.ot_hours)) : '', amount: Number(r.ot_amount ?? 0) > 0 ? String(Number(r.ot_amount)) : '',
+          legacy: !(Number(r.ot_hours) > 0) && Number(r.ot_amount ?? 0) > 0, paid: !!r.ot_paid, remarks: r.remarks }
+      : { status: '', regular: '', ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: '' };
   }
   return out;
 }
@@ -35,7 +39,7 @@ export function DailyAttendance() {
 
   const { data, error, loading, reload } = useQuery(async () => {
     const [emps, att, period] = await Promise.all([
-      sb.from('employees').select('*').eq('status', 'active').lte('joining_date', date).order('emp_code'),
+      sb.from('employees').select('*').or(`status.eq.active,last_working_date.gte.${date}`).lte('joining_date', date).order('emp_code'),
       sb.from('attendance').select('*').eq('work_date', date),
       sb.from('payroll_periods').select('status').eq('year', year).eq('month', month).maybeSingle(),
     ]);
@@ -92,7 +96,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
 
   function setStatus(id: string, status: AttendanceStatus | '') {
     const keepOt = OT_STATUSES.includes(status as AttendanceStatus);
-    const ot = keepOt ? { ot: rows[id].ot, amount: rows[id].amount, paid: rows[id].paid } : { ot: false, amount: '', paid: false };
+    const ot = keepOt ? { ot: rows[id].ot, hours: rows[id].hours, amount: rows[id].amount, legacy: rows[id].legacy, paid: rows[id].paid } : { ot: false, hours: '', amount: '', legacy: false, paid: false };
     if (status === 'present') patch(id, { status, regular: rows[id].regular && rows[id].regular !== '0' ? rows[id].regular : std, ...ot });
     else patch(id, { status, regular: status ? '0' : '', ...ot });
   }
@@ -100,36 +104,43 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   async function markAll() {
     const hasExceptions = Object.values(rows).some((r) => (r.status && r.status !== 'present') || r.ot);
     if (hasExceptions && !(await confirmDialog({ title: 'Mark everyone present?', message: 'This will overwrite existing exceptions and overtime for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
-    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'present' as const, regular: std, ot: false, amount: '', paid: false, remarks: rows[e.id].remarks }])));
+    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'present' as const, regular: std, ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])));
   }
 
   async function markAllOff() {
     const hasMarks = Object.values(rows).some((r) => r.status && r.status !== 'weekly_off');
     if (hasMarks && !(await confirmDialog({ title: 'Mark everyone weekend?', message: 'This will overwrite existing attendance, overtime and leave for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
-    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'weekly_off' as const, regular: '0', ot: false, amount: '', paid: false, remarks: rows[e.id].remarks }])));
+    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'weekly_off' as const, regular: '0', ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])));
   }
 
   const totals = useMemo(() => {
     const c: Record<string, number> = {}; let otPaid = 0; let otUnpaid = 0; let unmarked = 0;
-    for (const r of Object.values(rows)) {
+    for (const [id, r] of Object.entries(rows)) {
       if (!r.status) { unmarked++; continue; }
       c[r.status] = (c[r.status] ?? 0) + 1;
-      if (r.ot) { if (r.paid) otPaid += Number(r.amount) || 0; else otUnpaid += Number(r.amount) || 0; }
+      if (r.ot) {
+        const emp = emps.find((x) => x.id === id);
+        const amt = r.legacy ? Number(r.amount) || 0 : (Number(r.hours) || 0) * (emp ? otHourlyRate(emp, date, settings) : 0);
+        if (r.paid) otPaid += amt; else otUnpaid += amt;
+      }
     }
     return { c, otPaid, otUnpaid, unmarked };
-  }, [rows]);
+  }, [rows, emps, date, settings]);
 
   async function save() {
     const changed: object[] = [];
     for (const e of emps) {
       const r = rows[e.id], o = initial[e.id];
       if (!r.status || JSON.stringify(r) === JSON.stringify(o)) continue;
-      const regular = r.status === 'present' ? Number(r.regular || std) : 0, amount = r.ot ? Number(r.amount || 0) : 0;
+      const regular = r.status === 'present' ? Number(r.regular || std) : 0;
+      const hours = r.ot && !r.legacy ? Number(r.hours || 0) : 0, amount = r.ot && r.legacy ? Number(r.amount || 0) : 0;
       if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekend`, true);
-      if (r.ot && !(amount > 0)) return toast(`${e.name}: enter the OT amount`, true);
+      if (r.ot && !r.legacy && !(hours > 0)) return toast(`${e.name}: enter the OT hours`, true);
+      if (hours > 16) return toast(`${e.name}: OT hours cannot be more than 16`, true);
+      if (r.ot && r.legacy && !(amount > 0)) return toast(`${e.name}: enter the OT amount`, true);
       if (amount > 99999) return toast(`${e.name}: OT amount out of range`, true);
       // Always send the OT fields: a bulk upsert fills keys missing from some rows with NULL, which violates NOT NULL
-      changed.push({ employee_id: e.id, work_date: date, status: r.status, regular_hours: regular, ot_hours: 0, ot_amount: amount, ot_paid: r.ot && r.paid, remarks: r.remarks.trim() });
+      changed.push({ employee_id: e.id, work_date: date, status: r.status, regular_hours: regular, ot_hours: hours, ot_amount: amount, ot_paid: r.ot && r.paid, remarks: r.remarks.trim() });
     }
     if (!changed.length) return toast('No changes to save');
     setSaving(true);
@@ -155,7 +166,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
           <div className="panel-title">{emps.length} active employees</div>
         </div>
         <div className="table-wrap"><table className="table">
-          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Amount</th><th>Paid</th><th>Internal Notes</th></tr></thead>
+          <thead><tr><th>Employee</th><th>Status</th><th>Overtime</th><th className="r">OT Hours</th><th className="r">OT Amount</th><th>Paid</th><th>Internal Notes</th></tr></thead>
           <tbody>
             {emps.map((e) => {
               const r = rows[e.id]; const present = r.status === 'present'; const otOk = OT_STATUSES.includes(r.status as AttendanceStatus); 
@@ -169,12 +180,15 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
                     </Select>
                   </td>
                   <td>
-                    {otOk && <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, amount: '', paid: false })}>
+                    {otOk && <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, hours: '', amount: '', legacy: false, paid: false })}>
                       <option value="">No Overtime</option>
                       <option value="ot">Overtime Work</option>
                     </Select>}
                   </td>
-                  <td className="r">{r.ot && <input className="input num" type="text" inputMode="decimal" placeholder="Amount" disabled={!editable} value={r.amount} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]*[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { amount: v }); }} />}</td>
+                  <td className="r">{r.ot && !r.legacy && <input className="input num" type="text" inputMode="decimal" placeholder="Hours" style={{ width: 80 }} disabled={!editable} value={r.hours} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]{0,2}[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { hours: v }); }} />}</td>
+                  <td className="r">{r.ot && (r.legacy
+                    ? <input className="input num" type="text" inputMode="decimal" placeholder="Amount" disabled={!editable} value={r.amount} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]*[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { amount: v }); }} />
+                    : <span title={`Rate ${fmtNum(otHourlyRate(e, date, settings))} per hour`}>{fmtNum((Number(r.hours) || 0) * otHourlyRate(e, date, settings))}</span>)}</td>
                   <td>
                     {r.ot && <Select className="select" style={{ width: 130 }} disabled={!editable} value={r.paid ? 'paid' : 'unpaid'} onChange={(ev) => patch(e.id, { paid: ev.target.value === 'paid' })}>
                       <option value="unpaid">Not Paid</option>
@@ -185,7 +199,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
                 </tr>
               );
             })}
-            {emps.length === 0 && <tr><td colSpan={6}><div className="empty">No active employees for this date.</div></td></tr>}
+            {emps.length === 0 && <tr><td colSpan={7}><div className="empty">No active employees for this date.</div></td></tr>}
           </tbody>
         </table></div>
         <div className="toolbar action-bar no-print" style={{ position: 'sticky', bottom: 0, zIndex: 5, padding: '14px 22px', background: 'var(--surface-soft)', borderTop: '2px solid var(--border)', boxShadow: '0 -6px 14px rgba(15,23,42,.08)', justifyContent: 'flex-end', borderRadius: '0 0 16px 16px' }}>

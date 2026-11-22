@@ -62,7 +62,6 @@ export default function EmployeePettyCash() {
   return (
     <div className="pc-wrap">
       <header className="pc-head">
-        <div className="pc-co">{st.company}</div>
         <h1>{st.name}</h1>
         <div className="pc-sub">Petty cash · {st.emp_code}</div>
       </header>

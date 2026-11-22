@@ -12,7 +12,7 @@ export function BatchModal({ year, month, period, busy, onClose, onRun }: {
 }) {
   const sb = supabase();
   const { data: emps, error } = useQuery(async () =>
-    (await fetchAll<Employee>((f, t) => sb.from('employees').select('*').eq('status', 'active').order('emp_code').range(f, t))), []);
+    (await fetchAll<Employee>((f, t) => sb.from('employees').select('*').or(`status.eq.active,last_working_date.gte.${period?.start_date ?? ymd(new Date(year, month - 1, 1))}`).order('emp_code').range(f, t))), []);
   const [start, setStart] = useState(period?.start_date ?? ymd(new Date(year, month - 1, 1)));
   const [end, setEnd] = useState(period?.end_date ?? ymd(new Date(year, month, 0)));
   const [picked, setPicked] = useState<Set<string> | null>(

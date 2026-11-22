@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Money, Riyal } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { ErrorBox, Loading, OPEN_QUOTE, PageHead, StatCard } from '@/components/ui';
@@ -12,7 +13,6 @@ import type { Company, PayrollPeriod, PcSummaryRow, QuotationStatus, Role } from
 interface Row {
   company: Company; role: Role;
   quotes: { open: number; openValue: number; approved: number; approvedValue: number } | null;
-  petty: { given: number; spent: number; balance: number; review: number } | null;
   payroll: { processed: number; processedTotal: number; pending: { label: string; status: string; net: number }[]; pendingTotal: number } | null;
 }
 
@@ -20,6 +20,7 @@ const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
 export default function AllCompanies() {
   const { companies, switchCompany } = useApp();
+  const router = useRouter();
   const go = (id: string, to: string) => ({ className: 'click', title: 'Open in this company', onClick: () => switchCompany(id, to) });
   const now = new Date();
   const year = now.getFullYear();
@@ -30,10 +31,18 @@ export default function AllCompanies() {
     const mem = unwrap(await supabase().from('company_members').select('company_id, role').eq('user_id', me.user.id)) as { company_id: string; role: Role }[];
     const roles = new Map(mem.map((m) => [m.company_id, m.role]));
 
-    return Promise.all(companies.map(async (company): Promise<Row> => {
+    // petty cash belongs to no company: one shared ledger, read once
+    const pettyAllowed = mem.some((m) => PETTY_SIDE.includes(m.role));
+    const s = pettyAllowed ? unwrap(await supabase().rpc('pc_summary')) as PcSummaryRow[] : [];
+    const petty = pettyAllowed ? {
+      given: sum(s.map((x) => Number(x.given))), spent: sum(s.map((x) => Number(x.spent))),
+      balance: sum(s.map((x) => Number(x.balance))), review: sum(s.map((x) => x.pending_count)),
+    } : null;
+
+    const rows = await Promise.all(companies.map(async (company): Promise<Row> => {
       const role = roles.get(company.id) ?? 'viewer';
       const sb = supabaseFor(company.id);
-      const row: Row = { company, role, quotes: null, petty: null, payroll: null };
+      const row: Row = { company, role, quotes: null, payroll: null };
 
       if (QUOTE_SIDE.includes(role)) {
         const q = unwrap(await sb.from('quotations').select('status, amount')) as { status: QuotationStatus; amount: number }[];
@@ -42,14 +51,6 @@ export default function AllCompanies() {
         row.quotes = {
           open: open.length, openValue: sum(open.map((x) => Number(x.amount))),
           approved: appr.length, approvedValue: sum(appr.map((x) => Number(x.amount))),
-        };
-      }
-
-      if (PETTY_SIDE.includes(role)) {
-        const s = unwrap(await sb.rpc('pc_summary')) as PcSummaryRow[];
-        row.petty = {
-          given: sum(s.map((x) => Number(x.given))), spent: sum(s.map((x) => Number(x.spent))),
-          balance: sum(s.map((x) => Number(x.balance))), review: sum(s.map((x) => x.pending_count)),
         };
       }
 
@@ -73,12 +74,14 @@ export default function AllCompanies() {
       }
       return row;
     }));
+    return { rows, petty };
   }, [companies.map((c) => c.id).join(',')]);
 
-  const rows = data ?? [];
+  const rows = data?.rows ?? [];
+  const petty = data?.petty ?? null;
   const tot = {
     openQ: sum(rows.map((r) => r.quotes?.open ?? 0)), openQV: sum(rows.map((r) => r.quotes?.openValue ?? 0)),
-    held: sum(rows.map((r) => r.petty?.balance ?? 0)),
+    held: petty?.balance ?? 0,
     paid: sum(rows.map((r) => r.payroll?.processedTotal ?? 0)),
     pend: sum(rows.map((r) => r.payroll?.pending.length ?? 0)),
   };
@@ -92,7 +95,7 @@ export default function AllCompanies() {
         <>
           <section className="stats">
             <StatCard label="Open Quotations" icon="▤" value={tot.openQ} note={<>Worth <Money v={tot.openQV} dp={0} /></>} />
-            <StatCard label="Petty Cash Held" icon="◉" value={<Money v={tot.held} />} note="All companies" />
+            <StatCard label="Petty Cash Held" icon="◉" value={<Money v={tot.held} />} note="Shared ledger" />
             <StatCard label={`Payroll Processed ${year}`} icon={<Riyal />} value={<Money v={tot.paid} dp={0} />} note="Approved or completed" />
             <StatCard label="Pending Payroll" icon="◔" value={tot.pend} note="Months not yet approved" />
           </section>
@@ -116,19 +119,17 @@ export default function AllCompanies() {
           </div>
 
           <div className="panel flush" style={{ marginBottom: 18 }}>
-            <div className="panel-head"><div className="panel-title">Petty Cash Balances</div></div>
+            <div className="panel-head"><div className="panel-title">Petty Cash (shared by all companies)</div></div>
             <div className="table-wrap"><table className="table">
-              <thead><tr><th>Company</th><th className="r">Given</th><th className="r">Receipts</th><th className="r">Balance held</th><th className="r">To review</th></tr></thead>
+              <thead><tr><th>Ledger</th><th className="r">Given</th><th className="r">Receipts</th><th className="r">Balance held</th><th className="r">To review</th></tr></thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.company.id} {...go(r.company.id, '/adminconsole/pettycash')}>
-                    <td className="strong">{r.company.name}</td>
-                    <td className="r">{r.petty ? <Money v={r.petty.given} /> : dash}</td>
-                    <td className="r">{r.petty ? <Money v={r.petty.spent} /> : dash}</td>
-                    <td className="r">{r.petty ? <strong style={{ color: r.petty.balance < 0 ? 'var(--red)' : undefined }}><Money v={r.petty.balance} /></strong> : dash}</td>
-                    <td className="r">{r.petty?.review ?? dash}</td>
-                  </tr>
-                ))}
+                <tr className="click" title="Open petty cash" onClick={() => router.push('/adminconsole/pettycash')}>
+                  <td className="strong">All companies</td>
+                  <td className="r">{petty ? <Money v={petty.given} /> : dash}</td>
+                  <td className="r">{petty ? <Money v={petty.spent} /> : dash}</td>
+                  <td className="r">{petty ? <strong style={{ color: petty.balance < 0 ? 'var(--red)' : undefined }}><Money v={petty.balance} /></strong> : dash}</td>
+                  <td className="r">{petty?.review ?? dash}</td>
+                </tr>
               </tbody>
             </table></div>
           </div>

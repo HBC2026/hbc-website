@@ -27,7 +27,7 @@ export async function exportPettyCash(emps: Emp[], cash: CashRow[], receipts: Re
   const used = new Set<string>(['total']);
 
   const total = wb.addWorksheet('Total');
-  total.addRow([`${company} — Petty Cash Register`]).font = { bold: true, size: 14 };
+  total.addRow([company ? `${company} — Petty Cash Register` : 'Petty Cash Register']).font = { bold: true, size: 14 };
   total.addRow([`Exported ${new Date().toLocaleDateString('en-GB')}`]);
   total.addRow([]);
   styleHeader(total.addRow(['ID', 'Employee', 'Cash given', 'Receipts (pending + approved)', 'Balance held', 'Pending', 'Rejected']));

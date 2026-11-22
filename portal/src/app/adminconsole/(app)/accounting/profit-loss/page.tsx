@@ -1,9 +1,8 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Money } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { ReportHead, ReportTable, useBalances, useChart } from '@/components/AccountingBits';
-import { DatePicker, ErrorBox, Loading, PageHead, Select, StatCard } from '@/components/ui';
+import { DatePicker, ErrorBox, Loading, PageHead, Select } from '@/components/ui';
 import { buildPnl, exportReportXlsx } from '@/lib/accounting';
 import { fmtDate, monthEnd, monthStart } from '@/lib/format';
 
@@ -32,7 +31,6 @@ export default function ProfitLossPage() {
 
   const pnl = useMemo(() => (chart.data && bals.data ? buildPnl(chart.data, bals.data) : null), [chart.data, bals.data]);
   const sub = `${fmtDate(from)} – ${fmtDate(to)}`;
-  const margin = pnl && pnl.revenue ? Math.round((pnl.netProfit / pnl.revenue) * 1000) / 10 : 0;
 
   return (
     <>
@@ -56,15 +54,6 @@ export default function ProfitLossPage() {
           <DatePicker value={to} onChange={(v) => { setTo(v); setPreset('custom'); }} />
         </div>
       </div>
-
-      {pnl && (
-        <div className="stats no-print">
-          <StatCard label="Revenue" icon="＋" value={<Money v={pnl.revenue} />} />
-          <StatCard label="Costs & expenses" icon="−" value={<Money v={pnl.expenses} />} />
-          <StatCard label="Gross profit" icon="◔" value={<Money v={pnl.grossProfit} />} />
-          <StatCard label="Net profit" icon="↗" value={<span style={{ color: pnl.netProfit < 0 ? 'var(--red)' : undefined }}><Money v={pnl.netProfit} /></span>} note={`${margin}% margin`} />
-        </div>
-      )}
 
       <div className="panel flush">
         <ReportHead title="Profit & Loss Statement" sub={`For the period ${sub} · amounts in SAR`} />

@@ -5,7 +5,7 @@ import { Modal } from '@/components/ui';
 import type { Company, Profile, Role, Settings } from '@/lib/types';
 
 export const DEFAULT_SETTINGS: Settings = {
-  ot_multiplier: 1.5, standard_hours: 8, days_divisor: 30, vat_rate: 0.15, max_ot_per_day: 6,
+  ot_multiplier: 1.5, ot_day_hours: 9, standard_hours: 8, days_divisor: 30, vat_rate: 0.15, max_ot_per_day: 6,
   company: { name: 'Hassan and Bilal Company', name_ar: 'شركة حسن و بلال', address: '', phone: '', email: '', vat_no: '', cr_no: '' },
 };
 

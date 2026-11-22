@@ -15,19 +15,19 @@ type Emp = Pick<Employee, 'id' | 'emp_code' | 'name' | 'job_title' | 'status'>;
 interface Draft { employee: string; amount: string; date: string; note: string; given_by: string }
 
 export default function PettyCashPage() {
-  const { profile, company, toast } = useApp();
+  const { profile, toast } = useApp();
   const canWrite = can(profile!.role, 'pettycash:write');
   const sb = supabase();
   const { data, error, loading, reload } = useQuery(async () => {
     const [emps, sums] = await Promise.all([
-      sb.from('employees').select('id, emp_code, name, job_title, status').order('emp_code'),
+      sb.rpc('pc_people'),
       sb.rpc('pc_summary'),
     ]);
     return {
-      emps: unwrap(emps) as Emp[],
+      emps: (unwrap(emps) as Emp[]).sort((a, b) => a.emp_code.localeCompare(b.emp_code)),
       sums: new Map((unwrap(sums) as PcSummaryRow[]).map((s) => [s.employee_id, s])),
     };
-  }, [company?.id]);
+  }, []);
   const [q, setQ] = useState('');
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
@@ -82,7 +82,7 @@ export default function PettyCashPage() {
       };
       const [cash, receipts] = await Promise.all([all<PcCash & { employee_id: string }>('pc_cash_given', 'created_at'), all<PcReceipt & { employee_id: string }>('pc_receipts', 'created_at')]);
       const { exportPettyCash } = await import('@/lib/pettyExport');
-      await exportPettyCash(rows.map(({ e }) => e), cash, receipts, company?.name ?? '');
+      await exportPettyCash(rows.map(({ e }) => e), cash, receipts, '');
     } catch (err) {
       toast(err instanceof Error ? err.message : 'Export failed', true);
     }
@@ -91,7 +91,7 @@ export default function PettyCashPage() {
 
   return (
     <>
-      <PageHead eyebrow="Petty Cash" title="Petty Cash" sub="Cash given to employees, receipts uploaded and what each still holds">
+      <PageHead eyebrow="Petty Cash" title="Petty Cash" sub="Shared by all companies · cash given to employees, receipts uploaded and what each still holds">
         <button className="btn" disabled={exporting || loading || rows.length === 0} onClick={exportXlsx}>{exporting ? 'Exporting…' : '⬇ Export Excel'}</button>
         {canWrite && <button className="btn primary" onClick={() => setDraft({ employee: '', amount: '', date: today(), note: '', given_by: profile!.full_name })}>＋ New transaction</button>}
       </PageHead>

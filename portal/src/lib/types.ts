@@ -11,6 +11,15 @@ export interface Employee {
   id: string; emp_code: string; name: string; job_title: string; department: string;
   joining_date: string; basic_salary: number; allowances: number;
   ot_method: 'multiplier' | 'fixed'; ot_rate: number | null; status: 'active' | 'inactive';
+  iqama_no: string; iqama_issue_date: string | null; iqama_expiry_date: string | null;
+  bank_code: string; iban: string;
+  /** Set when the employee is made inactive: they still show in attendance and payroll up to this date. */
+  last_working_date: string | null;
+}
+
+export interface EmployeeDocument {
+  id: string; employee_id: string; doc_type: string; title: string; file_path: string;
+  file_name: string; file_size: number; created_at: string;
 }
 
 export interface AttendanceRow {
@@ -70,7 +79,7 @@ export interface AuditLog {
 }
 
 export interface Settings {
-  ot_multiplier: number; standard_hours: number; days_divisor: number; vat_rate: number; max_ot_per_day: number;
+  ot_multiplier: number; ot_day_hours: number; standard_hours: number; days_divisor: number; vat_rate: number; max_ot_per_day: number;
   company: { name: string; name_ar: string; address: string; phone: string; email: string; vat_no: string; cr_no: string; logo?: string };
 }
 
@@ -91,7 +100,7 @@ export interface PcReceipt {
 export interface PcDupInfo { id: string; employee: string; amount: number; date: string; status: ReceiptStatus; description: string }
 /** What the employee's private page receives from pc_statement(token). */
 export interface PcStatement {
-  name: string; emp_code: string; company: string; active: boolean;
+  name: string; emp_code: string; active: boolean;
   given: number; spent: number; balance: number;
   cash: { id: string; amount: number; date: string; note: string; given_by: string }[];
   receipts: { id: string; amount: number; date: string; description: string; status: ReceiptStatus; reject_reason: string; replaces_id: string | null; revised: boolean }[];

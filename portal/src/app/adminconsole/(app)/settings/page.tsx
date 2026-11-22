@@ -20,13 +20,13 @@ export default function SettingsPage() {
   // Members of the current company (plus everyone else, so an administrator can add them). Administrators only.
   const team = useQuery(async () => canWrite ? unwrap(await sb.rpc('list_company_team')) as TeamMember[] : [], [canWrite, company?.id]);
 
-  const num = (k: 'ot_multiplier' | 'standard_hours' | 'days_divisor' | 'vat_rate' | 'max_ot_per_day', v: string) => setS((x) => ({ ...x, [k]: Number(v) }));
+  const num = (k: 'ot_multiplier' | 'ot_day_hours' | 'standard_hours' | 'days_divisor' | 'vat_rate' | 'max_ot_per_day', v: string) => setS((x) => ({ ...x, [k]: Number(v) }));
   const co = (k: keyof Settings['company'], v: string) => setS((x) => ({ ...x, company: { ...x.company, [k]: v } }));
 
   async function save() {
-    if (!(s.ot_multiplier > 0) || !(s.standard_hours > 0) || !(s.days_divisor > 0) || s.vat_rate < 0) return toast('Please enter valid numbers', true);
+    if (!(s.ot_multiplier > 0) || !(s.ot_day_hours > 0) || !(s.standard_hours > 0) || !(s.days_divisor > 0) || s.vat_rate < 0) return toast('Please enter valid numbers', true);
     setBusy(true);
-    const rows = (['ot_multiplier', 'standard_hours', 'days_divisor', 'vat_rate', 'max_ot_per_day'] as const).map((key) => ({ company_id: company!.id, key, value: s[key], updated_at: new Date().toISOString() }))
+    const rows = (['ot_multiplier', 'ot_day_hours', 'standard_hours', 'days_divisor', 'vat_rate', 'max_ot_per_day'] as const).map((key) => ({ company_id: company!.id, key, value: s[key], updated_at: new Date().toISOString() }))
       .concat([{ company_id: company!.id, key: 'company' as never, value: s.company as never, updated_at: new Date().toISOString() }]);
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'company_id,key' });
     setBusy(false);
@@ -53,9 +53,10 @@ export default function SettingsPage() {
           <div className="panel-title">Payroll &amp; overtime rules</div>
           <div className="form-grid">
             <Field label="Default OT multiplier"><input className="input num" type="number" step="0.05" min="0" disabled={!canWrite} value={s.ot_multiplier} onChange={(e) => num('ot_multiplier', e.target.value)} /></Field>
-            <Field label="Days per month (for the daily rate)"><input className="input num" type="number" min="1" disabled={!canWrite} value={s.days_divisor} onChange={(e) => num('days_divisor', e.target.value)} /></Field>
+            <Field label="Hours per day for the OT hourly rate (daily rate ÷ this)"><input className="input num" type="number" min="1" disabled={!canWrite} value={s.ot_day_hours} onChange={(e) => num('ot_day_hours', e.target.value)} /></Field>
+            <Field label="Days per month (for absence deductions)"><input className="input num" type="number" min="1" disabled={!canWrite} value={s.days_divisor} onChange={(e) => num('days_divisor', e.target.value)} /></Field>
           </div>
-          <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Overtime is entered as an amount in daily attendance. Unpaid days (Absent, Unpaid Leave) deduct basic ÷ days per month each. Changes apply the next time payroll is calculated; approved months are never altered.</div>
+          <div className="muted" style={{ marginTop: 12, fontSize: 11 }}>Overtime is entered as hours in daily attendance and priced at (basic + allowances) ÷ calendar days in the month ÷ hours per day × multiplier. Unpaid days (Absent, Unpaid Leave) deduct basic ÷ days per month each. Changes apply the next time payroll is calculated; approved months are never altered.</div>
         </div>
 
         <div className="panel">

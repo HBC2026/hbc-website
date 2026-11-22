@@ -16,12 +16,12 @@ const LABEL: Record<ReceiptStatus, string> = { pending: 'Pending', approved: 'Ap
 
 export default function PettyCashEmployeePage() {
   const { id } = useParams<{ id: string }>();
-  const { profile, company, toast, confirmDialog } = useApp();
+  const { profile, toast, confirmDialog } = useApp();
   const canWrite = can(profile!.role, 'pettycash:write');
   const sb = supabase();
   const { data, error, loading, reload } = useQuery(async () => {
     const [emp, cash, rec] = await Promise.all([
-      sb.from('employees').select('id, emp_code, name, job_title, status').eq('id', id).maybeSingle(),
+      sb.rpc('pc_people'),
       sb.from('pc_cash_given').select('*').eq('employee_id', id).order('given_on', { ascending: false }).order('created_at', { ascending: false }),
       sb.from('pc_receipts').select('*').eq('employee_id', id).order('spent_on', { ascending: false }).order('created_at', { ascending: false }),
     ]);
@@ -29,12 +29,12 @@ export default function PettyCashEmployeePage() {
     const flagged = receipts.filter((r) => r.dup_of).map((r) => r.id);
     const dups = flagged.length ? unwrap(await sb.rpc('pc_duplicate_info', { p_ids: flagged })) as Record<string, PcDupInfo> : {};
     return {
-      emp: unwrap(emp) as Pick<Employee, 'id' | 'emp_code' | 'name' | 'job_title' | 'status'> | null,
+      emp: ((unwrap(emp) as Pick<Employee, 'id' | 'emp_code' | 'name' | 'job_title' | 'status'>[]).find((p) => p.id === id)) ?? null,
       cash: unwrap(cash) as PcCash[],
       receipts,
       dups,
     };
-  }, [id, company?.id]);
+  }, [id]);
 
   const [give, setGive] = useState<{ amount: string; date: string; note: string; given_by: string } | null>(null);
   const [reject, setReject] = useState<{ id: string; reason: string } | null>(null);
