@@ -748,8 +748,9 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 
 /* a single printed slip is clamped to one A4 sheet: nothing after it can start a second page */
 @media print {
-  html:has(.one-page), body:has(.one-page) { height: 297mm !important; max-height: 297mm !important; overflow: hidden !important; }
-  .one-page { height: 296mm; overflow: hidden; break-after: avoid; page-break-after: avoid; }
+  /* the slip is two sheets: the page to sign, then the calculation sheet */
+  html:has(.one-page), body:has(.one-page) { height: 594mm !important; max-height: 594mm !important; overflow: hidden !important; }
+  .one-page { break-after: avoid; page-break-after: avoid; }
   .one-page .paper.slip { height: 290mm; margin: 0; }
 }
 

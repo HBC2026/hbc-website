@@ -103,6 +103,10 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
   const advance = Number(e.advance_paid ?? 0);
   const gross = Number(e.basic) + Number(e.allowances) + Number(e.ot_amount) + otPaid + Number(e.other_earnings);
   const fit = usePaperZoom();
+  const fit2 = usePaperZoom();
+  // Page 1 (signed) shows only basic salary, allowances and deductions; page 2 shows the full calculation.
+  const signedEarnings = Number(e.basic) + Number(e.allowances);
+  const signedNet = signedEarnings - Number(e.deductions);
 
   const [from, to] = slipRange(p);
   const days: string[] = [];
@@ -118,6 +122,7 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
   const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
+    <>
     <div className="paper slip" ref={fit.ref} style={fit.style}>
       <DocHead co={co} />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
@@ -169,9 +174,50 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
             <tbody>
               <tr><td>Basic Salary</td><td className="r">{dash(e.basic)}</td></tr>
               <tr><td>Allowances</td><td className="r">{dash(e.allowances)}</td></tr>
-              {(Number(e.ot_amount) > 0 || otPaid > 0) && <tr>
-                <td>Overtime</td>
-                <td className="r">{dash(Number(e.ot_amount) + otPaid)}</td></tr>}
+            </tbody>
+            <tfoot><tr><td>Total Earnings</td><td className="r">{dash(signedEarnings)}</td></tr></tfoot>
+          </table>
+        </div>
+        <div>
+          <table className="doc-table">
+            <thead><tr><th>Deductions</th><th className="r">Amount (<Riyal />)</th></tr></thead>
+            <tbody>
+              <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{dash(e.absence_deduction)}</td></tr>
+              {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{dash(e.other_deductions)}</td></tr>}
+            </tbody>
+            <tfoot><tr><td>Total Deductions</td><td className="r">{dash(e.deductions)}</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div className="doc-totals" style={{ width: '100%' }}><div className="grand"><span>NET PAY</span><span><Money v={signedNet} /></span></div></div>
+
+      <div style={{ marginTop: 'auto', paddingTop: 10, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>
+      <div className="sign-row">
+        <div><div className="line" /><div className="cap">Employee Signature</div></div>
+        <div><div className="line" /><div className="cap">Date</div></div>
+      </div>
+      <div className="doc-foot">{co.name}</div>
+    </div>
+
+    <div className="paper slip" ref={fit2.ref} style={fit2.style}>
+      <DocHead co={co} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 }}>
+        <div><div className="doc-title">SALARY CALCULATION</div><div style={{ fontSize: 12, fontWeight: 600 }}>{periodLabel(p)}</div></div>
+        <div style={{ textAlign: 'right', fontSize: 10, color: '#555' }}>Slip No. {slip.slip_no}</div>
+      </div>
+      <div className="doc-meta" style={{ gridTemplateColumns: '1fr' }}>
+        <div className="doc-box"><div className="l">Employee</div><b style={{ fontSize: 12 }}>{emp.name}</b><br />Employee ID: {emp.emp_code}<br />Job Title: {emp.job_title}</div>
+      </div>
+
+      <div style={{ marginTop: 14 }} />
+      <div className="slip-cols">
+        <div>
+          <table className="doc-table">
+            <thead><tr><th>Earnings</th><th className="r">Amount (<Riyal />)</th></tr></thead>
+            <tbody>
+              <tr><td>Basic Salary</td><td className="r">{dash(e.basic)}</td></tr>
+              <tr><td>Allowances</td><td className="r">{dash(e.allowances)}</td></tr>
+              {(Number(e.ot_amount) > 0 || otPaid > 0) && <tr><td>Overtime</td><td className="r">{dash(Number(e.ot_amount) + otPaid)}</td></tr>}
               {Number(e.other_earnings) > 0 && <tr><td>Other Earnings</td><td className="r">{dash(e.other_earnings)}</td></tr>}
             </tbody>
             <tfoot><tr><td>Total Earnings</td><td className="r">{dash(gross)}</td></tr></tfoot>
@@ -183,22 +229,25 @@ export function SalarySlipDoc({ slip, co, att = [] }: { slip: SlipFull; co: Sett
             <tbody>
               <tr><td>Absence / Unpaid Leave — {e.unpaid_days} day(s)</td><td className="r">{dash(e.absence_deduction)}</td></tr>
               {Number(e.other_deductions) > 0 && <tr><td>Other Deductions{e.adjustment_note ? ` — ${e.adjustment_note}` : ''}</td><td className="r">{dash(e.other_deductions)}</td></tr>}
-              {otPaid > 0 && <tr><td>Overtime Paid Earlier</td><td className="r">{dash(otPaid)}</td></tr>}
-              {advance > 0 && <tr><td>Already Paid (before this slip)</td><td className="r">{dash(advance)}</td></tr>}
             </tbody>
-            <tfoot><tr><td>Total Deductions{advance > 0 || otPaid > 0 ? ' & Amount Paid' : ''}</td><td className="r">{dash(Number(e.deductions) + advance + otPaid)}</td></tr></tfoot>
+            <tfoot><tr><td>Total Deductions</td><td className="r">{dash(e.deductions)}</td></tr></tfoot>
           </table>
         </div>
       </div>
+
+      <table className="doc-table" style={{ marginTop: 6 }}>
+        <thead><tr><th>Net of Earnings and Deductions</th><th className="r">{fmtNum(gross - Number(e.deductions))}</th></tr></thead>
+        <tbody>
+          {otPaid > 0 && <tr><td>Overtime Paid Earlier</td><td className="r" style={{ color: '#b91c1c' }}>− {fmtNum(otPaid)}</td></tr>}
+          {advance > 0 && <tr><td>Advance</td><td className="r" style={{ color: '#b91c1c' }}>− {fmtNum(advance)}</td></tr>}
+        </tbody>
+      </table>
       <div className="doc-totals" style={{ width: '100%' }}><div className="grand"><span>NET PAY</span><span><Money v={e.net_salary} /></span></div></div>
 
-      <div style={{ marginTop: 'auto', paddingTop: 10, fontSize: 10, color: '#444' }}>I acknowledge receipt of the above salary for the stated period.</div>
-      <div className="sign-row">
-        <div><div className="line" /><div className="cap">Employee Signature</div></div>
-        <div><div className="line" /><div className="cap">Date</div></div>
-      </div>
+      <div style={{ marginTop: 'auto', paddingTop: 10, fontSize: 10, color: '#444' }}>For reference only. The salary slip to be signed is the previous page.</div>
       <div className="doc-foot">{co.name}</div>
     </div>
+    </>
   );
 }
 

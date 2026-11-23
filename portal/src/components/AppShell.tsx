@@ -64,7 +64,7 @@ const NAV: NavGroup[] = [
 ];
 
 // Petty cash belongs to no company: it sits under "All Companies" instead of in a company's menu
-const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }, { href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉' }];
+const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }, { href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉' }, { href: '/adminconsole/attendance-all', label: 'All Attendance', icon: '◧' }];
 
 function activeHref(pathname: string): string | undefined {
   return ALL.filter((i) => (i.href === '/adminconsole' ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')))
@@ -191,6 +191,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           {PETTY_SIDE.includes(profile.role) && (
             <Link href="/adminconsole/pettycash" title="Petty Cash (shared by all companies)" className={`nav-item nav-top${current === '/adminconsole/pettycash' ? ' active' : ''}`}>
               <span className="nav-icon">◉</span>Petty Cash
+            </Link>
+          )}
+          {ATTENDANCE_SIDE.includes(profile.role) && (
+            <Link href="/adminconsole/attendance-all" title="Attendance of all companies" className={`nav-item nav-top${current === '/adminconsole/attendance-all' ? ' active' : ''}`}>
+              <span className="nav-icon">◧</span>All Attendance
             </Link>
           )}
           <div className="brand-subtitle">Administration Portal</div>

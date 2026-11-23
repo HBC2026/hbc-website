@@ -9,13 +9,16 @@ import { otHourlyRate } from '@/lib/ot';
 import { supabase, unwrap } from '@/lib/supabase';
 import type { AttendanceRow, AttendanceStatus, Employee } from '@/lib/types';
 
+/** An employee row; in "all companies" mode it also carries the company, that company's settings and whether you may edit it */
+type Emp = Employee & { company_code?: string; standard_hours?: number; ot_multiplier?: number; ot_day_hours?: number; locked?: boolean; can_write?: boolean };
+
 const OT_STATUSES: AttendanceStatus[] = ['present', 'holiday', 'weekly_off'];
 
 /** hours = OT hours (priced from salary); legacy = an old entry that only has an amount, kept editable as an amount */
 interface Row { status: AttendanceStatus | ''; regular: string; ot: boolean; hours: string; amount: string; legacy: boolean; paid: boolean; remarks: string }
 type Rows = Record<string, Row>;
 
-function buildRows(emps: Employee[], existing: AttendanceRow[]): Rows {
+function buildRows(emps: Emp[], existing: AttendanceRow[]): Rows {
   const by = new Map(existing.map((r) => [r.employee_id, r]));
   const out: Rows = {};
   for (const e of emps) {
@@ -29,7 +32,8 @@ function buildRows(emps: Employee[], existing: AttendanceRow[]): Rows {
   return out;
 }
 
-export function DailyAttendance() {
+/** all = mark attendance for the employees of every company you belong to (instead of only the selected company) */
+export function DailyAttendance({ all = false }: { all?: boolean } = {}) {
   const { profile, confirmDialog } = useApp();
   const canWrite = can(profile!.role, 'attendance:write');
   const sb = supabase();
@@ -38,13 +42,17 @@ export function DailyAttendance() {
   const [year, month] = date.split('-').map(Number);
 
   const { data, error, loading, reload } = useQuery(async () => {
+    if (all) {
+      const res = unwrap(await sb.rpc('attendance_day_all', { p_date: date })) as { employees: Emp[]; attendance: AttendanceRow[] };
+      return { emps: res.employees, att: res.attendance, locked: false, at: Date.now() };
+    }
     const [emps, att, period] = await Promise.all([
       sb.from('employees').select('*').or(`status.eq.active,last_working_date.gte.${date}`).lte('joining_date', date).order('emp_code'),
       sb.from('attendance').select('*').eq('work_date', date),
       sb.from('payroll_periods').select('status').eq('year', year).eq('month', month).maybeSingle(),
     ]);
     return {
-      emps: unwrap(emps) as Employee[], att: unwrap(att) as AttendanceRow[],
+      emps: unwrap(emps) as Emp[], att: unwrap(att) as AttendanceRow[],
       locked: ['approved', 'completed'].includes((unwrap(period) as { status: string } | null)?.status ?? ''),
       at: Date.now(),
     };
@@ -69,24 +77,32 @@ export function DailyAttendance() {
       {error && <ErrorBox error={error} />}
       {loading || !data ? <Loading /> : (
         <Grid key={`${date}-${data.at}`} date={date} emps={data.emps} initial={buildRows(data.emps, data.att)}
-          locked={data.locked} canWrite={canWrite} monthText={monthLabel(year, month)} onDirty={setDirty} onSaved={() => { setDirty(false); reload(); }} />
+          locked={data.locked} canWrite={canWrite} all={all} monthText={monthLabel(year, month)} onDirty={setDirty} onSaved={() => { setDirty(false); reload(); }} />
       )}
     </>
   );
 }
 
-function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSaved }: {
-  date: string; emps: Employee[]; initial: Rows; locked: boolean; canWrite: boolean; monthText: string;
+function Grid({ date, emps, initial, locked, canWrite, all, monthText, onDirty, onSaved }: {
+  date: string; emps: Emp[]; initial: Rows; locked: boolean; canWrite: boolean; all: boolean; monthText: string;
   onDirty: (d: boolean) => void; onSaved: () => void;
 }) {
   const { settings, toast, confirmDialog } = useApp();
   const editable = canWrite && !locked;
   const std = String(settings.standard_hours);
+  // per employee: in all-companies mode each employee follows their own company's settings, lock and permissions
+  const canEdit = (e: Emp) => (all ? !!e.can_write && !e.locked : editable);
+  const stdOf = (e: Emp) => (all && e.standard_hours != null ? String(e.standard_hours) : std);
+  const otSettings = (e: Emp) => (all && e.ot_multiplier != null ? { ot_multiplier: e.ot_multiplier, ot_day_hours: e.ot_day_hours ?? settings.ot_day_hours } : settings);
+  const anyEditable = all ? emps.some(canEdit) : editable;
+  const lockedCompanies = [...new Set(emps.filter((e) => e.locked).map((e) => e.company_code))];
   // Fridays default to Weekend for anyone not yet marked (still needs Save; `initial` stays the stored state)
   const start = useMemo(() => {
-    if (!editable || new Date(`${date}T00:00:00`).getDay() !== 5) return initial;
-    return Object.fromEntries(Object.entries(initial).map(([id, r]) => [id, r.status ? r : { ...r, status: 'weekly_off' as const, regular: '0' }])) as Rows;
-  }, [initial, editable, date]);
+    if (!anyEditable || new Date(`${date}T00:00:00`).getDay() !== 5) return initial;
+    const editableIds = new Set(emps.filter(canEdit).map((e) => e.id));
+    return Object.fromEntries(Object.entries(initial).map(([id, r]) => [id, r.status || !editableIds.has(id) ? r : { ...r, status: 'weekly_off' as const, regular: '0' }])) as Rows;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial, anyEditable, date]);
   const [rows, setRows] = useState<Rows>(start);
   const [saving, setSaving] = useState(false);
 
@@ -95,6 +111,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   const patch = (id: string, p: Partial<Row>) => setRows((r) => ({ ...r, [id]: { ...r[id], ...p } }));
 
   function setStatus(id: string, status: AttendanceStatus | '') {
+    const std = stdOf(emps.find((x) => x.id === id)!);
     const keepOt = OT_STATUSES.includes(status as AttendanceStatus);
     const ot = keepOt ? { ot: rows[id].ot, hours: rows[id].hours, amount: rows[id].amount, legacy: rows[id].legacy, paid: rows[id].paid } : { ot: false, hours: '', amount: '', legacy: false, paid: false };
     if (status === 'present') patch(id, { status, regular: rows[id].regular && rows[id].regular !== '0' ? rows[id].regular : std, ...ot });
@@ -104,13 +121,13 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
   async function markAll() {
     const hasExceptions = Object.values(rows).some((r) => (r.status && r.status !== 'present') || r.ot);
     if (hasExceptions && !(await confirmDialog({ title: 'Mark everyone present?', message: 'This will overwrite existing exceptions and overtime for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
-    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'present' as const, regular: std, ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])));
+    setRows((cur) => ({ ...cur, ...Object.fromEntries(emps.filter(canEdit).map((e) => [e.id, { status: 'present' as const, regular: stdOf(e), ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])) }));
   }
 
   async function markAllOff() {
     const hasMarks = Object.values(rows).some((r) => r.status && r.status !== 'weekly_off');
     if (hasMarks && !(await confirmDialog({ title: 'Mark everyone weekend?', message: 'This will overwrite existing attendance, overtime and leave for this date. Continue?', confirmLabel: 'Overwrite', danger: true }))) return;
-    setRows(Object.fromEntries(emps.map((e) => [e.id, { status: 'weekly_off' as const, regular: '0', ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])));
+    setRows((cur) => ({ ...cur, ...Object.fromEntries(emps.filter(canEdit).map((e) => [e.id, { status: 'weekly_off' as const, regular: '0', ot: false, hours: '', amount: '', legacy: false, paid: false, remarks: rows[e.id].remarks }])) }));
   }
 
   const totals = useMemo(() => {
@@ -120,19 +137,20 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
       c[r.status] = (c[r.status] ?? 0) + 1;
       if (r.ot) {
         const emp = emps.find((x) => x.id === id);
-        const amt = r.legacy ? Number(r.amount) || 0 : (Number(r.hours) || 0) * (emp ? otHourlyRate(emp, date, settings) : 0);
+        const amt = r.legacy ? Number(r.amount) || 0 : (Number(r.hours) || 0) * (emp ? otHourlyRate(emp, date, otSettings(emp)) : 0);
         if (r.paid) otPaid += amt; else otUnpaid += amt;
       }
     }
     return { c, otPaid, otUnpaid, unmarked };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, emps, date, settings]);
 
   async function save() {
     const changed: object[] = [];
     for (const e of emps) {
       const r = rows[e.id], o = initial[e.id];
-      if (!r.status || JSON.stringify(r) === JSON.stringify(o)) continue;
-      const regular = r.status === 'present' ? Number(r.regular || std) : 0;
+      if (!r.status || JSON.stringify(r) === JSON.stringify(o) || !canEdit(e)) continue;
+      const regular = r.status === 'present' ? Number(r.regular || stdOf(e)) : 0;
       const hours = r.ot && !r.legacy ? Number(r.hours || 0) : 0, amount = r.ot && r.legacy ? Number(r.amount || 0) : 0;
       if (r.ot && !OT_STATUSES.includes(r.status)) return toast(`${e.name}: overtime can only be entered for Present, Holiday or Weekend`, true);
       if (r.ot && !r.legacy && !(hours > 0)) return toast(`${e.name}: enter the OT hours`, true);
@@ -144,7 +162,9 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
     }
     if (!changed.length) return toast('No changes to save');
     setSaving(true);
-    const { error } = await supabase().from('attendance').upsert(changed, { onConflict: 'employee_id,work_date' });
+    const { error } = all
+      ? await supabase().rpc('save_attendance_all', { p_rows: changed })
+      : await supabase().from('attendance').upsert(changed, { onConflict: 'employee_id,work_date' });
     setSaving(false);
     if (error) return toast(error.message, true);
     toast(`Attendance saved for ${fmtDate(date)} (${changed.length} updated)` + (totals.unmarked ? ` — ${totals.unmarked} still unmarked` : ''));
@@ -153,6 +173,7 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
 
   return (
     <>
+      {all && lockedCompanies.length > 0 && <div className="banner warn">Payroll for {monthText} is approved for {lockedCompanies.join(', ')}. Those employees are locked — reopen the payroll period to edit.</div>}
       {locked && <div className="banner warn">Payroll for {monthText} is approved. Attendance is locked — reopen the payroll period to edit.</div>}
       <div className="stats compact">
         <div className="stat-card"><div className="stat-label">Present</div><div className="stat-number">{totals.c.present ?? 0} <span className="muted" style={{ fontSize: 13 }}>/ {emps.length}</span></div></div>
@@ -172,30 +193,30 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
               const r = rows[e.id]; const present = r.status === 'present'; const otOk = OT_STATUSES.includes(r.status as AttendanceStatus); 
               return (
                 <tr key={e.id}>
-                  <td><span className="strong">{e.name}</span><div className="muted" style={{ fontSize: 10 }}>{e.emp_code} · {e.job_title}</div></td>
+                  <td><span className="strong">{e.name}</span><div className="muted" style={{ fontSize: 10 }}>{all && e.company_code ? `${e.company_code} · ` : ''}{e.emp_code} · {e.job_title}</div></td>
                   <td>
-                    <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.status} onChange={(ev) => setStatus(e.id, ev.target.value as AttendanceStatus | '')}>
+                    <Select className="select" style={{ width: 150 }} disabled={!canEdit(e)} value={r.status} onChange={(ev) => setStatus(e.id, ev.target.value as AttendanceStatus | '')}>
                       <option value="">— Not marked —</option>
                       {ATT_STATUSES.map((s) => <option key={s} value={s}>{ATT_LABEL[s]}</option>)}
                     </Select>
                   </td>
                   <td>
-                    {otOk && <Select className="select" style={{ width: 150 }} disabled={!editable} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, hours: '', amount: '', legacy: false, paid: false })}>
+                    {otOk && <Select className="select" style={{ width: 150 }} disabled={!canEdit(e)} value={r.ot ? 'ot' : ''} onChange={(ev) => patch(e.id, ev.target.value === 'ot' ? { ot: true } : { ot: false, hours: '', amount: '', legacy: false, paid: false })}>
                       <option value="">No Overtime</option>
                       <option value="ot">Overtime Work</option>
                     </Select>}
                   </td>
-                  <td className="r">{r.ot && !r.legacy && <input className="input num" type="text" inputMode="decimal" placeholder="Hours" style={{ width: 80 }} disabled={!editable} value={r.hours} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]{0,2}[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { hours: v }); }} />}</td>
+                  <td className="r">{r.ot && !r.legacy && <input className="input num" type="text" inputMode="decimal" placeholder="Hours" style={{ width: 80 }} disabled={!canEdit(e)} value={r.hours} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]{0,2}[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { hours: v }); }} />}</td>
                   <td className="r">{r.ot && (r.legacy
-                    ? <input className="input num" type="text" inputMode="decimal" placeholder="Amount" disabled={!editable} value={r.amount} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]*[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { amount: v }); }} />
-                    : <span title={`Rate ${fmtNum(otHourlyRate(e, date, settings))} per hour`}>{fmtNum((Number(r.hours) || 0) * otHourlyRate(e, date, settings))}</span>)}</td>
+                    ? <input className="input num" type="text" inputMode="decimal" placeholder="Amount" disabled={!canEdit(e)} value={r.amount} onChange={(ev) => { const v = ev.target.value; if (/^[0-9]*[.]?[0-9]{0,2}$/.test(v)) patch(e.id, { amount: v }); }} />
+                    : <span title={`Rate ${fmtNum(otHourlyRate(e, date, otSettings(e)))} per hour`}>{fmtNum((Number(r.hours) || 0) * otHourlyRate(e, date, otSettings(e)))}</span>)}</td>
                   <td>
-                    {r.ot && <Select className="select" style={{ width: 130 }} disabled={!editable} value={r.paid ? 'paid' : 'unpaid'} onChange={(ev) => patch(e.id, { paid: ev.target.value === 'paid' })}>
+                    {r.ot && <Select className="select" style={{ width: 130 }} disabled={!canEdit(e)} value={r.paid ? 'paid' : 'unpaid'} onChange={(ev) => patch(e.id, { paid: ev.target.value === 'paid' })}>
                       <option value="unpaid">Not Paid</option>
                       <option value="paid">Paid</option>
                     </Select>}
                   </td>
-                  <td><input className="input" disabled={!editable} value={r.remarks} onChange={(ev) => patch(e.id, { remarks: ev.target.value })} placeholder="Internal note (optional)" /></td>
+                  <td><input className="input" disabled={!canEdit(e)} value={r.remarks} onChange={(ev) => patch(e.id, { remarks: ev.target.value })} placeholder="Internal note (optional)" /></td>
                 </tr>
               );
             })}
@@ -203,9 +224,9 @@ function Grid({ date, emps, initial, locked, canWrite, monthText, onDirty, onSav
           </tbody>
         </table></div>
         <div className="toolbar action-bar no-print" style={{ position: 'sticky', bottom: 0, zIndex: 5, padding: '14px 22px', background: 'var(--surface-soft)', borderTop: '2px solid var(--border)', boxShadow: '0 -6px 14px rgba(15,23,42,.08)', justifyContent: 'flex-end', borderRadius: '0 0 16px 16px' }}>
-          <button className="btn green" disabled={!editable} onClick={markAll}>✓ Mark All Present</button>
-          {new Date(`${date}T00:00:00`).getDay() === 5 && <button className="btn" disabled={!editable} onClick={markAllOff}>Mark All Weekend</button>}
-          <button className="btn primary" disabled={!editable || saving} onClick={save}>{saving ? 'Saving…' : 'Save Attendance'}</button>
+          <button className="btn green" disabled={!anyEditable} onClick={markAll}>✓ Mark All Present</button>
+          {new Date(`${date}T00:00:00`).getDay() === 5 && <button className="btn" disabled={!anyEditable} onClick={markAllOff}>Mark All Weekend</button>}
+          <button className="btn primary" disabled={!anyEditable || saving} onClick={save}>{saving ? 'Saving…' : 'Save Attendance'}</button>
         </div>
       </div>
     </>

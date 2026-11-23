@@ -4,9 +4,9 @@ import { Money, Riyal } from '@/components/Money';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useApp } from '@/components/Providers';
-import { ATT_CODE, ATT_LABEL, Badge, ErrorBox, Loading, MonthPicker, PageHead, SlipBadge, StatCard, Tabs } from '@/components/ui';
+import { ATT_CODE, ATT_LABEL, Badge, DatePicker, ErrorBox, Field, Loading, Modal, MonthPicker, PageHead, SlipBadge, StatCard, Tabs } from '@/components/ui';
 import { useQuery } from '@/lib/hooks';
-import { fmtDate, fmtNum, hrs, monthEnd, monthLabel, monthStart, ymKey, periodLabel } from '@/lib/format';
+import { fmtDate, today, fmtNum, hrs, monthEnd, monthLabel, monthStart, ymKey, periodLabel } from '@/lib/format';
 import { OtRule } from '@/components/OtRule';
 import { supabase, unwrap } from '@/lib/supabase';
 import { can, PAYROLL_SIDE } from '@/lib/roles';
@@ -22,11 +22,13 @@ const isFri = (d: string) => new Date(`${d}T00:00:00`).getDay() === 5;
 
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
-  const { profile, settings } = useApp();
+  const { profile, settings, toast } = useApp();
   const sb = supabase();
   const showPayroll = PAYROLL_SIDE.includes(profile!.role);
   const [tab, setTab] = useState<Tab>('attendance');
   const [editing, setEditing] = useState(false);
+  const [leaving, setLeaving] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const now = new Date();
   const [ym, setYm] = useState(ymKey(now.getFullYear(), now.getMonth() + 1));
   const [y, m] = ym.split('-').map(Number);
@@ -42,6 +44,23 @@ export default function EmployeeDetail() {
     ? (unwrap(await sb.from('salary_slips').select('*, payroll_periods(*)').eq('employee_id', id)) as (SalarySlip & { payroll_periods: PayrollPeriod })[])
         .sort((a, b) => b.payroll_periods.year * 12 + b.payroll_periods.month - (a.payroll_periods.year * 12 + a.payroll_periods.month))
     : [], [id]);
+
+  async function activate(e: Employee) {
+    const { error } = await sb.from('employees').update({ status: 'active', last_working_date: null }).eq('id', e.id);
+    if (error) return toast(error.message, true);
+    toast('Employee reactivated'); emp.reload();
+  }
+
+  async function deactivate(e: Employee, date: string) {
+    if (!date) return toast('Choose the last working day', true);
+    if (date < e.joining_date) return toast('The last working day cannot be before the joining date', true);
+    setSaving(true);
+    const { error } = await sb.from('employees').update({ status: 'inactive', last_working_date: date }).eq('id', e.id);
+    setSaving(false);
+    if (error) return toast(error.message, true);
+    toast(`${e.name} deactivated — still shown in attendance and payroll up to ${fmtDate(date)}`);
+    setLeaving(null); emp.reload();
+  }
 
   if (emp.loading) return <Loading />;
   if (emp.error || !emp.data) return <ErrorBox error={emp.error ?? 'Employee not found'} />;
@@ -59,6 +78,9 @@ export default function EmployeeDetail() {
           {e.status === 'inactive' && <StatCard label="Last working day" icon="" value={e.last_working_date ? fmtDate(e.last_working_date) : '—'} />}
         </div>
         {can(profile!.role, 'employees:write') && <button className="btn primary" onClick={() => setEditing(true)}>Edit</button>}
+        {can(profile!.role, 'employees:write') && (e.status === 'active'
+          ? <button className="btn danger" onClick={() => setLeaving(today())}>Deactivate</button>
+          : <button className="btn" onClick={() => activate(e)}>Activate</button>)}
         <Link href="/adminconsole/employees" className="btn">← Employees</Link>
       </PageHead>
 
@@ -135,6 +157,14 @@ export default function EmployeeDetail() {
             {!slips.loading && (slips.data ?? []).length === 0 && <tr><td colSpan={5}><div className="empty">No salary slips yet. They are generated when payroll is approved.</div></td></tr>}
           </tbody>
         </table></div></div>
+      )}
+
+      {leaving !== null && (
+        <Modal title={`Deactivate ${e.name}`} onClose={() => setLeaving(null)}
+          footer={<><button className="btn" onClick={() => setLeaving(null)}>Cancel</button><button className="btn danger" disabled={saving} onClick={() => deactivate(e, leaving)}>{saving ? 'Saving…' : 'Deactivate'}</button></>}>
+          <Field label="Last working day"><DatePicker value={leaving} onChange={setLeaving} /></Field>
+          <div className="muted" style={{ marginTop: 12, fontSize: 12 }}>Attendance and payroll up to and including this day are kept. After it, the employee is no longer listed.</div>
+        </Modal>
       )}
 
       {editing && <EmployeeFormModal employee={e} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); emp.reload(); }} />}
