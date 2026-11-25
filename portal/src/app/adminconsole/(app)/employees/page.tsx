@@ -14,6 +14,13 @@ import { can } from '@/lib/roles';
 import { supabase, unwrap } from '@/lib/supabase';
 import type { Employee } from '@/lib/types';
 
+/** Most urgent highlight across the three expiry dates of an active employee. */
+function rowTone(e: Employee) {
+  if (e.status !== 'active') return null;
+  const tones = [e.work_permit_expiry_date, e.iqama_expiry_date, e.tamin_expiry_date].map(iqamaTone);
+  return tones.includes('red') ? 'red' : tones.includes('gold') ? 'gold' : null;
+}
+
 export default function EmployeesPage() {
   const { profile, company, settings } = useApp();
   const router = useRouter();
@@ -50,20 +57,22 @@ export default function EmployeesPage() {
         </div>
         {loading ? <Loading /> : (
           <div className="table-wrap"><table className="table">
-            <thead><tr><th>ID</th><th>Name</th><th>Job Title</th><th>Department</th><th>Joined</th><th>Iqama Expiry</th><th className="r">Basic</th><th className="r">Allowances</th><th>OT Rule</th><th>Status</th></tr></thead>
+            <thead><tr><th>ID</th><th>Name</th><th>Job Title</th><th>Department</th><th>Joined</th><th>Work Permit Expiry</th><th>Iqama Expiry</th><th>Tamin Expiry</th><th className="r">Basic</th><th className="r">Allowances</th><th>OT Rule</th><th>Status</th></tr></thead>
             <tbody>
               {rows.map((e) => (
-                <tr key={e.id} className={`click${e.status === 'active' && iqamaTone(e.iqama_expiry_date) ? ` row-${iqamaTone(e.iqama_expiry_date)}` : ''}`} onClick={() => router.push(`/adminconsole/employees/${e.id}`)}>
+                <tr key={e.id} className={`click${rowTone(e) ? ` row-${rowTone(e)}` : ''}`} onClick={() => router.push(`/adminconsole/employees/${e.id}`)}>
                   <td className="mono">{e.emp_code}</td>
                   <td><Link href={`/adminconsole/employees/${e.id}`} className="strong">{e.name}</Link></td>
                   <td>{e.job_title}</td><td>{e.department}</td><td>{fmtDate(e.joining_date)}</td>
+                  <td><IqamaExpiry date={e.work_permit_expiry_date} /></td>
                   <td><IqamaExpiry date={e.iqama_expiry_date} /></td>
+                  <td><IqamaExpiry date={e.tamin_expiry_date} /></td>
                   <td className="r">{<Money v={e.basic_salary} />}</td><td className="r">{<Money v={e.allowances} />}</td>
                   <td><OtRule e={e} defMult={settings.ot_multiplier} /></td>
                   <td><Badge tone={e.status === 'active' ? 'green' : ''}>{e.status === 'active' ? 'Active' : 'Inactive'}</Badge></td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={10}><div className="empty">No employees found.</div></td></tr>}
+              {rows.length === 0 && <tr><td colSpan={12}><div className="empty">No employees found.</div></td></tr>}
             </tbody>
           </table></div>
         )}

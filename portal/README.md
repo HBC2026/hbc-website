@@ -60,6 +60,10 @@ Payroll is calculated in the database (`calculate_payroll`) from attendance — 
 
 Run `supabase/migrations/0027_accounting.sql` once in the SQL Editor. It creates the chart of accounts, journal and report function, and gives every existing company a standard construction chart. Per company; administrators post, viewers read. Tests: `node supabase/tests/accounting.mjs`.
 
+## Work permit, Iqama and Tamin
+
+Run `supabase/migrations/0039_employee_renewals.sql` once in the SQL Editor **before** deploying. It adds the work permit and Tamin expiry dates and the renewal / fee history shown on each employee's profile. Administrators and payroll record entries, viewers read, attendance sees expiry dates only. Fees are not posted to accounting. Tests: `node supabase/tests/renewals.mjs`.
+
 ## Roles
 
 | Role | Can |

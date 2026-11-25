@@ -7,8 +7,9 @@ import { today } from '@/lib/format';
 import { supabase } from '@/lib/supabase';
 import type { Employee } from '@/lib/types';
 
-type Draft = Omit<Employee, 'id' | 'basic_salary' | 'allowances' | 'ot_rate' | 'iqama_issue_date' | 'iqama_expiry_date'> & {
+type Draft = Omit<Employee, 'id' | 'basic_salary' | 'allowances' | 'ot_rate' | 'iqama_issue_date' | 'iqama_expiry_date' | 'work_permit_expiry_date' | 'tamin_expiry_date'> & {
   id?: string; basic_salary: string; allowances: string; ot_rate: string; iqama_issue_date: string; iqama_expiry_date: string;
+  work_permit_expiry_date: string; tamin_expiry_date: string;
 };
 
 function toDraft(e?: Employee, nextCode = ''): Draft {
@@ -17,6 +18,7 @@ function toDraft(e?: Employee, nextCode = ''): Draft {
     joining_date: e?.joining_date ?? today(), basic_salary: String(e?.basic_salary ?? ''), allowances: String(e?.allowances ?? 0),
     ot_method: e?.ot_method ?? 'multiplier', ot_rate: e?.ot_rate == null ? '' : String(e.ot_rate), status: e?.status ?? 'active',
     iqama_no: e?.iqama_no ?? '', iqama_issue_date: e?.iqama_issue_date ?? '', iqama_expiry_date: e?.iqama_expiry_date ?? '',
+    work_permit_expiry_date: e?.work_permit_expiry_date ?? '', tamin_expiry_date: e?.tamin_expiry_date ?? '',
     bank_code: e?.bank_code ?? '', iban: e?.iban ?? '', last_working_date: e?.last_working_date ?? null,
   };
 }
@@ -42,6 +44,7 @@ export function EmployeeFormModal({ employee, nextCode = '', onClose, onSaved }:
     setSaving(true);
     const payload = {
       iqama_no: draft.iqama_no.trim(), iqama_issue_date: draft.iqama_issue_date || null, iqama_expiry_date: draft.iqama_expiry_date || null,
+      work_permit_expiry_date: draft.work_permit_expiry_date || null, tamin_expiry_date: draft.tamin_expiry_date || null,
       bank_code: draft.bank_code.trim().toUpperCase(), iban,
       emp_code: draft.emp_code.trim(), name: draft.name.trim(), job_title: draft.job_title.trim(), department: draft.department.trim(),
       joining_date: draft.joining_date, basic_salary: Number(draft.basic_salary), allowances: Number(draft.allowances || 0),
@@ -93,6 +96,8 @@ export function EmployeeFormModal({ employee, nextCode = '', onClose, onSaved }:
           <Field label="Iqama / ID number"><input className="input" inputMode="numeric" maxLength={10} placeholder="10 digits" value={draft.iqama_no} onChange={(e) => set('iqama_no', e.target.value.replace(/\D/g, ''))} /></Field>
           <Field label="Issue date"><DatePicker value={draft.iqama_issue_date} onChange={(v) => set('iqama_issue_date', v)} /></Field>
           <Field label="Expiry date"><DatePicker value={draft.iqama_expiry_date} onChange={(v) => set('iqama_expiry_date', v)} /></Field>
+          <Field label="Work permit expiry"><DatePicker value={draft.work_permit_expiry_date} onChange={(v) => set('work_permit_expiry_date', v)} /></Field>
+          <Field label="Tamin (insurance) expiry"><DatePicker value={draft.tamin_expiry_date} onChange={(v) => set('tamin_expiry_date', v)} /></Field>
         </div>
       </div>
 

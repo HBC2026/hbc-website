@@ -13,10 +13,10 @@ import { can, PAYROLL_SIDE } from '@/lib/roles';
 import { otRateWorking } from '@/lib/ot';
 import { EmployeeDocuments } from '@/components/EmployeeDocuments';
 import { EmployeeFormModal } from '@/components/EmployeeFormModal';
-import { IqamaExpiry } from '@/components/IqamaExpiry';
+import { EmployeeIqama, EmployeeRenewalHistory } from '@/components/EmployeeIqama';
 import type { AttendanceRow, Employee, PayrollEntry, PayrollPeriod, SalarySlip } from '@/lib/types';
 
-type Tab = 'attendance' | 'payroll' | 'slips' | 'documents';
+type Tab = 'attendance' | 'payroll' | 'slips' | 'documents' | 'renewals';
 
 const isFri = (d: string) => new Date(`${d}T00:00:00`).getDay() === 5;
 
@@ -65,7 +65,7 @@ export default function EmployeeDetail() {
   if (emp.loading) return <Loading />;
   if (emp.error || !emp.data) return <ErrorBox error={emp.error ?? 'Employee not found'} />;
   const e = emp.data;
-  const tabs: [Tab, string][] = [['attendance', 'Attendance'], ...(showPayroll ? [['payroll', 'Payroll History'], ['slips', 'Salary Slips'], ['documents', 'Documents']] as [Tab, string][] : [])];
+  const tabs: [Tab, string][] = [['attendance', 'Attendance'], ...(showPayroll ? [['payroll', 'Payroll History'], ['slips', 'Salary Slips'], ['documents', 'Documents'], ['renewals', 'Renewal History']] as [Tab, string][] : [])];
   const w = otRateWorking(e, monthStart(y, m), settings);
   const rows = att.data ?? [];
   const sum = (k: 'ot_amount') => rows.reduce((s, r) => s + Number(r[k] ?? 0), 0);
@@ -84,24 +84,29 @@ export default function EmployeeDetail() {
         <Link href="/adminconsole/employees" className="btn">← Employees</Link>
       </PageHead>
 
-      <div className="panel info-strip" style={{ marginBottom: 12 }}>
-        <div className="info-grid">
-          <div><div className="stat-label">Basic salary</div><div><Money v={e.basic_salary} /></div></div>
-          <div><div className="stat-label">Allowances</div><div><Money v={e.allowances} /></div></div>
-          <div title={e.ot_method === 'fixed' ? 'Fixed rate per OT hour' : `(${fmtNum(w.monthly)} ÷ ${w.days} days = ${fmtNum(w.daily)}) ÷ ${settings.ot_day_hours}h × ${w.mult}`}>
-            <div className="stat-label">OT / hr · {monthLabel(y, m)}</div><div><Money v={w.rate} /></div></div>
-          <div><div className="stat-label">OT rule</div><div><OtRule e={e} defMult={settings.ot_multiplier} /></div></div>
+      <div className="profile-cards">
+        <div className="panel info-strip">
+          <div className="form-section-title">Salary</div>
+          <div className="info-grid">
+            <div><div className="stat-label">Basic salary</div><div><Money v={e.basic_salary} /></div></div>
+            <div><div className="stat-label">Allowances</div><div><Money v={e.allowances} /></div></div>
+            <div title={e.ot_method === 'fixed' ? 'Fixed rate per OT hour' : `(${fmtNum(w.monthly)} ÷ ${w.days} days = ${fmtNum(w.daily)}) ÷ ${settings.ot_day_hours}h × ${w.mult}`}>
+              <div className="stat-label">OT / hr · {monthLabel(y, m)}</div><div><Money v={w.rate} /></div></div>
+            <div><div className="stat-label">OT rule</div><div><OtRule e={e} defMult={settings.ot_multiplier} /></div></div>
+          </div>
         </div>
-      </div>
 
-      <div className="panel info-strip" style={{ marginBottom: 16 }}>
-        <div className="info-grid">
-          <div><div className="stat-label">Iqama / ID number</div><div className="mono">{e.iqama_no || '—'}</div></div>
-          <div><div className="stat-label">Iqama issue date</div><div>{fmtDate(e.iqama_issue_date)}</div></div>
-          <div><div className="stat-label">Iqama expiry date</div><div><IqamaExpiry date={e.iqama_expiry_date} /></div></div>
-          {showPayroll && <div><div className="stat-label">Bank code</div><div>{e.bank_code || '—'}</div></div>}
-          {showPayroll && <div className="iban"><div className="stat-label">IBAN</div><div className="mono">{e.iban || '—'}</div></div>}
-        </div>
+        {showPayroll && (
+          <div className="panel info-strip">
+            <div className="form-section-title">Bank</div>
+            <div className="info-grid">
+              <div><div className="stat-label">Bank code</div><div>{e.bank_code || '—'}</div></div>
+              <div className="iban"><div className="stat-label">IBAN</div><div className="mono">{e.iban || '—'}</div></div>
+            </div>
+          </div>
+        )}
+
+        <EmployeeIqama employee={e} canWrite={can(profile!.role, 'employees:write')} onChanged={emp.reload} />
       </div>
 
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
@@ -144,6 +149,8 @@ export default function EmployeeDetail() {
       )}
 
       {tab === 'documents' && <EmployeeDocuments employeeId={e.id} canWrite={can(profile!.role, 'employees:write')} />}
+
+      {tab === 'renewals' && <EmployeeRenewalHistory employeeId={e.id} canWrite={can(profile!.role, 'employees:write')} onChanged={emp.reload} />}
 
       {tab === 'slips' && (
         <div className="panel flush"><div className="table-wrap"><table className="table">

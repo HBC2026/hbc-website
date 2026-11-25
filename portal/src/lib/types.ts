@@ -12,9 +12,16 @@ export interface Employee {
   joining_date: string; basic_salary: number; allowances: number;
   ot_method: 'multiplier' | 'fixed'; ot_rate: number | null; status: 'active' | 'inactive';
   iqama_no: string; iqama_issue_date: string | null; iqama_expiry_date: string | null;
+  work_permit_expiry_date: string | null; tamin_expiry_date: string | null;
   bank_code: string; iban: string;
   /** Set when the employee is made inactive: they still show in attendance and payroll up to this date. */
   last_working_date: string | null;
+}
+
+export type RenewalItem = 'work_permit' | 'iqama' | 'tamin';
+export interface EmployeeRenewal {
+  id: string; employee_id: string; item: RenewalItem; expiry_date: string | null;
+  fee_paid: number | null; paid_date: string | null; note: string; created_at: string;
 }
 
 export interface EmployeeDocument {
