@@ -5,7 +5,7 @@ import { Money } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { useBalances, useChart } from '@/components/AccountingBits';
 import { ErrorBox, Loading, PageHead, StatCard } from '@/components/ui';
-import { buildPnl, natural } from '@/lib/accounting';
+import { buildPnl, natural, type AccKind } from '@/lib/accounting';
 
 export default function AccountingOverview() {
   const { company } = useApp();
@@ -18,8 +18,8 @@ export default function AccountingOverview() {
     if (!chart.data || !ytd.data || !all.data) return null;
     const pnl = buildPnl(chart.data, ytd.data);
     const bm = new Map(all.data.map((b) => [b.account_id, b]));
-    const sum = (f: (code: string) => boolean) => chart.data!.filter((a) => f(a.code)).reduce((s, a) => s + natural(a.type, bm.get(a.id)?.debit ?? 0, bm.get(a.id)?.credit ?? 0), 0);
-    return { pnl, cash: sum((c) => c.startsWith('10')), ar: sum((c) => c === '1100' || c === '1150'), ap: sum((c) => c === '2000') };
+    const sum = (kind: AccKind) => chart.data!.filter((a) => a.kind === kind).reduce((s, a) => s + natural(a.type, bm.get(a.id)?.debit ?? 0, bm.get(a.id)?.credit ?? 0), 0);
+    return { pnl, cash: sum('cash'), ar: sum('receivable'), ap: sum('payable') };
   }, [chart.data, ytd.data, all.data]);
 
   const err = chart.error || ytd.error || all.error;
@@ -38,8 +38,8 @@ export default function AccountingOverview() {
             <StatCard label="Cash & bank" icon="◉" value={<Money v={k.cash} />} href="/adminconsole/accounting/balance-sheet" />
           </div>
           <div className="stats" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-            <StatCard label="Owed to us (receivables)" icon="▤" value={<Money v={k.ar} />} />
-            <StatCard label="We owe (payables)" icon="▧" value={<Money v={k.ap} />} />
+            <StatCard label="Owed to us (receivables)" icon="▤" value={<Money v={k.ar} />} href="/adminconsole/accounting/invoices" />
+            <StatCard label="We owe (payables)" icon="▧" value={<Money v={k.ap} />} href="/adminconsole/accounting/bills" />
           </div>
           {!posted && (
             <div className="panel">
@@ -47,7 +47,7 @@ export default function AccountingOverview() {
               <ol style={{ lineHeight: 1.9, paddingLeft: 18, fontSize: 13 }}>
                 <li>Review the <Link href="/adminconsole/accounting/accounts" className="strong">Chart of Accounts</Link> (a construction-company chart is already set up).</li>
                 <li>In the <Link href="/adminconsole/accounting/journal" className="strong">Journal</Link>, post one <em>Journal entry</em> for your opening balances: debit what you own (bank, receivables, equipment), credit what you owe, and credit the difference to Owners’ Capital.</li>
-                <li>From then on use <em>Money received</em> and <em>Payment</em> for day-to-day transactions.</li>
+                <li>Enter client <Link href="/adminconsole/accounting/invoices" className="strong">Invoices</Link> and vendor <Link href="/adminconsole/accounting/bills" className="strong">Bills</Link> as they arise, and record the money against each one. Use the <Link href="/adminconsole/accounting/register" className="strong">Register</Link> for everything else.</li>
                 <li>Open <Link href="/adminconsole/accounting/profit-loss" className="strong">Profit &amp; Loss</Link> and <Link href="/adminconsole/accounting/balance-sheet" className="strong">Balance Sheet</Link> any time.</li>
               </ol>
             </div>

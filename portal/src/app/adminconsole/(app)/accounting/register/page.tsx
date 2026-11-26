@@ -31,9 +31,12 @@ export default function RegisterPage() {
 
   const [accountId, setAccountId] = useState('');
   useEffect(() => {
-    if (!accountId && accs.length) setAccountId((accs.find((a) => a.code === '1010') ?? accs.find((a) => a.type === 'asset') ?? accs[0]).id);
+    if (!accountId && accs.length) setAccountId((accs.find((a) => a.kind === 'cash' && a.is_active) ?? accs.find((a) => a.type === 'asset') ?? accs[0]).id);
   }, [accs, accountId]);
   const account = byId.get(accountId);
+  // everyday words on this screen: "Money in" posts a debit, "Money out" posts a credit
+  const drLabel = 'Money in';
+  const crLabel = 'Money out';
 
   const { data, error, loading, reload } = useQuery(async () => {
     if (!accountId) return [] as Row[];
@@ -78,8 +81,8 @@ export default function RegisterPage() {
     if (!account) return;
     const d = num(draft.debit), c = num(draft.credit);
     if (!draft.date) return toast('Enter the date', true);
-    if (d && c) return toast('Use either Debit or Credit, not both', true);
-    if (!(d > 0 || c > 0)) return toast('Enter a debit or a credit amount', true);
+    if (d && c) return toast(`Use either ${drLabel} or ${crLabel}, not both`, true);
+    if (!(d > 0 || c > 0)) return toast(`Enter an amount in ${drLabel} or ${crLabel}`, true);
     if (!draft.other) return toast('Choose the COA account', true);
     if (draft.other === accountId) return toast('The other account must be different', true);
     const amt = d || c;
@@ -109,7 +112,11 @@ export default function RegisterPage() {
     toast('Transaction deleted'); if (draft.id === e.id) setDraft(fresh()); reload();
   }
 
-  const onKey = (ev: React.KeyboardEvent) => { if (ev.key === 'Enter') { ev.preventDefault(); save(); } };
+  const editing = draft.id ? rows.find((x) => x.r.acc_entries.id === draft.id)?.r.acc_entries : undefined;
+  const onKey = (ev: React.KeyboardEvent) => {
+    if (ev.key === 'Enter') { ev.preventDefault(); save(); }
+    if (ev.key === 'Escape' && draft.id) setDraft(fresh());
+  };
   const active = accs.filter((a) => a.is_active && a.id !== accountId);
 
   return (
@@ -120,8 +127,8 @@ export default function RegisterPage() {
       <div className="panel flush">
         <div className="panel-head">
           <div className="toolbar">
-            <Select value={accountId} onChange={(e) => { setAccountId(e.target.value); setDraft(fresh()); }}>
-              {accs.filter((a) => a.is_active || a.id === accountId).map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}
+            <Select searchable value={accountId} onChange={(e) => { setAccountId(e.target.value); setDraft(fresh()); }}>
+              {accs.filter((a) => a.is_active || a.id === accountId).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </Select>
             <input className="input" placeholder="Search this register…" value={q} onChange={(e) => setQ(e.target.value)} />
           </div>
@@ -130,30 +137,37 @@ export default function RegisterPage() {
           </div>
         </div>
 
+        {editing && (
+          <div className="reg-banner" role="status">
+            <span><strong>✎ Updating {jeNo(editing.entry_no)}</strong> dated {fmtDate(editing.entry_date)}. Change the top row, then save.</span>
+            <button className="btn sm" onClick={() => setDraft(fresh())}>Cancel update</button>
+          </div>
+        )}
+
         {loading || chart.loading ? <Loading /> : (
           <div className="table-wrap"><table className="table register">
             <thead><tr>
               <th style={{ width: 150 }}>Date</th><th style={{ width: 110 }}>Num</th><th>Description</th><th>Memo</th><th style={{ width: 230 }}>COA</th>
-              <th className="r" style={{ width: 130 }}>Debit</th><th className="r" style={{ width: 130 }}>Credit</th><th className="r" style={{ width: 140 }}>Balance</th><th style={{ width: 150 }} />
+              <th className="r" style={{ width: 130 }}>{drLabel}</th><th className="r" style={{ width: 130 }}>{crLabel}</th><th className="r" style={{ width: 140 }}>Balance</th><th style={{ width: 150 }} />
             </tr></thead>
             <tbody>
               {canWrite && (
-                <tr className="reg-entry" onKeyDown={onKey}>
+                <tr className={draft.id ? 'reg-entry is-editing' : 'reg-entry'} onKeyDown={onKey}>
                   <td data-label="Date"><DatePicker value={draft.date} onChange={(v) => setDraft({ ...draft, date: v })} /></td>
                   <td data-label="Num"><input className="input" value={draft.num} onChange={(e) => setDraft({ ...draft, num: e.target.value })} placeholder="Ref no." /></td>
                   <td data-label="Description"><input className="input" value={draft.memo} onChange={(e) => setDraft({ ...draft, memo: e.target.value })} placeholder="Description" /></td>
                   <td data-label="Memo"><input className="input" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} placeholder="Memo" /></td>
                   <td data-label="COA">
-                    <Select value={draft.other} onChange={(e) => setDraft({ ...draft, other: e.target.value })}>
+                    <Select searchable value={draft.other} onChange={(e) => setDraft({ ...draft, other: e.target.value })}>
                       <option value="">Choose COA…</option>
-                      {active.map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}
+                      {active.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </Select>
                   </td>
-                  <td data-label="Debit"><input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={draft.debit} onChange={(e) => setDraft({ ...draft, debit: e.target.value, credit: e.target.value ? '' : draft.credit })} /></td>
-                  <td data-label="Credit"><input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={draft.credit} onChange={(e) => setDraft({ ...draft, credit: e.target.value, debit: e.target.value ? '' : draft.debit })} /></td>
+                  <td data-label={drLabel}><input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={draft.debit} onChange={(e) => setDraft({ ...draft, debit: e.target.value, credit: e.target.value ? '' : draft.credit })} /></td>
+                  <td data-label={crLabel}><input className="input num" type="number" inputMode="decimal" min="0" step="0.01" value={draft.credit} onChange={(e) => setDraft({ ...draft, credit: e.target.value, debit: e.target.value ? '' : draft.debit })} /></td>
                   <td />
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    <button className="btn sm primary" disabled={saving} onClick={save}>{saving ? 'Saving…' : draft.id ? 'Update' : 'Add'}</button>{' '}
+                    <button className={draft.id ? 'btn sm update' : 'btn sm primary'} disabled={saving} onClick={save}>{saving ? 'Saving…' : draft.id ? 'Save changes' : '＋ Add'}</button>{' '}
                     {draft.id && <button className="btn sm" onClick={() => setDraft(fresh())}>Cancel</button>}
                   </td>
                 </tr>
@@ -166,12 +180,13 @@ export default function RegisterPage() {
                     <td className="mono">{e.reference || <span className="muted">{jeNo(e.entry_no)}</span>}</td>
                     <td>{e.memo || <span className="muted">—</span>}</td>
                     <td>{x.r.memo || <span className="muted">—</span>}</td>
-                    <td className="muted">{x.split ? '-Split-' : x.otherId ? `${byId.get(x.otherId)?.code} · ${byId.get(x.otherId)?.name}` : '—'}</td>
+                    <td className="muted">{x.split ? '-Split-' : x.otherId ? byId.get(x.otherId)?.name : '—'}</td>
                     <td className="r">{Number(x.r.debit) ? <Money v={x.r.debit} /> : ''}</td>
                     <td className="r">{Number(x.r.credit) ? <Money v={x.r.credit} /> : ''}</td>
                     <td className="r"><strong style={{ color: x.bal < 0 ? 'var(--red)' : undefined }}><Money v={x.bal} /></strong></td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      {canWrite && <>
+                      {canWrite && draft.id === e.id && <span className="reg-tag">Editing above ↑</span>}
+                      {canWrite && draft.id !== e.id && <>
                         {!x.split && <button className="btn sm" onClick={() => edit(x)}>Edit</button>}{' '}
                         <button className="btn sm danger" onClick={() => remove(x)}>Delete</button>
                       </>}
@@ -192,7 +207,7 @@ export default function RegisterPage() {
         )}
       </div>
       {account && <p className="muted" style={{ marginTop: 10, fontSize: 12 }}>
-        {account.name}: {account.type === 'asset' || account.type === 'expense' ? 'a debit increases the balance and a credit decreases it.' : 'a credit increases the balance and a debit decreases it.'} Transactions with more than two accounts show as -Split- and are edited in the Journal.
+        {account.name}: {account.type === 'asset' || account.type === 'expense' ? 'money in increases the balance and money out decreases it.' : 'money out increases the balance and money in decreases it.'} Transactions with more than two accounts show as -Split- and are edited in the Journal.
       </p>}
     </>
   );

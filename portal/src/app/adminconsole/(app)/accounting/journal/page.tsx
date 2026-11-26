@@ -41,7 +41,7 @@ export default function JournalPage() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const label = (id: string) => { const a = byId.get(id); return a ? `${a.code} · ${a.name}` : '—'; };
+  const label = (id: string) => { const a = byId.get(id); return a ? a.name : '—'; };
   const rows = useMemo(() => (data ?? []).filter((e) => {
     const t = q.trim().toLowerCase();
     return !t || `${jeNo(e.entry_no)} ${e.memo} ${e.reference} ${e.acc_lines.map((l) => label(l.account_id)).join(' ')}`.toLowerCase().includes(t);
@@ -49,7 +49,7 @@ export default function JournalPage() {
   }), [data, q, byId]);
 
   const active = accs.filter((a) => a.is_active);
-  const opts = (list: Acc[]) => list.map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>);
+  const opts = (list: Acc[]) => list.map((a) => <option key={a.id} value={a.id}>{a.name}</option>);
 
   function edit(e: Entry) {
     setDraft({

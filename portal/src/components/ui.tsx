@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Children, isValidElement, useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type ReactNode } from 'react';
+import { Children, isValidElement, useEffect, useRef, useState, type ChangeEvent, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react';
 import type { AttendanceStatus, PeriodStatus, QuotationStatus, SlipStatus } from '@/lib/types';
 
 /* ------------------------------------------------ status vocab */
@@ -114,24 +114,52 @@ function collectOptions(children: ReactNode, out: Opt[] = []): Opt[] {
   return out;
 }
 
-export function Select({ value, onChange, disabled, className = 'select', style, children, ...rest }: {
+export function Select({ value, onChange, disabled, className = 'select', style, children, searchable, ...rest }: {
   value: string; onChange: (e: ChangeEvent<HTMLSelectElement>) => void; disabled?: boolean;
-  className?: string; style?: CSSProperties; children: ReactNode; 'aria-label'?: string;
+  className?: string; style?: CSSProperties; children: ReactNode; searchable?: boolean; 'aria-label'?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number; width: number; maxH: number } | null>(null);
+  const [pos, setPos] = useState<{ top?: number; bottom?: number; left: number; width: number; maxH: number } | null>(null);
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
   const btn = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLUListElement>(null);
   const opts = collectOptions(children);
   const current = opts.find((o) => o.value === value);
+  const term = query.trim().toLowerCase();
+  // while searching, the "Choose…" placeholder (empty value) is not a result
+  const shown = term ? opts.filter((o) => o.value !== '' && [o.label].flat().join('').toLowerCase().includes(term)) : opts;
 
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     const outside = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('.dd-menu, .dd-btn')) close(); };
-    window.addEventListener('resize', close); window.addEventListener('keydown', key); document.addEventListener('mousedown', outside);
-    return () => { window.removeEventListener('resize', close); window.removeEventListener('keydown', key); document.removeEventListener('mousedown', outside); };
-  }, [open]);
+    // only a width change closes the menu: a phone keyboard opening for the search box changes the height
+    const width = window.innerWidth;
+    const resize = () => { if (!searchable || window.innerWidth !== width) close(); };
+    window.addEventListener('resize', resize); window.addEventListener('keydown', key); document.addEventListener('mousedown', outside);
+    return () => { window.removeEventListener('resize', resize); window.removeEventListener('keydown', key); document.removeEventListener('mousedown', outside); };
+  }, [open, searchable]);
+
+  useEffect(() => { list.current?.querySelector('.dd-item.active')?.scrollIntoView({ block: 'nearest' }); }, [active]);
+
+  function pick(o: Opt) {
+    if (o.disabled) return;
+    setOpen(false);
+    onChange({ target: { value: o.value } } as ChangeEvent<HTMLSelectElement>);
+    if (searchable) btn.current?.focus();
+  }
+
+  /** Keys typed in the search box stay here, so Enter or Escape do not also act on the form or row around it. */
+  function searchKey(e: ReactKeyboardEvent<HTMLInputElement>) {
+    e.stopPropagation();
+    if (e.key === 'Escape') { setOpen(false); btn.current?.focus(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, shown.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((i) => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (shown[active]) pick(shown[active]); }
+    else if (e.key === 'Tab') setOpen(false);
+  }
 
   function toggle() {
     if (disabled) return;
@@ -141,7 +169,12 @@ export function Select({ value, onChange, disabled, className = 'select', style,
       const above = r.top - 12;
       const up = below < 200 && above > below;
       const maxH = Math.min(320, up ? above : below);
-      setPos({ left: r.left, width: Math.max(r.width, 160), top: up ? Math.max(8, r.top - Math.min(maxH, opts.length * 38 + 10) - 4) : r.bottom + 4, maxH });
+      const base = { left: r.left, width: Math.max(r.width, searchable ? 240 : 160), maxH };
+      // a searchable list that opens upward is pinned by its bottom edge, so it stays attached as results narrow
+      if (up && searchable) setPos({ ...base, bottom: window.innerHeight - r.top + 4 });
+      else setPos({ ...base, top: up ? Math.max(8, r.top - Math.min(maxH, opts.length * 38 + 10) - 4) : r.bottom + 4 });
+      setQuery('');
+      setActive(0);
     }
     setOpen(!open);
   }
@@ -155,14 +188,23 @@ export function Select({ value, onChange, disabled, className = 'select', style,
       {open && pos && (
         <>
           <div className="dd-backdrop" onClick={() => setOpen(false)} />
-          <ul className="dd-menu" role="listbox" style={{ top: pos.top, left: pos.left, minWidth: pos.width, maxHeight: pos.maxH }}>
-            {opts.map((o) => (
+          <ul ref={list} className={searchable ? 'dd-menu searchable' : 'dd-menu'} role="listbox" style={{ top: pos.top, bottom: pos.bottom, left: pos.left, minWidth: pos.width, maxHeight: pos.maxH }}>
+            {searchable && (
+              <li className="dd-search" role="presentation">
+                {/* no auto-focus on touch screens: the keyboard would cover half the list before anything is read */}
+                <input className="input" type="search" placeholder="Search…" aria-label="Search options" value={query}
+                  autoFocus={window.matchMedia('(pointer: fine)').matches}
+                  onChange={(e) => { setQuery(e.target.value); setActive(0); }} onKeyDown={searchKey} />
+              </li>
+            )}
+            {shown.map((o, i) => (
               <li key={o.value} role="option" aria-selected={o.value === value} aria-disabled={o.disabled}
-                className={`dd-item${o.value === value ? ' sel' : ''}${o.disabled ? ' off' : ''}`}
-                onClick={() => { if (o.disabled) return; setOpen(false); onChange({ target: { value: o.value } } as ChangeEvent<HTMLSelectElement>); }}>
+                className={`dd-item${o.value === value ? ' sel' : ''}${o.disabled ? ' off' : ''}${searchable && i === active && (term || active > 0) ? ' active' : ''}`}
+                onClick={() => pick(o)}>
                 {o.label}
               </li>
             ))}
+            {shown.length === 0 && <li className="dd-none" role="presentation">No matches</li>}
           </ul>
         </>
       )}

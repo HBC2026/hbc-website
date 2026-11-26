@@ -60,7 +60,11 @@ Payroll is calculated in the database (`calculate_payroll`) from attendance — 
 
 Run `supabase/migrations/0027_accounting.sql` once in the SQL Editor. It creates the chart of accounts, journal and report function, and gives every existing company a standard construction chart. Per company; administrators post, viewers read. Tests: `node supabase/tests/accounting.mjs`.
 
-**Vendors and payments:** run `supabase/migrations/0040_vendors_payments.sql` once in the SQL Editor **before** deploying. It adds the Vendors and Payments pages under Accounting; each vendor payment is a journal entry (cash/bank to the account paid for). Vendor bills and amounts owed are not tracked. Tests: `node supabase/tests/payments.mjs`.
+**Vendors and payments:** run `supabase/migrations/0040_vendors_payments.sql` once in the SQL Editor **before** deploying. It adds the Vendors and Payments pages under Accounting; each vendor payment is a journal entry (cash/bank to the account paid for). Tests: `node supabase/tests/payments.mjs`.
+
+**Invoices, bills and ageing:** run `supabase/migrations/0042_invoices_bills.sql` once in the SQL Editor (after 0041) **before** deploying. Saving an invoice (to a client) or a bill (from a vendor) posts it to the Journal, with optional VAT; money received or paid is recorded against it and **Ageing** shows what is still owed. These entries cannot be edited from the Journal, Register or Payments screens. **Invoices here are internal accounting records, not ZATCA e-invoices** (no QR code, no Fatoora integration), so do not send them to clients as tax invoices. Credit notes and retention are not handled. Tests: `node supabase/tests/invoices.mjs` and `node --experimental-strip-types tests/invoices.test.mjs`.
+
+**Chart of accounts without codes:** run `supabase/migrations/0041_coa_without_codes.sql` once in the SQL Editor **before** deploying. Accounts are grouped by section and sorted by name unless reordered on the Chart of Accounts screen; cash, receivable and payable accounts are marked on the account itself. The old `code` column is kept but unused. Tests: `node supabase/tests/coa.mjs` and `node --experimental-strip-types tests/accounting.test.mjs`.
 
 ## Work permit, Iqama and Tamin
 

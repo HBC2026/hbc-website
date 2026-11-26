@@ -3,7 +3,8 @@ export type AccSection =
   | 'current_asset' | 'fixed_asset' | 'current_liability' | 'long_term_liability' | 'equity'
   | 'revenue' | 'other_income' | 'cost_of_sales' | 'operating_expense' | 'other_expense';
 
-export interface Acc { id: string; code: string; name: string; type: AccType; section: AccSection; is_active: boolean }
+export type AccKind = '' | 'cash' | 'receivable' | 'payable';
+export interface Acc { id: string; name: string; type: AccType; section: AccSection; kind: AccKind; sort_order: number | null; is_active: boolean }
 export interface Bal { account_id: string; debit: number; credit: number }
 export interface JournalLine { id: string; entry_id: string; account_id: string; debit: number; credit: number; memo: string }
 export interface JournalEntry { id: string; entry_no: number; entry_date: string; memo: string; reference: string; created_at: string }
@@ -27,7 +28,18 @@ export const SECTIONS_OF: Record<AccType, AccSection[]> = {
   expense: ['cost_of_sales', 'operating_expense', 'other_expense'],
 };
 
-export const r2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+const SECTION_ORDER = Object.keys(SECTION_LABEL) as AccSection[];
+const last = Number.MAX_SAFE_INTEGER;
+
+/** By section (statement order), then the user's own order, then name. */
+export function sortAccounts<T extends Pick<Acc, 'name' | 'section' | 'sort_order'>>(accs: T[]): T[] {
+  return [...accs].sort((a, b) =>
+    SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section)
+    || (a.sort_order ?? last) - (b.sort_order ?? last)
+    || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
+export const r2 =(n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /** Assets and expenses grow with debits; liabilities, equity and income grow with credits. */
 export const isDebitNature = (t: AccType) => t === 'asset' || t === 'expense';
@@ -37,7 +49,6 @@ export interface ReportRow {
   kind: 'section' | 'line' | 'total' | 'grand';
   label: string;
   amount?: number;
-  code?: string;
 }
 
 function balanceMap(bals: Bal[]) {
@@ -46,18 +57,16 @@ function balanceMap(bals: Bal[]) {
 
 /** Accounts of one section with a non-zero balance, as report lines. */
 function sectionLines(accs: Acc[], bm: Map<string, Bal>, section: AccSection) {
-  const lines = accs
-    .filter((a) => a.section === section)
+  const lines = sortAccounts(accs.filter((a) => a.section === section))
     .map((a) => ({ a, v: natural(a.type, bm.get(a.id)?.debit ?? 0, bm.get(a.id)?.credit ?? 0) }))
-    .filter((x) => x.v !== 0)
-    .sort((x, y) => x.a.code.localeCompare(y.a.code));
+    .filter((x) => x.v !== 0);
   return { lines, total: r2(lines.reduce((s, x) => s + x.v, 0)) };
 }
 
 function emit(rows: ReportRow[], title: string, totalLabel: string, accs: Acc[], bm: Map<string, Bal>, section: AccSection) {
   const { lines, total } = sectionLines(accs, bm, section);
   rows.push({ kind: 'section', label: title });
-  lines.forEach(({ a, v }) => rows.push({ kind: 'line', label: a.name, code: a.code, amount: v }));
+  lines.forEach(({ a, v }) => rows.push({ kind: 'line', label: a.name, amount: v }));
   rows.push({ kind: 'total', label: totalLabel, amount: total });
   return total;
 }
@@ -103,7 +112,7 @@ export function buildBalanceSheet(accs: Acc[], bals: Bal[]): BalanceSheet {
 
   rows.push({ kind: 'section', label: 'EQUITY' });
   const { lines, total: eq } = sectionLines(accs, bm, 'equity');
-  lines.forEach(({ a, v }) => rows.push({ kind: 'line', label: a.name, code: a.code, amount: v }));
+  lines.forEach(({ a, v }) => rows.push({ kind: 'line', label: a.name, amount: v }));
   const earned = r2(accs.reduce((s, a) => {
     if (a.type !== 'income' && a.type !== 'expense') return s;
     const b = bm.get(a.id);
@@ -122,20 +131,20 @@ export async function exportReportXlsx(file: string, company: string, title: str
   const ExcelJS = (await import('exceljs')).default;
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(title.slice(0, 31));
-  ws.columns = [{ width: 12 }, { width: 46 }, { width: 18 }];
+  ws.columns = [{ width: 52 }, { width: 18 }];
   ws.addRow([company]).font = { bold: true, size: 14 };
   ws.addRow([title]).font = { bold: true, size: 12 };
   ws.addRow([subtitle]);
   ws.addRow([]);
   for (const r of rows) {
-    const row = ws.addRow([r.code ?? '', r.label, r.amount ?? null]);
-    row.getCell(3).numFmt = '#,##0.00;[Red](#,##0.00)';
+    const row = ws.addRow([r.label, r.amount ?? null]);
+    row.getCell(2).numFmt = '#,##0.00;[Red](#,##0.00)';
     if (r.kind === 'section') row.font = { bold: true, color: { argb: 'FF1F3A5F' } };
-    if (r.kind === 'total') { row.font = { bold: true }; row.getCell(3).border = { top: { style: 'thin' } }; }
+    if (r.kind === 'total') { row.font = { bold: true }; row.getCell(2).border = { top: { style: 'thin' } }; }
     if (r.kind === 'grand') {
       row.font = { bold: true };
       row.eachCell((c) => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF0F7' } }; });
-      row.getCell(3).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
+      row.getCell(2).border = { top: { style: 'thin' }, bottom: { style: 'double' } };
     }
   }
   const buf = await wb.xlsx.writeBuffer();
@@ -147,8 +156,62 @@ export async function exportReportXlsx(file: string, company: string, title: str
 
 export interface Vendor { id: string; name: string; phone: string; vat_no: string; notes: string; is_active: boolean }
 export interface VendorPayment {
-  id: string; entry_no: number; entry_date: string; memo: string; reference: string; vendor_id: string;
+  id: string; entry_no: number; entry_date: string; memo: string; reference: string; vendor_id: string; doc_id: string | null;
   acc_lines: { account_id: string; debit: number; credit: number }[];
 }
 
 export const paymentAmount = (p: VendorPayment) => r2(p.acc_lines.reduce((s, l) => s + Number(l.debit), 0));
+
+/* ------------------------------------------------ invoices and bills */
+
+export type DocKind = 'invoice' | 'bill';
+
+/** One row of acc_doc_list: an invoice or bill and what has been paid against it. */
+export interface AccDoc {
+  id: string; doc_no: number; doc_date: string; due_date: string; party_id: string;
+  control_account_id: string; vat_account_id: string | null; vat_rate: number;
+  subtotal: number; vat: number; total: number; paid: number; reference: string; memo: string;
+}
+
+export const docNo = (kind: DocKind, n: number) => `${kind === 'invoice' ? 'INV' : 'BILL'}-${String(n).padStart(4, '0')}`;
+
+/** Same rounding as acc_save_doc: each line to the halala, then VAT on the subtotal. Worked in whole numbers. */
+export function docTotals(lines: { qty: number | string; unit_price: number | string }[], rate: number) {
+  const cents = lines.reduce((s, l) => s + Math.round(Math.round(Number(l.qty) * 1000) * Math.round(Number(l.unit_price) * 100) / 1000), 0);
+  const vat = Math.round(cents * Math.round(rate * 10000) / 10000);
+  return { subtotal: cents / 100, vat: vat / 100, total: (cents + vat) / 100 };
+}
+
+export const docBalance = (d: Pick<AccDoc, 'total' | 'paid'>) => r2(d.total - d.paid);
+
+export type DocStatus = 'paid' | 'overdue' | 'partial' | 'open';
+export function docStatus(d: Pick<AccDoc, 'total' | 'paid' | 'due_date'>, asAt: string): DocStatus {
+  if (docBalance(d) <= 0) return 'paid';
+  if (d.due_date < asAt) return 'overdue';
+  return d.paid > 0 ? 'partial' : 'open';
+}
+
+export const AGE_LABELS = ['Not yet due', '1–30 days', '31–60 days', '61–90 days', 'Over 90 days'];
+
+export interface AgingRow { party_id: string; buckets: number[]; total: number }
+
+/** What is still owed per client or vendor, split by how many days past the due date it is. */
+export function aging(docs: Pick<AccDoc, 'party_id' | 'due_date' | 'total' | 'paid'>[], asAt: string) {
+  const zero = () => AGE_LABELS.map(() => 0);
+  const byParty = new Map<string, AgingRow>();
+  const buckets = zero();
+  let total = 0;
+  for (const d of docs) {
+    const owed = docBalance(d);
+    if (owed <= 0) continue;
+    const days = Math.round((Date.parse(asAt) - Date.parse(d.due_date)) / 86_400_000);
+    const i = days <= 0 ? 0 : days <= 30 ? 1 : days <= 60 ? 2 : days <= 90 ? 3 : 4;
+    const row = byParty.get(d.party_id) ?? { party_id: d.party_id, buckets: zero(), total: 0 };
+    byParty.set(d.party_id, row);
+    row.buckets[i] = r2(row.buckets[i] + owed);
+    row.total = r2(row.total + owed);
+    buckets[i] = r2(buckets[i] + owed);
+    total = r2(total + owed);
+  }
+  return { rows: [...byParty.values()].sort((a, b) => b.total - a.total), buckets, total };
+}

@@ -71,6 +71,7 @@ export default function VendorsPage() {
                   <td>{v.notes || <span className="muted">—</span>}</td>
                   <td className="r"><Money v={paid.get(v.id) ?? 0} /></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                    <Link className="btn sm" href={`/adminconsole/accounting/bills?vendor=${v.id}`}>Bills</Link>{' '}
                     <Link className="btn sm" href={`/adminconsole/accounting/payments?vendor=${v.id}`}>Payments</Link>{' '}
                     {canWrite && <button className="btn sm" onClick={() => setDraft(v)}>Edit</button>}
                   </td>

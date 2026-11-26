@@ -450,9 +450,15 @@ table.table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .dd-item:hover { background: var(--surface-soft); }
 .dd-item.sel { background: var(--green-soft); color: var(--green); font-weight: 600; }
 .dd-item.off { opacity: .45; cursor: not-allowed; }
+.dd-item.active { background: var(--surface-soft); box-shadow: inset 0 0 0 1px var(--border); }
+/* searchable dropdown: the box stays put while the list scrolls under it */
+.dd-menu.searchable { padding-top: 0; scroll-padding-top: 52px; }
+.dd-search { position: sticky; top: 0; z-index: 1; background: white; padding: 6px 1px; margin-bottom: 2px; border-bottom: 1px solid var(--border); }
+.dd-search .input { width: 100%; }
+.dd-none { padding: 10px 12px; font-size: 13px; color: var(--muted); }
 @media (max-width: 800px) {
   .dd-backdrop { background: rgba(17,24,39,.45); }
-  .dd-menu { top: auto !important; left: 0 !important; right: 0; bottom: 0; min-width: 0 !important; width: 100%; max-height: 65vh !important; border-radius: 18px 18px 0 0; padding: 10px 10px 18px; }
+  .dd-menu { top: auto !important; left: 0 !important; right: 0; bottom: 0 !important; min-width: 0 !important; width: 100%; max-height: 65vh !important; border-radius: 18px 18px 0 0; padding: 10px 10px 18px; }
   .dd-item { padding: 14px 14px; font-size: 14px; }
   /* attendance calendar: seven equal columns that always fit the screen */
   .cal { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
@@ -832,7 +838,6 @@ table.table.sheet { border-collapse: separate; border-spacing: 0 10px; }
 .rep-head h2 { font-family: var(--font-head); font-size: 20px; margin: 4px 0; }
 table.rep { width: 100%; max-width: 760px; margin: 18px auto 24px; border-collapse: collapse; font-size: 13px; }
 table.rep td { padding: 6px 10px; }
-.rep-code { width: 70px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 11px; }
 .rep-amt { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .rep-section td { padding-top: 16px; font-weight: 700; color: var(--navy); }
 .rep-line .rep-label { padding-left: 22px; }
@@ -885,6 +890,15 @@ table.rep td { padding: 6px 10px; }
 .qb a.strong, .qb td a { color: var(--qb-link); }
 .qb a.strong:hover, .qb td a:hover { text-decoration: underline; }
 .qb .badge { background: var(--qb-bg); color: var(--qb-muted); border-radius: 999px; }
+.qb .badge.green { background: var(--qb-green-soft); color: var(--qb-green-dark); }
+.qb .badge.blue { background: #e3f2fb; color: #005a8f; }
+.qb .badge.gold { background: #fff3d6; color: #945800; }
+.qb .badge.red { background: #fdecea; color: #d52b1e; }
+.qb .tab.active { color: var(--qb-ink); border-bottom-color: var(--qb-green); }
+/* invoice and bill money bar: overdue orange, not yet due grey, total blue */
+.qb .doc-stats .stat-card:nth-child(1) { border-top-color: #f5701f; }
+.qb .doc-stats .stat-card:nth-child(2) { border-top-color: #8d9096; }
+.qb .doc-stats .stat-card:nth-child(3) { border-top-color: #0077c5; }
 
 /* modal */
 .qb .modal-head { border-bottom: 1px solid var(--qb-line); }
@@ -908,7 +922,14 @@ table.rep td { padding: 6px 10px; }
 /* register: inline entry row */
 .qb .reg-entry td { background: var(--qb-green-soft); border-bottom: 2px solid var(--qb-green); vertical-align: middle; }
 .qb .reg-entry .input, .qb .reg-entry .dd-btn { width: 100%; }
-.qb .reg-editing td { background: #fff8e1; }
+/* register: updating an existing transaction looks amber, adding a new one stays green */
+.qb .reg-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #ffe8b3; border-top: 2px solid #d98200; color: #6b4000; font-size: 13px; }
+.qb .reg-entry.is-editing td { background: #fff3d6; border-bottom: 2px solid #d98200; }
+.qb .btn.update, .qb .btn.update:hover { background: #b86e00; border-color: #b86e00; color: #fff; }
+.qb .btn.update:hover { background: #945800; border-color: #945800; }
+.qb .reg-editing td { background: #fff8e6; border-top: 1px dashed #d98200; border-bottom: 1px dashed #d98200; }
+.qb .reg-editing td:first-child { box-shadow: inset 4px 0 0 #d98200; }
+.qb .reg-tag { font-size: 12px; font-weight: 700; color: #945800; }
 .qb table.register tfoot td { background: var(--qb-bg); border-top: 1px solid var(--qb-line); }
 
 /* employee profile: header KPI pills size to their content */
@@ -950,3 +971,21 @@ table.rep td { padding: 6px 10px; }
 .form-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 800px) { .form-grid.cols-4 { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 520px) { .form-grid.cols-4 { grid-template-columns: 1fr; } }
+
+/* ---------------- invoice / bill editor ---------------- */
+.doc-lines { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.doc-line { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr) 70px 100px 100px 32px; gap: 8px; align-items: end; width: 100%; }
+.doc-line .field { min-width: 0; margin: 0; }
+.doc-line .input, .doc-line .select { width: 100%; min-width: 0; }
+.doc-line-amt { text-align: right; padding-bottom: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.doc-sum { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+.doc-sum-vat { display: flex; flex-direction: column; gap: 10px; min-width: 220px; }
+.doc-sum dl { display: grid; grid-template-columns: auto auto; gap: 6px 28px; text-align: right; margin-left: auto; align-content: start; }
+.doc-paid { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.doc-paid .muted { flex: 1; }
+@media (max-width: 800px) {
+  .doc-line { grid-template-columns: 1fr 1fr; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .doc-line .field.wide { grid-column: 1 / -1; }
+  .doc-line-amt { text-align: left; }
+  .doc-line .btn { justify-self: end; }
+}

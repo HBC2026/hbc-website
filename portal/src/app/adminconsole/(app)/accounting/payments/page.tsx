@@ -29,7 +29,7 @@ export default function PaymentsPage() {
   const accs = chart.data ?? [];
   const accById = useMemo(() => new Map((chart.data ?? []).map((a) => [a.id, a])), [chart.data]);
   const venById = useMemo(() => new Map((vendors.data ?? []).map((v) => [v.id, v])), [vendors.data]);
-  const accLabel = (id: string) => { const a = accById.get(id); return a ? `${a.code} · ${a.name}` : '—'; };
+  const accLabel = (id: string) => { const a = accById.get(id); return a ? a.name : '—'; };
   const paidFrom = (p: VendorPayment) => p.acc_lines.find((l) => Number(l.credit))?.account_id ?? '';
   const paidFor = (p: VendorPayment) => p.acc_lines.find((l) => Number(l.debit))?.account_id ?? '';
 
@@ -41,7 +41,7 @@ export default function PaymentsPage() {
 
   const add = () => setDraft({
     vendor: venById.get(vendorId)?.is_active ? vendorId : '', date: today(),
-    from: accs.find((a) => a.code === '1010' && a.is_active)?.id ?? '', for: '', amount: '', ref: '', memo: '',
+    from: accs.find((a) => a.kind === 'cash' && a.is_active)?.id ?? '', for: '', amount: '', ref: '', memo: '',
   });
   const edit = (p: VendorPayment) => setDraft({
     id: p.id, vendor: p.vendor_id, date: p.entry_date, from: paidFrom(p), for: paidFor(p),
@@ -108,8 +108,8 @@ export default function PaymentsPage() {
                   <td className="r"><Money v={paymentAmount(p)} /></td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                     {canWrite && <>
-                      {/* a payment split into more lines in the Journal is edited there */}
-                      {p.acc_lines.length === 2 && <button className="btn sm" onClick={() => edit(p)}>Edit</button>}{' '}
+                      {/* a split payment is edited in the Journal; a bill payment is deleted and entered again */}
+                      {p.acc_lines.length === 2 && !p.doc_id && <button className="btn sm" onClick={() => edit(p)}>Edit</button>}{' '}
                       <button className="btn sm danger" onClick={() => remove(p)}>Delete</button>
                     </>}
                   </td>
@@ -138,13 +138,13 @@ export default function PaymentsPage() {
             <Field label="Paid from (cash / bank)">
               <Select value={draft.from} onChange={(e) => setDraft({ ...draft, from: e.target.value })}>
                 <option value="">Choose account…</option>
-                {accs.filter((a) => a.is_active && a.type === 'asset').map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}
+                {accs.filter((a) => a.is_active && a.type === 'asset').map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select>
             </Field>
             <Field label="Paid for (materials, subcontractor, rent…)">
               <Select value={draft.for} onChange={(e) => setDraft({ ...draft, for: e.target.value })}>
                 <option value="">Choose account…</option>
-                {accs.filter((a) => a.is_active && a.id !== draft.from).map((a) => <option key={a.id} value={a.id}>{a.code} · {a.name}</option>)}
+                {accs.filter((a) => a.is_active && a.id !== draft.from).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
               </Select>
             </Field>
             <Field label="Reference (invoice / cheque no.)"><input className="input" value={draft.ref} onChange={(e) => setDraft({ ...draft, ref: e.target.value })} /></Field>

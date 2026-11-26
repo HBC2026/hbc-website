@@ -3,21 +3,22 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Money } from '@/components/Money';
 import { useApp } from '@/components/Providers';
 import { useQuery } from '@/lib/hooks';
-import { supabase, unwrap } from '@/lib/supabase';
+import { fetchAll, supabase, unwrap } from '@/lib/supabase';
 import { can } from '@/lib/roles';
-import type { Acc, Bal, ReportRow, Vendor, VendorPayment } from '@/lib/accounting';
+import { sortAccounts, type Acc, type AccDoc, type Bal, type DocKind, type ReportRow, type Vendor, type VendorPayment } from '@/lib/accounting';
 
 /** Loads the company's chart of accounts. An administrator opening a company with none gets the standard chart created. */
 export function useChart() {
   const { company, profile } = useApp();
   const sb = supabase();
   const q = useQuery(async () => {
-    let accs = unwrap(await sb.from('acc_accounts').select('id, code, name, type, section, is_active').order('code')) as Acc[];
+    const load = async () => unwrap(await sb.from('acc_accounts').select('id, name, type, section, kind, sort_order, is_active')) as Acc[];
+    let accs = await load();
     if (accs.length === 0 && can(profile?.role, 'accounting:write')) {
       unwrap(await sb.rpc('acc_seed_accounts'));
-      accs = unwrap(await sb.from('acc_accounts').select('id, code, name, type, section, is_active').order('code')) as Acc[];
+      accs = await load();
     }
-    return accs;
+    return sortAccounts(accs);
   }, [company?.id]);
   return q;
 }
@@ -40,7 +41,6 @@ export function ReportTable({ rows, empty }: { rows: ReportRow[]; empty?: ReactN
       <tbody>
         {rows.map((r, i) => (
           <tr key={i} className={`rep-${r.kind}`}>
-            <td className="rep-code">{r.code ?? ''}</td>
             <td className="rep-label">{r.label}</td>
             <td className="rep-amt">{r.kind === 'section' ? '' : <Money v={r.amount ?? 0} />}</td>
           </tr>
@@ -83,7 +83,7 @@ export function useVendorPayments() {
     const all: VendorPayment[] = [];
     for (let from = 0; ; from += 1000) {
       const page = unwrap(await supabase().from('acc_entries')
-        .select('id, entry_no, entry_date, memo, reference, vendor_id, acc_lines(account_id, debit, credit)')
+        .select('id, entry_no, entry_date, memo, reference, vendor_id, doc_id, acc_lines(account_id, debit, credit)')
         .not('vendor_id', 'is', null)
         .order('entry_date', { ascending: false }).order('entry_no', { ascending: false })
         .range(from, from + 999)) as VendorPayment[];
@@ -91,4 +91,30 @@ export function useVendorPayments() {
       if (page.length < 1000) return all;
     }
   }, [company?.id]);
+}
+
+/** Every invoice or bill with what has been paid against it; asAt null = today's position. */
+export async function loadDocs(kind: DocKind, asAt: string | null): Promise<AccDoc[]> {
+  const rows = await fetchAll<AccDoc>((from, to) => supabase().rpc('acc_doc_list', { p_kind: kind, p_as_at: asAt }).range(from, to));
+  return rows.map((d) => ({ ...d, vat_rate: Number(d.vat_rate), subtotal: Number(d.subtotal), vat: Number(d.vat), total: Number(d.total), paid: Number(d.paid) }));
+}
+
+export function useDocs(kind: DocKind) {
+  const { company } = useApp();
+  return useQuery(() => loadDocs(kind, null), [company?.id, kind]);
+}
+
+/** Who can be invoiced (clients) or send bills (vendors). */
+export async function loadParties(kind: DocKind): Promise<{ id: string; name: string; active: boolean }[]> {
+  if (kind === 'invoice') {
+    const rows = unwrap(await supabase().from('clients').select('id, name, status').order('name')) as { id: string; name: string; status: string }[];
+    return rows.map((c) => ({ id: c.id, name: c.name, active: c.status === 'active' }));
+  }
+  const rows = unwrap(await supabase().from('acc_vendors').select('id, name, is_active').order('name')) as { id: string; name: string; is_active: boolean }[];
+  return rows.map((v) => ({ id: v.id, name: v.name, active: v.is_active }));
+}
+
+export function useParties(kind: DocKind) {
+  const { company } = useApp();
+  return useQuery(() => loadParties(kind), [company?.id, kind]);
 }
