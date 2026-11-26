@@ -52,6 +52,8 @@ const NAV: NavGroup[] = [
       { href: '/adminconsole/accounting', label: 'Overview', icon: '∑', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/register', label: 'Register', icon: '▦', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/journal', label: 'Journal', icon: '✎', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/vendors', label: 'Vendors', icon: '♖', roles: ACC_SIDE },
+      { href: '/adminconsole/accounting/payments', label: 'Payments', icon: '◉', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/accounts', label: 'Chart of Accounts', icon: '▤', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/profit-loss', label: 'Profit & Loss', icon: '↗', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/balance-sheet', label: 'Balance Sheet', icon: '⚖', roles: ACC_SIDE },

@@ -144,3 +144,11 @@ export async function exportReportXlsx(file: string, company: string, title: str
   a.href = url; a.download = `${file}.xlsx`; a.click();
   URL.revokeObjectURL(url);
 }
+
+export interface Vendor { id: string; name: string; phone: string; vat_no: string; notes: string; is_active: boolean }
+export interface VendorPayment {
+  id: string; entry_no: number; entry_date: string; memo: string; reference: string; vendor_id: string;
+  acc_lines: { account_id: string; debit: number; credit: number }[];
+}
+
+export const paymentAmount = (p: VendorPayment) => r2(p.acc_lines.reduce((s, l) => s + Number(l.debit), 0));

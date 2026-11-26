@@ -5,7 +5,7 @@ import { useApp } from '@/components/Providers';
 import { useQuery } from '@/lib/hooks';
 import { supabase, unwrap } from '@/lib/supabase';
 import { can } from '@/lib/roles';
-import type { Acc, Bal, ReportRow } from '@/lib/accounting';
+import type { Acc, Bal, ReportRow, Vendor, VendorPayment } from '@/lib/accounting';
 
 /** Loads the company's chart of accounts. An administrator opening a company with none gets the standard chart created. */
 export function useChart() {
@@ -67,4 +67,28 @@ export function useMounted() {
   const [m, setM] = useState(false);
   useEffect(() => setM(true), []);
   return m;
+}
+
+export function useVendors() {
+  const { company } = useApp();
+  return useQuery(async () =>
+    unwrap(await supabase().from('acc_vendors').select('id, name, phone, vat_no, notes, is_active').order('name')) as Vendor[],
+  [company?.id]);
+}
+
+/** Every vendor payment, newest first. Read in pages so totals stay right past the API's 1000-row limit. */
+export function useVendorPayments() {
+  const { company } = useApp();
+  return useQuery(async () => {
+    const all: VendorPayment[] = [];
+    for (let from = 0; ; from += 1000) {
+      const page = unwrap(await supabase().from('acc_entries')
+        .select('id, entry_no, entry_date, memo, reference, vendor_id, acc_lines(account_id, debit, credit)')
+        .not('vendor_id', 'is', null)
+        .order('entry_date', { ascending: false }).order('entry_no', { ascending: false })
+        .range(from, from + 999)) as VendorPayment[];
+      all.push(...page);
+      if (page.length < 1000) return all;
+    }
+  }, [company?.id]);
 }
