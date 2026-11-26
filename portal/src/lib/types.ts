@@ -101,10 +101,10 @@ export interface PcReceipt {
   /** set when this receipt is the employee's revision of an earlier rejected one */
   replaces_id: string | null;
   site: string;
-  /** set when another live receipt has the same amount and date (employee confirmed it is a different purchase) */
+  /** possible duplicate: an earlier live receipt with the same file, or the same amount and date. Office only. */
   dup_of: string | null;
 }
-export interface PcDupInfo { id: string; employee: string; amount: number; date: string; status: ReceiptStatus; description: string }
+export interface PcDupInfo { id: string; employee: string; amount: number; date: string; status: ReceiptStatus; description: string; same_file?: boolean }
 /** What the employee's private page receives from pc_statement(token). */
 export interface PcStatement {
   name: string; emp_code: string; active: boolean;

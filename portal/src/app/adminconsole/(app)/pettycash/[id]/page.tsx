@@ -71,7 +71,7 @@ export default function PettyCashEmployeePage() {
     const d = data?.dups[rid];
     if (status === 'approved' && d && !(await confirmDialog({
       title: 'Possible duplicate receipt',
-      message: `Same amount and date as ${d.employee}'s receipt of ${fmtDate(d.date)} (${Number(d.amount).toFixed(2)} SAR, ${d.status}). Approve this one only if it is a different purchase.`,
+      message: `${d.same_file ? 'This is the same file' : 'Same amount and date'} as ${d.employee}'s receipt of ${fmtDate(d.date)} (${Number(d.amount).toFixed(2)} SAR, ${d.status}). Approve this one only if it is a different purchase.`,
       confirmLabel: 'Approve anyway', danger: true,
     }))) return;
     if (await run(() => sb.rpc('pc_review_receipt', { p_id: rid, p_status: status, p_reason: reason }), status === 'approved' ? 'Receipt approved' : 'Receipt rejected')) setReject(null);
@@ -123,7 +123,7 @@ export default function PettyCashEmployeePage() {
             {data.receipts.map((r) => (
               <tr key={r.id}>
                 <td>{fmtDate(r.spent_on)}</td>
-                <td>{r.description}{r.site && <div className="muted" style={{ fontSize: 11 }}>Site: {r.site}</div>}{r.dup_of && <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>⚠ Possible duplicate{data.dups[r.id] ? ` of ${data.dups[r.id].employee}'s receipt of ${fmtDate(data.dups[r.id].date)} (${Number(data.dups[r.id].amount).toFixed(2)} SAR, ${data.dups[r.id].status}): ${data.dups[r.id].description}` : ' (same amount and date as another receipt)'}</div>}{r.replaces_id && <div className="muted" style={{ fontSize: 11 }}>Revised receipt (replaces a rejected one)</div>}{data.receipts.some((n) => n.replaces_id === r.id) && <div className="muted" style={{ fontSize: 11 }}>Revised receipt submitted</div>}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
+                <td>{r.description}{r.site && <div className="muted" style={{ fontSize: 11 }}>Site: {r.site}</div>}{r.dup_of && <div style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>⚠ Possible duplicate{data.dups[r.id] ? ` (${data.dups[r.id].same_file ? 'same file' : 'same amount and date'}) of ${data.dups[r.id].employee}'s receipt of ${fmtDate(data.dups[r.id].date)} (${Number(data.dups[r.id].amount).toFixed(2)} SAR, ${data.dups[r.id].status}): ${data.dups[r.id].description}` : ' (matches another receipt)'}</div>}{r.replaces_id && <div className="muted" style={{ fontSize: 11 }}>Revised receipt (replaces a rejected one)</div>}{data.receipts.some((n) => n.replaces_id === r.id) && <div className="muted" style={{ fontSize: 11 }}>Revised receipt submitted</div>}{r.status === 'rejected' && r.reject_reason && <div className="muted" style={{ fontSize: 11 }}>Rejected: {r.reject_reason}</div>}</td>
                 <td className="r" style={r.status === 'rejected' ? { textDecoration: 'line-through', opacity: .55 } : undefined}><Money v={r.amount} /></td>
                 <td><Badge tone={TONE[r.status]}>{LABEL[r.status]}</Badge></td>
                 <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>

@@ -1,7 +1,7 @@
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_SIDE = 1600;
 
-/** SHA-256 of the original file bytes (hex), used to refuse the same receipt file twice. Null if the browser cannot hash. */
+/** SHA-256 of the original file bytes (hex), used to warn the office when the same receipt file is sent twice. Null if the browser cannot hash. */
 export async function hashFile(file: Blob): Promise<string | null> {
   try {
     const digest = await crypto.subtle.digest('SHA-256', await file.arrayBuffer());

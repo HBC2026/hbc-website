@@ -106,6 +106,7 @@ Printing: "Print" and "Download PDF" use the browser print dialog with A4 print 
 - Employees do not sign in. Open an employee in Petty Cash → **Copy link** and send them `https://hbcgcc.com/pettycash/<token>` (WhatsApp etc.). **New link** revokes the old one.
 - The employee page works only through token-checked database functions (`pc_statement`, `pc_add_receipt`, with `0028_petty_receipt_revisions.sql`) and an insert-only upload folder in the private bucket `petty-cash-receipts`; it can never see another employee.
 - **Reject** a receipt (a reason is required) and it stops counting; the employee sees the reason and uploads it again. Approved receipts can't be removed by the employee.
+- **Duplicates** (`0043_petty_silent_duplicates.sql`): the employee is never told. A receipt with the same file, or the same amount and date, as another live receipt is accepted and shown to the office as *Possible duplicate*; it counts as spent until rejected. The rejection reason is visible to the employee.
 - Run `0008_petty_cash.sql` then `0010_petty_cash_given_by.sql` once. Each cash entry records who gave the money. Existing databases need nothing else.
 
 ## JSA Management (AI-assisted Job Safety Analysis)
