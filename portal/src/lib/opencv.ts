@@ -21,6 +21,8 @@ export function loadOpenCv(): Promise<{ cv: any }> {
     };
     const s = document.createElement('script');
     s.src = SRC;
+    s.integrity = 'sha384-XsTfGA62I8LzqS3D7IcgiSOCrJuECWLcg4s1M0AnrkDCcJ8lXX+j+qdg+o6t7KZa';   // pinned: a tampered CDN file will not run
+    s.crossOrigin = 'anonymous';
     s.async = true;
     s.onload = () => poll(Date.now());
     s.onerror = () => { s.remove(); fail('Could not load the scanner. Check your connection.'); };

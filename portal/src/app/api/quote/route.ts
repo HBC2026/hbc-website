@@ -14,9 +14,27 @@ const FIELDS: [string, string, number][] = [
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const reply = (body: object, status = 200) => Response.json(body, { status });
 
+// Best-effort per-IP throttle (per server instance) so the public form cannot be used to flood the inbox or burn email quota.
+const hits = new Map<string, number[]>();
+function limited(ip: string): boolean {
+  const now = Date.now(), win = 10 * 60_000, max = 5;
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < win);
+  if (recent.length >= max) { hits.set(ip, recent); return true; }
+  recent.push(now); hits.set(ip, recent);
+  if (hits.size > 5000) for (const [k, v] of hits) if (v.every((t) => now - t >= win)) hits.delete(k);
+  return false;
+}
+
 export async function POST(req: Request) {
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+  if (limited(ip)) return reply({ error: 'Too many requests. Please try again later or call us.' }, 429);
+  const origin = req.headers.get('origin');
+  let originHost = ''; try { originHost = origin ? new URL(origin).host : ''; } catch { originHost = 'invalid'; }
+  if (origin && originHost !== req.headers.get('host')) return reply({ error: 'Invalid request.' }, 403);
+  if (Number(req.headers.get('content-length') ?? 0) > 20_000) return reply({ error: 'Request too large.' }, 413);
   let raw: Record<string, unknown>;
   try { raw = await req.json(); } catch { return reply({ error: 'Invalid request.' }, 400); }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return reply({ error: 'Invalid request.' }, 400);
   if (raw.website) return reply({ ok: true }); // honeypot: bots fill this, pretend success
 
   const d: Record<string, string> = {};

@@ -8,7 +8,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** The mailbox's Archive folder; created on first use when the account has none. */
 async function archivePath(client: ReturnType<typeof imapClient>): Promise<string | null> {
   const boxes = await client.list();
-  const found = boxes.find((b) => b.specialUse === '\Archive')?.path ?? boxes.find((b) => /^(archive|archiv|archived)$/i.test(b.name))?.path;
+  const found = boxes.find((b) => b.specialUse === '\\Archive')?.path ?? boxes.find((b) => /^(archive|archiv|archived)$/i.test(b.name))?.path;
   if (found) return found;
   try { return (await client.mailboxCreate('Archive')).path; } catch { return null; }
 }
