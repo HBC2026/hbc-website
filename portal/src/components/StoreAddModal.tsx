@@ -6,12 +6,12 @@ import { STORE_BUCKET, uploadStorePhoto } from '@/lib/storePhoto';
 import { getCompanyId, supabase } from '@/lib/supabase';
 
 export interface NewStoreItem {
-  item: string; qty: string; location: string; condition: string; status: string;
+  item: string; description: string; qty: string; location: string; condition: string; status: string;
   purchase_date: string; warranty: string; useful_life: string;
 }
 export interface AddedStoreItem extends NewStoreItem { id: string; attachment: string | null; preview?: string }
 
-const empty = (location = ''): NewStoreItem => ({ item: '', qty: '1', location, condition: 'Good', status: 'In store', purchase_date: '', warranty: '', useful_life: '' });
+const empty = (location = ''): NewStoreItem => ({ item: '', description: '', qty: '1', location, condition: 'Good', status: 'In store', purchase_date: '', warranty: '', useful_life: '' });
 
 /** One item, saved the moment it is submitted. Built for a phone held in the store: camera first, big buttons. */
 export function StoreAddModal({ locations, conditions, statuses, onAdded, onClose }: {
@@ -43,7 +43,7 @@ export function StoreAddModal({ locations, conditions, statuses, onAdded, onClos
     showPhoto(f);
   }
 
-  const started = !!(form.item.trim() || form.warranty.trim() || photo);
+  const started = !!(form.item.trim() || form.description.trim() || form.warranty.trim() || photo);
   const close = useCallback(async () => {
     if (busy) return;
     // a stray tap outside the form must not throw away a photo already taken
@@ -63,12 +63,12 @@ export function StoreAddModal({ locations, conditions, statuses, onAdded, onClos
     try {
       if (photo) path = await uploadStorePhoto(sb, company, photo.file);
       const res = await sb.rpc('store_add_item', { p_item: {
-        item: form.item.trim(), qty: Number(form.qty), location: form.location.trim(), condition: form.condition, status: form.status,
+        item: form.item.trim(), description: form.description.trim(), qty: Number(form.qty), location: form.location.trim(), condition: form.condition, status: form.status,
         purchase_date: form.purchase_date || null, warranty: form.warranty.trim(),
         useful_life_years: form.useful_life.trim() === '' ? null : Number(form.useful_life), attachment: path,
       } });
       if (res.error) throw new Error(res.error.message);
-      onAdded({ ...form, item: form.item.trim(), location: form.location.trim(), warranty: form.warranty.trim(),
+      onAdded({ ...form, item: form.item.trim(), description: form.description.trim(), location: form.location.trim(), warranty: form.warranty.trim(),
         id: res.data as string, attachment: path, preview: photo ? URL.createObjectURL(photo.file) : undefined });
       toast(`Added “${form.item.trim()}”`);
       if (another) { setForm(empty(form.location)); showPhoto(null); } else onClose();
@@ -102,6 +102,7 @@ export function StoreAddModal({ locations, conditions, statuses, onAdded, onClos
 
         <div className="store-add-grid">
           <Field label="Item" className="full"><input ref={name} className="input" value={form.item} onChange={(e) => set({ item: e.target.value })} placeholder="e.g. Angle grinder" /></Field>
+          <Field label="Short description" className="full"><input className="input" value={form.description} maxLength={200} onChange={(e) => set({ description: e.target.value })} placeholder="e.g. 125mm, with spare discs" /></Field>
           <Field label="Quantity"><input className="input" inputMode="decimal" value={form.qty} onChange={(e) => set({ qty: e.target.value })} /></Field>
           <Field label="Location"><SuggestInput value={form.location} onChange={(v) => set({ location: v })} options={locations} /></Field>
           <Field label="Condition"><Select value={form.condition} onChange={(e) => set({ condition: e.target.value })}>{conditions.map((c) => <option key={c}>{c}</option>)}</Select></Field>

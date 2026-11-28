@@ -128,6 +128,26 @@ ok(out.rows[0].store_save_all.includes(`${HBC}/new.jpg`), 'its photo is reported
 await db.exec(save(all));
 ok(!(await names()).includes('Drill'), 'a stale screen does not bring a deleted row back');
 
+// 0045: the "New" condition and a short description
+await as(U1, HBC);
+const sheet = () => q(`select id, item, condition, description from store_items order by sort_order`);
+const tryAdd = async (item) => { try { return (await q(add(item)))[0].id; } catch (e) { return `ERROR ${e.message}`; } };
+const NEWID = await tryAdd({ item: 'Saw', condition: 'New', description: ' 10 inch, yellow case ' });
+ok(!NEWID.startsWith('ERROR'), `an item can be added as New (${NEWID})`);
+ok(await fails(add({ item: 'long', description: 'x'.repeat(201) })), 'a description over 200 characters is refused');
+if (!NEWID.startsWith('ERROR')) {
+  const saw = async () => (await sheet()).find((r) => r.id === NEWID);
+  ok((await saw()).description === '10 inch, yellow case', 'the description is stored, trimmed');
+  await db.exec(save((await sheet()).map((r) => (r.id === NEWID ? { ...r, description: 'blade replaced' } : r))));
+  ok((await saw()).description === 'blade replaced' && (await saw()).condition === 'New', 'saving the sheet updates the description and keeps New');
+  const copy = (await q(`select snapshot from store_checks order by created_at desc limit 1`))[0].snapshot;
+  ok(copy.some((r) => r.description === 'blade replaced'), 'the signed copy includes the description');
+  await db.exec(save((await sheet()).map(({ description, ...r }) => r))); // a page from before this change
+  ok((await saw()).description === 'blade replaced', 'a page that does not send descriptions does not wipe them');
+  await db.exec(save([...(await sheet()), { item: 'Row', condition: 'New', description: 'from table' }]));
+  ok((await sheet()).some((r) => r.item === 'Row' && r.description === 'from table'), 'a new row saved from the table keeps its description');
+}
+
 // an old page, still holding one company's rows, must not be able to delete the rest
 await as(U1, HBC);
 ok(await fails(`select store_save('[{"item":"stale"}]'::jsonb, 'chk', '2026-11-01', '${SIG}')`), 'the old save function is gone');

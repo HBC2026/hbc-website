@@ -17,7 +17,7 @@
   .store-sheet td .input:focus, .store-sheet td .dd-btn:focus { outline: 2px solid var(--green); outline-offset: -2px; background: #fff; }
   .store-sheet td:has(> *:focus-within) { background: #fff; }
   .store-sheet .qty-in, .store-sheet td.r .input { text-align: right; }
-  .store-sheet td:nth-child(6) { padding: 0 8px; white-space: nowrap; }   /* calculated: actual life */
+  .store-sheet td:nth-child(7) { padding: 0 8px; white-space: nowrap; }   /* calculated: actual life */
   .store-sheet .store-att { flex-wrap: nowrap; gap: 6px; padding: 0 6px; }
   .store-sheet .store-thumb { width: 28px; height: 28px; border-radius: 5px; }
   .store-sheet .store-att .btn.sm { padding: 3px 8px; font-size: 11px; min-height: 0; white-space: nowrap; }
@@ -63,7 +63,7 @@
 .store-sheet td .dd-btn { min-width: 0; }
 @media (min-width: 801px) {
   .store-sheet .store-att { flex-wrap: wrap; row-gap: 2px; padding: 3px 6px; }   /* buttons drop to a second line instead of being clipped */
-  .store-sheet td:nth-child(6) { white-space: normal; }
+  .store-sheet td:nth-child(7) { white-space: normal; }
 }
 
 /* add-item form (camera first, works one-handed on a phone) */

@@ -11,17 +11,17 @@ import { can } from '@/lib/roles';
 import { STORE_BUCKET as BUCKET, uploadStorePhoto } from '@/lib/storePhoto';
 import { fetchAll, getCompanyId, supabase, unwrap } from '@/lib/supabase';
 
-const CONDITIONS = ['Good', 'Fair', 'Needs repair', 'Broken', 'Scrap'];
+const CONDITIONS = ['New', 'Good', 'Fair', 'Needs repair', 'Broken', 'Scrap'];
 const STATUSES = ['In store', 'Checked out', 'Under repair', 'Missing', 'Disposed'];
 const LOCATIONS = ['Store Room', 'Site Container', 'Vehicle'];
 
 interface Row {
-  key: string; id?: string; item: string; purchase_date: string; useful_life: string; decommission_date: string; warranty: string; location: string; qty: string; condition: string; status: string;
+  key: string; id?: string; item: string; description: string; purchase_date: string; useful_life: string; decommission_date: string; warranty: string; location: string; qty: string; condition: string; status: string;
   attachment: string | null;   // saved storage path
   file?: File;                 // new image, uploaded on Save
   preview?: string;            // what the thumbnail shows (signed URL or local object URL)
 }
-interface DbRow { id: string; item: string; purchase_date: string | null; useful_life_years: number | null; decommission_date: string | null; warranty: string; location: string; qty: number; condition: string; status: string; attachment: string | null }
+interface DbRow { id: string; item: string; description: string; purchase_date: string | null; useful_life_years: number | null; decommission_date: string | null; warranty: string; location: string; qty: number; condition: string; status: string; attachment: string | null }
 interface Check { id: string; checker_name: string; check_date: string; signature: string; row_count: number; created_at: string }
 
 /** Purchase date -> out-of-commission date as "2 y 3 m 5 d". Blank until both dates are filled in. */
@@ -36,14 +36,12 @@ function actualLife(from: string, to: string): string {
   return out || '0 d';
 }
 const HEADS: [string, boolean][] = [
-  ['Item', false], ['Date of purchase', false], ['Warranty', false], ['Useful life (yrs)', true], ['Date out of commission', false], ['Total actual life', false],
+  ['Item', false], ['Description', false], ['Date of purchase', false], ['Warranty', false], ['Useful life (yrs)', true], ['Date out of commission', false], ['Total actual life', false],
   ['Location', false], ['Qty', true], ['Condition', false], ['Status', false], ['Attachment', false], ['', false],
 ];
-const DEFAULT_WIDTHS = [14, 9, 9, 5.5, 9, 8.5, 10, 4.5, 8, 8, 10, 4.5];   // % of the table, always totals 100
+const DEFAULT_WIDTHS = [11, 13, 8.5, 7.5, 5.5, 8.5, 7.5, 8, 4.5, 7.5, 7.5, 7, 4];   // % of the table, always totals 100
 const MIN_W = 2.5;
-const WIDTH_KEY = 'hbc-store-col-widths-v2';
-
-const blank = (): Row => ({ key: crypto.randomUUID(), item: '', purchase_date: '', useful_life: '', decommission_date: '', warranty: '', location: '', qty: '1', condition: 'Good', status: 'In store', attachment: null });
+const WIDTH_KEY = 'hbc-store-col-widths-v3';
 
 export default function StorePage() {
   const { roles, toast, confirmDialog } = useApp();
@@ -62,7 +60,7 @@ export default function StorePage() {
       signed?.forEach((s) => { if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl); });
     }
     const rows: Row[] = items.map((i) => ({
-      key: i.id, id: i.id, item: i.item, purchase_date: i.purchase_date ?? '', useful_life: i.useful_life_years == null ? '' : String(i.useful_life_years), decommission_date: i.decommission_date ?? '', warranty: i.warranty ?? '', location: i.location, qty: String(i.qty), condition: i.condition, status: i.status,
+      key: i.id, id: i.id, item: i.item, description: i.description ?? '', purchase_date: i.purchase_date ?? '', useful_life: i.useful_life_years == null ? '' : String(i.useful_life_years), decommission_date: i.decommission_date ?? '', warranty: i.warranty ?? '', location: i.location, qty: String(i.qty), condition: i.condition, status: i.status,
       attachment: i.attachment, preview: i.attachment ? urls.get(i.attachment) : undefined,
     }));
     return { rows, checks };
@@ -135,7 +133,7 @@ export default function StorePage() {
     setRows((rs) => [...rs, { ...v, key: id, id, attachment, preview, decommission_date: '' }]);
 
   function startSave() {
-    if (rows.length === 0 && removed.length === 0) return toast('Add at least one row before saving', true);
+    if (rows.length === 0 && removed.length === 0) return toast('Add an item before saving', true);
     const bad = rows.findIndex((r) => !r.item.trim());
     if (bad >= 0) return toast(`Row ${bad + 1} has no item name`, true);
     if (rows.some((r) => r.useful_life.trim() !== '' && !(Number(r.useful_life) >= 0))) return toast('Useful life must be a number of years, 0 or more', true);
@@ -152,7 +150,7 @@ export default function StorePage() {
     for (const r of rows) {
       let attachment = r.attachment;
       if (r.file) attachment = await uploadStorePhoto(sb, co, r.file);
-      payload.push({ id: r.id ?? null, item: r.item.trim(), purchase_date: r.purchase_date || null, useful_life_years: r.useful_life.trim() === '' ? null : Number(r.useful_life), decommission_date: r.decommission_date || null, warranty: r.warranty.trim(), location: r.location.trim(), qty: Number(r.qty), condition: r.condition, status: r.status, attachment });
+      payload.push({ id: r.id ?? null, item: r.item.trim(), description: r.description.trim(), purchase_date: r.purchase_date || null, useful_life_years: r.useful_life.trim() === '' ? null : Number(r.useful_life), decommission_date: r.decommission_date || null, warranty: r.warranty.trim(), location: r.location.trim(), qty: Number(r.qty), condition: r.condition, status: r.status, attachment });
     }
     const res = await sb.rpc('store_save_all', { p_rows: payload, p_removed: removed, p_checker: checker, p_date: date, p_signature: signature });
     if (res.error) throw new Error(res.error.message);
@@ -162,13 +160,12 @@ export default function StorePage() {
     setSigning(false); setDirty(false); reload();
   }
 
-  const shown = rows.filter((r) => !q.trim() || `${r.item} ${r.location} ${r.status}`.toLowerCase().includes(q.trim().toLowerCase()));
+  const shown = rows.filter((r) => !q.trim() || `${r.item} ${r.description} ${r.location} ${r.status}`.toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
     <>
       <PageHead eyebrow="Store" title="Store Inventory" sub="One store for all companies. Add item saves at once; table edits need a signed Save">
         {canWrite && <button className="btn primary store-add-btn" onClick={() => setAdding(true)}>＋ Add item</button>}
-        {canWrite && <button className="btn" onClick={() => { setRows((rs) => [...rs, blank()]); setDirty(true); }}>＋ Add row</button>}
         {canWrite && <button className="btn" disabled={!dirty && rows.length === 0} onClick={startSave}>Save checked sheet</button>}
       </PageHead>
       {error && <ErrorBox error={error} />}
@@ -195,10 +192,11 @@ export default function StorePage() {
                 ))}
               </tr></thead>
               <tbody>
-                {shown.length === 0 && <tr><td colSpan={12} className="empty">{rows.length ? 'No rows match.' : 'The table is empty. Add a row to start.'}</td></tr>}
+                {shown.length === 0 && <tr><td colSpan={13} className="empty">{rows.length ? 'No rows match.' : canWrite ? 'The store is empty. Use “Add item” to start.' : 'The store is empty.'}</td></tr>}
                 {shown.map((r) => (
                   <tr key={r.key}>
                     <td><input className="input" value={r.item} disabled={!canWrite} onChange={(e) => edit(r.key, { item: e.target.value })} placeholder="Item" /></td>
+                    <td><input className="input" value={r.description} title={r.description} maxLength={200} disabled={!canWrite} onChange={(e) => edit(r.key, { description: e.target.value })} placeholder="Short description" /></td>
                     <td>{canWrite ? <DatePicker value={r.purchase_date} onChange={(v) => edit(r.key, { purchase_date: v })} /> : fmtDate(r.purchase_date)}</td>
                     <td><input className="input" value={r.warranty} disabled={!canWrite} onChange={(e) => edit(r.key, { warranty: e.target.value })} placeholder="e.g. 2 years / none" /></td>
                     <td className="r"><input className="input qty-in" inputMode="decimal" value={r.useful_life} disabled={!canWrite} onChange={(e) => edit(r.key, { useful_life: e.target.value })} placeholder="yrs" /></td>
