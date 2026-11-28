@@ -3,14 +3,14 @@ import '@/app/store.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '@/components/Providers';
 import { SignaturePad } from '@/components/SignaturePad';
+import { StoreAddModal, type AddedStoreItem } from '@/components/StoreAddModal';
 import { DatePicker, ErrorBox, Field, Loading, Modal, PageHead, Select, SuggestInput } from '@/components/ui';
 import { fmtDate, today } from '@/lib/format';
 import { useQuery } from '@/lib/hooks';
-import { prepareReceipt } from '@/lib/receipt';
 import { can } from '@/lib/roles';
+import { STORE_BUCKET as BUCKET, uploadStorePhoto } from '@/lib/storePhoto';
 import { fetchAll, getCompanyId, supabase, unwrap } from '@/lib/supabase';
 
-const BUCKET = 'store-photos';
 const CONDITIONS = ['Good', 'Fair', 'Needs repair', 'Broken', 'Scrap'];
 const STATUSES = ['In store', 'Checked out', 'Under repair', 'Missing', 'Disposed'];
 const LOCATIONS = ['Store Room', 'Site Container', 'Vehicle'];
@@ -24,27 +24,6 @@ interface Row {
 interface DbRow { id: string; item: string; purchase_date: string | null; useful_life_years: number | null; decommission_date: string | null; warranty: string; location: string; qty: number; condition: string; status: string; attachment: string | null }
 interface Check { id: string; checker_name: string; check_date: string; signature: string; row_count: number; created_at: string }
 
-/** The storage bucket takes JPEG/PNG/WebP/HEIC only, so SVG (and anything else) is redrawn as a PNG first. */
-async function rasterize(file: File): Promise<File> {
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise<HTMLImageElement>((ok, no) => {
-      const i = new Image();
-      i.onload = () => ok(i); i.onerror = () => no(new Error('Could not read that image.'));
-      i.src = url;
-    });
-    const w = img.naturalWidth || 800, h = img.naturalHeight || 800;
-    const k = Math.min(1, 1600 / Math.max(w, h)) || 1;
-    const c = document.createElement('canvas');
-    c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
-    const g = c.getContext('2d')!;
-    g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
-    g.drawImage(img, 0, 0, c.width, c.height);
-    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, 'image/png'));
-    if (!blob) throw new Error('Could not convert that image.');
-    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' });
-  } finally { URL.revokeObjectURL(url); }
-}
 /** Purchase date -> out-of-commission date as "2 y 3 m 5 d". Blank until both dates are filled in. */
 function actualLife(from: string, to: string): string {
   if (!from || !to || to < from) return '—';
@@ -63,13 +42,13 @@ const HEADS: [string, boolean][] = [
 const DEFAULT_WIDTHS = [14, 9, 9, 5.5, 9, 8.5, 10, 4.5, 8, 8, 10, 4.5];   // % of the table, always totals 100
 const MIN_W = 2.5;
 const WIDTH_KEY = 'hbc-store-col-widths-v2';
-const NATIVE = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 const blank = (): Row => ({ key: crypto.randomUUID(), item: '', purchase_date: '', useful_life: '', decommission_date: '', warranty: '', location: '', qty: '1', condition: 'Good', status: 'In store', attachment: null });
 
 export default function StorePage() {
-  const { profile, toast, confirmDialog } = useApp();
-  const canWrite = can(profile!.role, 'store:write');
+  const { roles, toast, confirmDialog } = useApp();
+  // the store belongs to no company: a role in any company counts (see 0044)
+  const canWrite = roles.some((r) => can(r, 'store:write'));
   const sb = supabase();
 
   const { data, error, loading, reload } = useQuery(async () => {
@@ -92,6 +71,8 @@ export default function StorePage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [dirty, setDirty] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [removed, setRemoved] = useState<string[]>([]);   // saved rows deleted on screen; only these are deleted on Save
   const [q, setQ] = useState('');
   const tableRef = useRef<HTMLTableElement>(null);
   const [widths, setWidths] = useState<number[]>(DEFAULT_WIDTHS);
@@ -123,7 +104,7 @@ export default function StorePage() {
 
   // this page uses the whole width of the screen (the shared layout normally adds side margins)
   useEffect(() => { document.body.classList.add('store-wide'); return () => document.body.classList.remove('store-wide'); }, []);
-  useEffect(() => { if (data) { setRows(data.rows); setDirty(false); } }, [data]);
+  useEffect(() => { if (data) { setRows(data.rows); setRemoved([]); setDirty(false); } }, [data]);
   useEffect(() => {
     if (!dirty) return;
     const h = (e: BeforeUnloadEvent) => { e.preventDefault(); };
@@ -146,10 +127,15 @@ export default function StorePage() {
   async function removeRow(r: Row) {
     if (r.item.trim() && !(await confirmDialog({ title: 'Delete row?', message: `“${r.item}” is removed from the sheet when you Save.`, confirmLabel: 'Delete', danger: true }))) return;
     setRows((rs) => rs.filter((x) => x.key !== r.key)); setDirty(true);
+    if (r.id) setRemoved((ids) => [...ids, r.id!]);
   }
 
+  /** Already saved by the form, so it joins the sheet without marking it unsaved. */
+  const added = ({ id, preview, attachment, ...v }: AddedStoreItem) =>
+    setRows((rs) => [...rs, { ...v, key: id, id, attachment, preview, decommission_date: '' }]);
+
   function startSave() {
-    if (rows.length === 0) return toast('Add at least one row before saving', true);
+    if (rows.length === 0 && removed.length === 0) return toast('Add at least one row before saving', true);
     const bad = rows.findIndex((r) => !r.item.trim());
     if (bad >= 0) return toast(`Row ${bad + 1} has no item name`, true);
     if (rows.some((r) => r.useful_life.trim() !== '' && !(Number(r.useful_life) >= 0))) return toast('Useful life must be a number of years, 0 or more', true);
@@ -165,16 +151,10 @@ export default function StorePage() {
     const payload = [];
     for (const r of rows) {
       let attachment = r.attachment;
-      if (r.file) {
-        const p = await prepareReceipt(NATIVE.includes(r.file.type) ? r.file : await rasterize(r.file));
-        const path = `${co}/${crypto.randomUUID()}.${p.ext}`;
-        const up = await sb.storage.from(BUCKET).upload(path, p.blob, { contentType: p.type });
-        if (up.error) throw new Error(`Image upload failed: ${up.error.message}`);
-        attachment = path;
-      }
+      if (r.file) attachment = await uploadStorePhoto(sb, co, r.file);
       payload.push({ id: r.id ?? null, item: r.item.trim(), purchase_date: r.purchase_date || null, useful_life_years: r.useful_life.trim() === '' ? null : Number(r.useful_life), decommission_date: r.decommission_date || null, warranty: r.warranty.trim(), location: r.location.trim(), qty: Number(r.qty), condition: r.condition, status: r.status, attachment });
     }
-    const res = await sb.rpc('store_save', { p_rows: payload, p_checker: checker, p_date: date, p_signature: signature });
+    const res = await sb.rpc('store_save_all', { p_rows: payload, p_removed: removed, p_checker: checker, p_date: date, p_signature: signature });
     if (res.error) throw new Error(res.error.message);
     const unused = (res.data as string[]) ?? [];
     if (unused.length) await sb.storage.from(BUCKET).remove(unused);
@@ -186,9 +166,10 @@ export default function StorePage() {
 
   return (
     <>
-      <PageHead eyebrow="Store" title="Store Inventory" sub="Edit the table, then Save with the checker's name, date and signature">
+      <PageHead eyebrow="Store" title="Store Inventory" sub="One store for all companies. Add item saves at once; table edits need a signed Save">
+        {canWrite && <button className="btn primary store-add-btn" onClick={() => setAdding(true)}>＋ Add item</button>}
         {canWrite && <button className="btn" onClick={() => { setRows((rs) => [...rs, blank()]); setDirty(true); }}>＋ Add row</button>}
-        {canWrite && <button className="btn primary" disabled={!dirty && rows.length === 0} onClick={startSave}>Save</button>}
+        {canWrite && <button className="btn" disabled={!dirty && rows.length === 0} onClick={startSave}>Save checked sheet</button>}
       </PageHead>
       {error && <ErrorBox error={error} />}
 
@@ -273,6 +254,7 @@ export default function StorePage() {
         </div>
       )}
 
+      {adding && <StoreAddModal locations={locations} conditions={CONDITIONS} statuses={STATUSES} onAdded={added} onClose={() => setAdding(false)} />}
       {signing && <SignModal count={rows.length} onClose={() => setSigning(false)} onSave={save} />}
     </>
   );

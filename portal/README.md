@@ -66,6 +66,14 @@ Run `supabase/migrations/0027_accounting.sql` once in the SQL Editor. It creates
 
 **Chart of accounts without codes:** run `supabase/migrations/0041_coa_without_codes.sql` once in the SQL Editor **before** deploying. Accounts are grouped by section and sorted by name unless reordered on the Chart of Accounts screen; cash, receivable and payable accounts are marked on the account itself. The old `code` column is kept but unused. Tests: `node supabase/tests/coa.mjs` and `node --experimental-strip-types tests/accounting.test.mjs`.
 
+## Store Inventory
+
+One sheet shared by all companies. A role in any company counts: administrator, payroll and attendance edit; quotations and viewer read.
+
+**Add item** is a phone-friendly form (camera or gallery photo) that saves immediately, without a signature. Changes made in the table still need the signed **Save checked sheet**, which deletes only the rows removed on that screen.
+
+Run `supabase/migrations/0044_store_no_company.sql` once in the SQL Editor when deploying; from then until the new version is live, the old Store page can read but not save. Reload any Store page that was left open. Tests: `node supabase/tests/store_shared.mjs`.
+
 ## Work permit, Iqama and Tamin
 
 Run `supabase/migrations/0039_employee_renewals.sql` once in the SQL Editor **before** deploying. It adds the work permit and Tamin expiry dates and the renewal / fee history shown on each employee's profile. Administrators and payroll record entries, viewers read, attendance sees expiry dates only. Fees are not posted to accounting. Tests: `node supabase/tests/renewals.mjs`.

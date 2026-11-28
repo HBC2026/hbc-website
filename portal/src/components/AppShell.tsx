@@ -43,11 +43,6 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    label: 'Store', icon: '▦', items: [
-      { href: '/adminconsole/store', label: 'Store Inventory', icon: '▦', roles: STORE_SIDE },
-    ],
-  },
-  {
     label: 'Accounting', icon: '∑', items: [
       { href: '/adminconsole/accounting', label: 'Overview', icon: '∑', roles: ACC_SIDE },
       { href: '/adminconsole/accounting/register', label: 'Register', icon: '▦', roles: ACC_SIDE },
@@ -68,8 +63,8 @@ const NAV: NavGroup[] = [
   ] },
 ];
 
-// Petty cash belongs to no company: it sits under "All Companies" instead of in a company's menu
-const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }, { href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉' }, { href: '/adminconsole/attendance-all', label: 'All Attendance', icon: '◧' }];
+// Petty cash and the store belong to no company: they sit under "All Companies" instead of in a company's menu
+const ALL = [...NAV.flatMap((g) => g.items), { href: '/adminconsole/overview', label: 'All Companies', icon: '◈' }, { href: '/adminconsole/pettycash', label: 'Petty Cash', icon: '◉' }, { href: '/adminconsole/store', label: 'Store Inventory', icon: '▦' }, { href: '/adminconsole/attendance-all', label: 'All Attendance', icon: '◧' }];
 
 function activeHref(pathname: string): string | undefined {
   return ALL.filter((i) => (i.href === '/adminconsole' ? pathname === i.href : pathname === i.href || pathname.startsWith(i.href + '/')))
@@ -77,7 +72,7 @@ function activeHref(pathname: string): string | undefined {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { loading, userId, profile, company, companies, switchCompany, signOut } = useApp();
+  const { loading, userId, profile, roles, company, companies, switchCompany, signOut } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   // desktop: the whole navigation sidebar can be hidden to give pages more room (remembered per browser)
@@ -196,6 +191,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           {PETTY_SIDE.includes(profile.role) && (
             <Link href="/adminconsole/pettycash" title="Petty Cash (shared by all companies)" className={`nav-item nav-top${current === '/adminconsole/pettycash' ? ' active' : ''}`}>
               <span className="nav-icon">◉</span>Petty Cash
+            </Link>
+          )}
+          {roles.some((r) => STORE_SIDE.includes(r)) && (
+            <Link href="/adminconsole/store" title="Store Inventory (shared by all companies)" className={`nav-item nav-top${current === '/adminconsole/store' ? ' active' : ''}`}>
+              <span className="nav-icon">▦</span>Store Inventory
             </Link>
           )}
           {ATTENDANCE_SIDE.includes(profile.role) && (

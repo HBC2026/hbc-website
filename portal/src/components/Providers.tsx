@@ -14,6 +14,8 @@ export interface ConfirmOptions { title?: string; message: string; confirmLabel?
 interface Toast { id: number; msg: string; error?: boolean }
 interface AppCtx {
   loading: boolean; userId: string | null; profile: Profile | null; settings: Settings;
+  /** Every role the user holds in any company, for the modules that belong to no company. */
+  roles: Role[];
   /** Companies the user belongs to, and the one currently shown. `profile.role` is the role in that company. */
   companies: Company[]; company: Company | null; switchCompany: (id: string, to?: string) => void;
   signOut: () => Promise<void>; reloadSettings: () => Promise<void>; reloadProfile: () => Promise<void>;
@@ -36,6 +38,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [dialog, setDialog] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null);
 
@@ -65,7 +68,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
     async function load(uid: string | null) {
       setUserId(uid);
-      if (!uid) { setProfile(null); setCompanies([]); setCompany(null); setLoading(false); return; }
+      if (!uid) { setProfile(null); setCompanies([]); setCompany(null); setRoles([]); setLoading(false); return; }
 
       // Which companies can this user open, and in which role? The choice must be set before any other query.
       const { data: mem } = await sb.from('company_members').select('role, companies(id, code, name, name_ar)').eq('user_id', uid);
@@ -78,6 +81,7 @@ export function Providers({ children }: { children: ReactNode }) {
       const { data } = await sb.from('profiles').select('*').eq('id', uid).maybeSingle();
       if (cancelled) return;
       setCompanies(rows.map((m) => m.companies));
+      setRoles(rows.map((m) => m.role));
       setCompany(chosen ? chosen.companies : null);
       setProfile(data ? ({ ...(data as Profile), role: chosen ? chosen.role : 'viewer' }) : null);
       if (chosen) await reloadSettings();
@@ -110,7 +114,7 @@ export function Providers({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => { await supabase().auth.signOut(); }, []);
 
   return (
-    <Ctx.Provider value={{ loading, userId, profile, settings, companies, company, switchCompany, signOut, reloadSettings, reloadProfile, toast, confirmDialog }}>
+    <Ctx.Provider value={{ loading, userId, profile, roles, settings, companies, company, switchCompany, signOut, reloadSettings, reloadProfile, toast, confirmDialog }}>
       {children}
       {dialog && (
         <Modal title={dialog.title ?? 'Please confirm'} onClose={() => answer(false)}
