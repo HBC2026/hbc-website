@@ -72,7 +72,7 @@ One sheet shared by all companies. A role in any company counts: administrator, 
 
 **Add item** is a phone-friendly form (camera or gallery photo) that saves immediately, without a signature. Changes made in the table still need the signed **Save checked sheet**, which deletes only the rows removed on that screen.
 
-Run `supabase/migrations/0044_store_no_company.sql` once in the SQL Editor when deploying; from then until the new version is live, the old Store page can read but not save. Reload any Store page that was left open. Then run `supabase/migrations/0045_store_description_new_condition.sql` (short description and the "New" condition) **before** deploying. Tests: `node supabase/tests/store_shared.mjs`.
+Run `supabase/migrations/0044_store_no_company.sql` once in the SQL Editor when deploying; from then until the new version is live, the old Store page can read but not save. Reload any Store page that was left open. Then run `supabase/migrations/0045_store_description_new_condition.sql` (short description and the "New" condition) and `supabase/migrations/0046_store_second_photo.sql` (two photos per item) **before** deploying. Tests: `node supabase/tests/store_shared.mjs`.
 
 ## Work permit, Iqama and Tamin
 

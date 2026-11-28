@@ -148,6 +148,31 @@ if (!NEWID.startsWith('ERROR')) {
   ok((await sheet()).some((r) => r.item === 'Row' && r.description === 'from table'), 'a new row saved from the table keeps its description');
 }
 
+// 0046: a second photo per item
+await as(U1, HBC);
+const photos = () => q(`select id, item, attachment, attachment2 from store_items order by sort_order`);
+const P1 = `${HBC}/one.jpg`, P2 = `${HBC}/two.jpg`;
+const TWO = (await q(add({ item: 'Ladder', attachment: P1, attachment2: P2 })))[0].id;
+const ladder = async () => (await photos()).find((r) => r.id === TWO);
+const has2 = (await ladder()) !== undefined && 'attachment2' in (await ladder());
+ok(has2, 'items have a second photo');
+if (has2) {
+  const savedWith = async (change, removed = []) => (await db.query(save((await photos()).filter((r) => !removed.includes(r.id)).map((r) => (r.id === TWO ? change(r) : r)), removed))).rows[0].store_save_all;
+  ok((await ladder()).attachment === P1 && (await ladder()).attachment2 === P2, 'both photos are stored by the add form');
+  await savedWith(({ attachment2, ...r }) => r); // a page from before this change
+  ok((await ladder()).attachment2 === P2, 'a page that does not send a second photo does not wipe it');
+  const copy = (await q(`select snapshot from store_checks order by created_at desc limit 1`))[0].snapshot;
+  ok(copy.some((r) => r.attachment2 === P2), 'the signed copy includes the second photo');
+  const unused = await savedWith((r) => ({ ...r, attachment: r.attachment2, attachment2: null })); // first photo removed
+  ok((await ladder()).attachment === P2 && (await ladder()).attachment2 === null, 'the second photo can take the first place');
+  ok(unused.includes(P1) && !unused.includes(P2), 'only the removed photo is reported as unused');
+  await savedWith((r) => ({ ...r, attachment2: P1 }));
+  const gone = await savedWith((r) => r, [TWO]);
+  ok(gone.includes(P1) && gone.includes(P2), 'deleting an item reports both photos as unused');
+  await db.exec(save([...(await photos()), { item: 'TwoRow', attachment: P1, attachment2: P2 }]));
+  ok((await photos()).some((r) => r.item === 'TwoRow' && r.attachment2 === P2), 'a new row saved from the table keeps both photos');
+}
+
 // an old page, still holding one company's rows, must not be able to delete the rest
 await as(U1, HBC);
 ok(await fails(`select store_save('[{"item":"stale"}]'::jsonb, 'chk', '2026-11-01', '${SIG}')`), 'the old save function is gone');

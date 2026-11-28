@@ -2,6 +2,8 @@ import { prepareReceipt } from '@/lib/receipt';
 import type { supabase } from '@/lib/supabase';
 
 export const STORE_BUCKET = 'store-photos';
+/** Photos per item; stored as `attachment` and `attachment2`. */
+export const MAX_PHOTOS = 2;
 const NATIVE = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 /** The storage bucket takes JPEG/PNG/WebP/HEIC only, so SVG (and anything else) is redrawn as a PNG first. */

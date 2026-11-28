@@ -8,7 +8,7 @@ import { DatePicker, ErrorBox, Field, Loading, Modal, PageHead, Select, SuggestI
 import { fmtDate, today } from '@/lib/format';
 import { useQuery } from '@/lib/hooks';
 import { can } from '@/lib/roles';
-import { STORE_BUCKET as BUCKET, uploadStorePhoto } from '@/lib/storePhoto';
+import { MAX_PHOTOS, STORE_BUCKET as BUCKET, uploadStorePhoto } from '@/lib/storePhoto';
 import { fetchAll, getCompanyId, supabase, unwrap } from '@/lib/supabase';
 
 const CONDITIONS = ['New', 'Good', 'Fair', 'Needs repair', 'Broken', 'Scrap'];
@@ -17,11 +17,14 @@ const LOCATIONS = ['Store Room', 'Site Container', 'Vehicle'];
 
 interface Row {
   key: string; id?: string; item: string; description: string; purchase_date: string; useful_life: string; decommission_date: string; warranty: string; location: string; qty: string; condition: string; status: string;
-  attachment: string | null;   // saved storage path
+  photos: Photo[];             // up to MAX_PHOTOS, in order
+}
+interface Photo {
+  path: string | null;         // saved storage path
   file?: File;                 // new image, uploaded on Save
   preview?: string;            // what the thumbnail shows (signed URL or local object URL)
 }
-interface DbRow { id: string; item: string; description: string; purchase_date: string | null; useful_life_years: number | null; decommission_date: string | null; warranty: string; location: string; qty: number; condition: string; status: string; attachment: string | null }
+interface DbRow { id: string; item: string; description: string; purchase_date: string | null; useful_life_years: number | null; decommission_date: string | null; warranty: string; location: string; qty: number; condition: string; status: string; attachment: string | null; attachment2: string | null }
 interface Check { id: string; checker_name: string; check_date: string; signature: string; row_count: number; created_at: string }
 
 /** Purchase date -> out-of-commission date as "2 y 3 m 5 d". Blank until both dates are filled in. */
@@ -37,11 +40,11 @@ function actualLife(from: string, to: string): string {
 }
 const HEADS: [string, boolean][] = [
   ['Item', false], ['Description', false], ['Date of purchase', false], ['Warranty', false], ['Useful life (yrs)', true], ['Date out of commission', false], ['Total actual life', false],
-  ['Location', false], ['Qty', true], ['Condition', false], ['Status', false], ['Attachment', false], ['', false],
+  ['Location', false], ['Qty', true], ['Condition', false], ['Status', false], ['Photos', false], ['', false],
 ];
-const DEFAULT_WIDTHS = [11, 13, 8.5, 7.5, 5.5, 8.5, 7.5, 8, 4.5, 7.5, 7.5, 7, 4];   // % of the table, always totals 100
+const DEFAULT_WIDTHS = [10, 12, 8, 7, 5.5, 8, 7, 8, 4.5, 7, 7, 12, 4];   // % of the table, always totals 100
 const MIN_W = 2.5;
-const WIDTH_KEY = 'hbc-store-col-widths-v3';
+const WIDTH_KEY = 'hbc-store-col-widths-v4';
 
 export default function StorePage() {
   const { roles, toast, confirmDialog } = useApp();
@@ -53,7 +56,8 @@ export default function StorePage() {
     const items = await fetchAll<DbRow>((a, b) => sb.from('store_items').select('*').order('sort_order').order('updated_at').range(a, b));
     const checks = unwrap(await sb.from('store_checks').select('id, checker_name, check_date, signature, row_count, created_at')
       .order('created_at', { ascending: false }).limit(10)) as Check[];
-    const paths = items.map((i) => i.attachment).filter((p): p is string => !!p);
+    const pathsOf = (i: DbRow) => [i.attachment, i.attachment2].filter((p): p is string => !!p);
+    const paths = items.flatMap(pathsOf);
     const urls = new Map<string, string>();
     if (paths.length) {
       const { data: signed } = await sb.storage.from(BUCKET).createSignedUrls(paths, 3600);
@@ -61,7 +65,7 @@ export default function StorePage() {
     }
     const rows: Row[] = items.map((i) => ({
       key: i.id, id: i.id, item: i.item, description: i.description ?? '', purchase_date: i.purchase_date ?? '', useful_life: i.useful_life_years == null ? '' : String(i.useful_life_years), decommission_date: i.decommission_date ?? '', warranty: i.warranty ?? '', location: i.location, qty: String(i.qty), condition: i.condition, status: i.status,
-      attachment: i.attachment, preview: i.attachment ? urls.get(i.attachment) : undefined,
+      photos: pathsOf(i).map((path) => ({ path, preview: urls.get(path) })),
     }));
     return { rows, checks };
   }, []);
@@ -113,14 +117,19 @@ export default function StorePage() {
   const locations = useMemo(() => Array.from(new Set([...LOCATIONS, ...rows.map((r) => r.location.trim()).filter(Boolean)])).sort(), [rows]);
   const edit = (key: string, patch: Partial<Row>) => { setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r))); setDirty(true); };
 
-  function pickImage(key: string, f: File | undefined) {
-    if (!f) return;
-    if (!f.type.startsWith('image/')) return toast('Choose an image file', true);
-    const old = rows.find((r) => r.key === key);
-    if (old?.file && old.preview) URL.revokeObjectURL(old.preview);
-    edit(key, { file: f, preview: URL.createObjectURL(f) });
+  function pickImages(r: Row, list: FileList | null) {
+    const files = Array.from(list ?? []);
+    if (!files.length) return;
+    if (files.some((f) => !f.type.startsWith('image/'))) return toast('Choose an image file', true);
+    const room = MAX_PHOTOS - r.photos.length;
+    if (files.length > room) toast(`An item can have ${MAX_PHOTOS} photos`, true);
+    edit(r.key, { photos: [...r.photos, ...files.slice(0, room).map((file) => ({ path: null, file, preview: URL.createObjectURL(file) }))] });
   }
-  const removeImage = (key: string) => edit(key, { file: undefined, preview: undefined, attachment: null });
+  function removeImage(r: Row, n: number) {
+    const old = r.photos[n];
+    if (old.file && old.preview) URL.revokeObjectURL(old.preview);
+    edit(r.key, { photos: r.photos.filter((_, k) => k !== n) });
+  }
 
   async function removeRow(r: Row) {
     if (r.item.trim() && !(await confirmDialog({ title: 'Delete row?', message: `“${r.item}” is removed from the sheet when you Save.`, confirmLabel: 'Delete', danger: true }))) return;
@@ -129,8 +138,8 @@ export default function StorePage() {
   }
 
   /** Already saved by the form, so it joins the sheet without marking it unsaved. */
-  const added = ({ id, preview, attachment, ...v }: AddedStoreItem) =>
-    setRows((rs) => [...rs, { ...v, key: id, id, attachment, preview, decommission_date: '' }]);
+  const added = ({ id, ...v }: AddedStoreItem) =>
+    setRows((rs) => [...rs, { ...v, key: id, id, decommission_date: '' }]);
 
   function startSave() {
     if (rows.length === 0 && removed.length === 0) return toast('Add an item before saving', true);
@@ -148,9 +157,9 @@ export default function StorePage() {
     if (!co) throw new Error('No company selected');
     const payload = [];
     for (const r of rows) {
-      let attachment = r.attachment;
-      if (r.file) attachment = await uploadStorePhoto(sb, co, r.file);
-      payload.push({ id: r.id ?? null, item: r.item.trim(), description: r.description.trim(), purchase_date: r.purchase_date || null, useful_life_years: r.useful_life.trim() === '' ? null : Number(r.useful_life), decommission_date: r.decommission_date || null, warranty: r.warranty.trim(), location: r.location.trim(), qty: Number(r.qty), condition: r.condition, status: r.status, attachment });
+      const paths: (string | null)[] = [];
+      for (const p of r.photos) paths.push(p.file ? await uploadStorePhoto(sb, co, p.file) : p.path);
+      payload.push({ id: r.id ?? null, item: r.item.trim(), description: r.description.trim(), purchase_date: r.purchase_date || null, useful_life_years: r.useful_life.trim() === '' ? null : Number(r.useful_life), decommission_date: r.decommission_date || null, warranty: r.warranty.trim(), location: r.location.trim(), qty: Number(r.qty), condition: r.condition, status: r.status, attachment: paths[0] ?? null, attachment2: paths[1] ?? null });
     }
     const res = await sb.rpc('store_save_all', { p_rows: payload, p_removed: removed, p_checker: checker, p_date: date, p_signature: signature });
     if (res.error) throw new Error(res.error.message);
@@ -210,12 +219,16 @@ export default function StorePage() {
                     <td><Select value={r.status} disabled={!canWrite} onChange={(e) => edit(r.key, { status: e.target.value })}>{STATUSES.map((c) => <option key={c}>{c}</option>)}</Select></td>
                     <td>
                       <div className="store-att">
-                        {r.preview && <a href={r.preview} target="_blank" rel="noreferrer"><img className="store-thumb" src={r.preview} alt="" /></a>}
-                        {canWrite && (
+                        {r.photos.map((p, n) => (
+                          <span className="store-shot" key={p.path ?? p.preview}>
+                            {p.preview && <a href={p.preview} target="_blank" rel="noreferrer"><img className="store-thumb" src={p.preview} alt={`Photo ${n + 1}`} /></a>}
+                            {canWrite && <button className="store-shot-x" onClick={() => removeImage(r, n)} aria-label={`Remove photo ${n + 1}`} title="Remove photo">×</button>}
+                          </span>
+                        ))}
+                        {canWrite && r.photos.length < MAX_PHOTOS && (
                           <>
-                            <input type="file" accept="image/*" ref={(el) => { fileInputs.current[r.key] = el; }} onChange={(e) => { pickImage(r.key, e.target.files?.[0]); e.target.value = ''; }} />
-                            <button className="btn sm" onClick={() => fileInputs.current[r.key]?.click()}>{r.preview ? 'Change' : '＋ Image'}</button>
-                            {r.preview && <button className="btn sm danger" onClick={() => removeImage(r.key)}>Remove</button>}
+                            <input type="file" accept="image/*" multiple ref={(el) => { fileInputs.current[r.key] = el; }} onChange={(e) => { pickImages(r, e.target.files); e.target.value = ''; }} />
+                            <button className="btn sm" onClick={() => fileInputs.current[r.key]?.click()}>＋ Image</button>
                           </>
                         )}
                       </div>
